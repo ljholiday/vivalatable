@@ -1,71 +1,78 @@
 <?php
 /**
  * VivalaTable Bootstrap
- * Core initialization and configuration loading
+ * Initialize the application
  */
 
-// Prevent direct access
-if (!defined('VT_ROOT')) {
-    define('VT_ROOT', dirname(__DIR__));
+// Define constants
+define('VT_VERSION', '1.0.0');
+define('VT_PLUGIN_DIR', dirname(__DIR__));
+define('VT_INCLUDES_DIR', __DIR__);
+
+// Error reporting for development
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Set timezone
+date_default_timezone_set('UTC');
+
+// Load environment variables if .env file exists
+if (file_exists(VT_PLUGIN_DIR . '/.env')) {
+    $lines = file(VT_PLUGIN_DIR . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos($line, '=') !== false && $line[0] !== '#') {
+            list($key, $value) = explode('=', $line, 2);
+            $_ENV[trim($key)] = trim($value, '"\'');
+        }
+    }
 }
+
+// Load core classes
+require_once __DIR__ . '/class-config.php';
+require_once __DIR__ . '/class-database.php';
+require_once __DIR__ . '/class-auth.php';
+require_once __DIR__ . '/class-security.php';
+require_once __DIR__ . '/class-sanitize.php';
+require_once __DIR__ . '/class-mail.php';
+require_once __DIR__ . '/class-time.php';
+require_once __DIR__ . '/class-http.php';
+
+// Load WordPress replacements
+require_once '/Users/lonnholiday/vivalatable-migration-docs/wp_replacements.php';
+
+// Load all business logic classes
+$class_files = glob(__DIR__ . '/class-*.php');
+foreach ($class_files as $file) {
+    $filename = basename($file);
+    if (!in_array($filename, [
+        'class-config.php',
+        'class-database.php',
+        'class-auth.php',
+        'class-security.php',
+        'class-sanitize.php',
+        'class-mail.php',
+        'class-time.php',
+        'class-http.php'
+    ])) {
+        require_once $file;
+    }
+}
+
+// Initialize configuration system
+VT_Config::setDatabaseConfig(include VT_PLUGIN_DIR . '/config/database.php');
+
+// Initialize default configuration
+VT_Config::initializeDefaults();
+VT_Config::loadAutoloadOptions();
+
+// Initialize systems
+VT_Security::init();
+VT_Auth::init();
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Load configuration files
-if (file_exists(VT_ROOT . '/config/database.php')) {
-    require_once VT_ROOT . '/config/database.php';
-} else {
-    die('Database configuration not found. Please copy config/database.example.php to config/database.php and configure your database settings.');
-}
-
-// Load other config files
-$config_files = ['email.php', 'ai.php'];
-foreach ($config_files as $config_file) {
-    $config_path = VT_ROOT . '/config/' . $config_file;
-    if (file_exists($config_path)) {
-        require_once $config_path;
-    }
-}
-
-// Load core functions
-require_once __DIR__ . '/functions.php';
-require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/validation.php';
-
-// Load core classes
-require_once VT_ROOT . '/classes/Database.php';
-require_once VT_ROOT . '/classes/User.php';
-require_once VT_ROOT . '/classes/EventManager.php';
-require_once VT_ROOT . '/classes/CommunityManager.php';
-require_once VT_ROOT . '/classes/ConversationManager.php';
-require_once VT_ROOT . '/classes/GuestManager.php';
-
-// Initialize database connection
-try {
-    $db = Database::getInstance();
-} catch (Exception $e) {
-    error_log('Database connection failed: ' . $e->getMessage());
-    die('Database connection failed. Please check your configuration.');
-}
-
-// Set timezone
-date_default_timezone_set('America/New_York');
-
-// Define constants
-define('VT_VERSION', '1.0.0');
-define('VT_UPLOADS_URL', '/assets/uploads/');
-define('VT_UPLOADS_PATH', VT_ROOT . '/assets/uploads/');
-
-// Create uploads directory if it doesn't exist
-if (!is_dir(VT_UPLOADS_PATH)) {
-    mkdir(VT_UPLOADS_PATH, 0755, true);
-}
-
-// Initialize current user
-$current_user = null;
-if (is_user_logged_in()) {
-    $current_user = vt_get_current_user();
-}
+// Generate CSRF token
+VT_Security::generateCSRFToken();
