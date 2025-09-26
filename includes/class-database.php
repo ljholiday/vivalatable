@@ -20,19 +20,26 @@ class VT_Database {
         return self::$instance;
     }
 
-    private function connect() {
-        // Get database config without circular dependency
-        $config = [
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'database' => $_ENV['DB_NAME'] ?? 'vivalatable',
-            'username' => $_ENV['DB_USER'] ?? 'root',
-            'password' => $_ENV['DB_PASSWORD'] ?? 'root'
-        ];
+private function connect() {
+    // Load database configuration from config/database.php
+    $config = require __DIR__ . '/../config/database.php';
 
+    // Use host if available, otherwise fallback to socket
+    if (!empty($config['host'])) {
         $dsn = sprintf(
-            'mysql:unix_socket=/tmp/mysql.sock;dbname=%s;charset=utf8mb4',
-            $config['database']
+            'mysql:host=%s;dbname=%s;charset=%s',
+            $config['host'],
+            $config['database'],
+            $config['charset'] ?? 'utf8mb4'
         );
+    } else {
+        // fallback if no host is set — optional
+        $dsn = sprintf(
+            'mysql:unix_socket=/tmp/mysql.sock;dbname=%s;charset=%s',
+            $config['database'],
+            $config['charset'] ?? 'utf8mb4'
+        );
+    }
 
         try {
             $this->pdo = new PDO($dsn, $config['username'], $config['password'], [
