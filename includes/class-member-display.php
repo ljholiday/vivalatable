@@ -26,13 +26,13 @@ class VT_Member_Display {
 
 		$user = VT_Auth::getUserById($user_id);
 		if (!$user) {
-			return '<span class="' . esc_attr($args['class']) . '">Unknown User</span>';
+			return '<span class="' . VT_Sanitize::escAttr($args['class']) . '">Unknown User</span>';
 		}
 
 		$profile = VT_Profile_Manager::get_user_profile($user_id);
 		$display_name = $profile['display_name'] ?: $user->display_name ?: $user->username;
 
-		$output = '<div class="' . esc_attr($args['class']) . ' vt-flex vt-gap-2 vt-items-center">';
+		$output = '<div class="' . VT_Sanitize::escAttr($args['class']) . ' vt-flex vt-gap-2 vt-items-center">';
 
 		if ($args['show_avatar']) {
 			$avatar_html = self::get_avatar_html($profile, $args['avatar_size']);
@@ -41,11 +41,11 @@ class VT_Member_Display {
 
 		if ($args['show_profile_link']) {
 			$profile_url = VT_Profile_Manager::get_profile_url($user_id);
-			$output .= '<a href="' . esc_url($profile_url) . '" class="vt-text-primary vt-font-medium">';
-			$output .= esc_html($display_name);
+			$output .= '<a href="' . VT_Sanitize::escUrl($profile_url) . '" class="vt-text-primary vt-font-medium">';
+			$output .= VT_Sanitize::escHtml($display_name);
 			$output .= '</a>';
 		} else {
-			$output .= '<span class="vt-font-medium">' . esc_html($display_name) . '</span>';
+			$output .= '<span class="vt-font-medium">' . VT_Sanitize::escHtml($display_name) . '</span>';
 		}
 
 		$output .= '</div>';
@@ -71,7 +71,7 @@ class VT_Member_Display {
 
 		$args = array_merge($defaults, $args);
 
-		$output = esc_html($args['prefix']);
+		$output = VT_Sanitize::escHtml($args['prefix']);
 
 		// Try to get user by author_id first, then fall back to host_email
 		if (!empty($event->author_id)) {
@@ -81,7 +81,7 @@ class VT_Member_Display {
 			if ($user) {
 				$output .= self::get_member_display($user->id, $args);
 			} else {
-				$output .= '<span class="vt-member-display">' . esc_html($event->host_email) . '</span>';
+				$output .= '<span class="vt-member-display">' . VT_Sanitize::escHtml($event->host_email) . '</span>';
 			}
 		} else {
 			$output .= '<span class="vt-member-display">Unknown Host</span>';
@@ -119,7 +119,7 @@ class VT_Member_Display {
 
 		return sprintf(
 			'<img src="%s" alt="Avatar" class="vt-avatar" style="width: %dpx; height: %dpx; border-radius: 50%;">',
-			esc_url($avatar_url),
+			VT_Sanitize::escUrl($avatar_url),
 			(int) $size,
 			(int) $size
 		);
@@ -145,10 +145,10 @@ class VT_Member_Display {
 		$args = array_merge($defaults, $args);
 
 		if (empty($members)) {
-			return '<div class="' . esc_attr($args['class']) . '">No members</div>';
+			return '<div class="' . VT_Sanitize::escAttr($args['class']) . '">No members</div>';
 		}
 
-		$output = '<div class="' . esc_attr($args['class']) . ' vt-flex vt-gap-2 vt-flex-wrap">';
+		$output = '<div class="' . VT_Sanitize::escAttr($args['class']) . ' vt-flex vt-gap-2 vt-flex-wrap">';
 
 		$count = 0;
 		foreach ($members as $member) {

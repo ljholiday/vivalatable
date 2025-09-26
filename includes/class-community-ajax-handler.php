@@ -138,9 +138,9 @@ class VT_Community_Ajax_Handler {
 		}
 
 		$community_data = array(
-			'name' => sanitize_text_field($_POST['name']),
+			'name' => VT_Sanitize::textField($_POST['name']),
 			'description' => VT_Security::kses_post($_POST['description'] ?? ''),
-			'visibility' => sanitize_text_field($_POST['visibility'] ?? 'public'),
+			'visibility' => VT_Sanitize::textField($_POST['visibility'] ?? 'public'),
 		);
 
 		$community_manager = $this->get_community_manager();
@@ -210,9 +210,9 @@ class VT_Community_Ajax_Handler {
 		}
 
 		$community_data = array(
-			'name' => sanitize_text_field($_POST['name']),
+			'name' => VT_Sanitize::textField($_POST['name']),
 			'description' => VT_Security::kses_post($_POST['description'] ?? ''),
-			'visibility' => sanitize_text_field($_POST['visibility'] ?? 'public'),
+			'visibility' => VT_Sanitize::textField($_POST['visibility'] ?? 'public'),
 		);
 
 		$result = $community_manager->update_community($community_id, $community_data);
@@ -259,7 +259,7 @@ class VT_Community_Ajax_Handler {
 					(strlen($member->bio) > 80 ? substr($member->bio, 0, 80) . '...' : $member->bio) :
 					'Community member';
 
-				$members_html .= '<div class="vt-section" data-member-id="' . esc_attr($member->id) . '">';
+				$members_html .= '<div class="vt-section" data-member-id="' . VT_Sanitize::escAttr($member->id) . '">';
 				$members_html .= '<div class="vt-flex vt-flex-between">';
 				$members_html .= '<div class="vt-member-info">';
 
@@ -268,14 +268,14 @@ class VT_Community_Ajax_Handler {
 					$members_html .= VT_Member_Display::get_member_display($member->user_id, array('avatar_size' => 40));
 				} else {
 					$members_html .= '<div class="vt-flex vt-gap-2"><div class="vt-avatar"></div>';
-					$members_html .= '<div><strong>' . esc_html($member->display_name ?: $member->email) . '</strong></div></div>';
+					$members_html .= '<div><strong>' . VT_Sanitize::escHtml($member->display_name ?: $member->email) . '</strong></div></div>';
 				}
 
-				$members_html .= '<div class="vt-text-muted vt-text-sm vt-mt-1">' . esc_html($bio_text) . '</div>';
+				$members_html .= '<div class="vt-text-muted vt-text-sm vt-mt-1">' . VT_Sanitize::escHtml($bio_text) . '</div>';
 				$members_html .= '</div>';
 				$members_html .= '<div class="vt-ml-4">';
-				$members_html .= '<div class="vt-mb-2"><span class="vt-badge vt-badge-' . ($member->role === 'admin' ? 'primary' : 'secondary') . '">' . esc_html($member->role) . '</span></div>';
-				$members_html .= '<div><button class="vt-btn vt-btn-danger vt-btn-sm remove-btn" data-member-id="' . esc_attr($member->id) . '" data-member-name="' . esc_attr($member->display_name ?: $member->email) . '">Remove</button></div>';
+				$members_html .= '<div class="vt-mb-2"><span class="vt-badge vt-badge-' . ($member->role === 'admin' ? 'primary' : 'secondary') . '">' . VT_Sanitize::escHtml($member->role) . '</span></div>';
+				$members_html .= '<div><button class="vt-btn vt-btn-danger vt-btn-sm remove-btn" data-member-id="' . VT_Sanitize::escAttr($member->id) . '" data-member-name="' . VT_Sanitize::escAttr($member->display_name ?: $member->email) . '">Remove</button></div>';
 				$members_html .= '</div>';
 				$members_html .= '</div>';
 				$members_html .= '</div>';
@@ -300,7 +300,7 @@ class VT_Community_Ajax_Handler {
 
 		$community_id = intval($_POST['community_id']);
 		$member_id = intval($_POST['member_id']);
-		$new_role = sanitize_text_field($_POST['role']);
+		$new_role = VT_Sanitize::textField($_POST['role']);
 
 		if (!$community_id || !$member_id || !$new_role) {
 			VT_Ajax::send_error('All fields are required.');
@@ -378,7 +378,7 @@ class VT_Community_Ajax_Handler {
 		}
 
 		$community_id = intval($_POST['community_id']);
-		$email = sanitize_email($_POST['email']);
+		$email = VT_Sanitize::email($_POST['email']);
 
 		if (!$community_id || !$email) {
 			VT_Ajax::send_error('Community ID and email are required.');
@@ -515,7 +515,7 @@ class VT_Community_Ajax_Handler {
 	public function ajax_accept_invitation() {
 		VT_Security::verifyNonce('vt_accept_invitation', 'nonce');
 
-		$token = sanitize_text_field($_POST['token'] ?? '');
+		$token = VT_Sanitize::textField($_POST['token'] ?? '');
 		$community_id = intval($_POST['community_id'] ?? 0);
 
 		if (!$token || !$community_id) {
@@ -582,7 +582,7 @@ class VT_Community_Ajax_Handler {
 	public function ajax_load_community_invitation_form() {
 		VT_Security::verifyNonce('vt_community_invitation', 'nonce');
 
-		$token = sanitize_text_field($_POST['token'] ?? '');
+		$token = VT_Sanitize::textField($_POST['token'] ?? '');
 		if (!$token) {
 			VT_Ajax::send_error('No invitation token provided.');
 		}
@@ -597,14 +597,14 @@ class VT_Community_Ajax_Handler {
 		// Generate form HTML (simplified version)
 		ob_start();
 		?>
-		<form id="community-invitation-form" data-token="<?php echo esc_attr($token); ?>">
+		<form id="community-invitation-form" data-token="<?php echo VT_Sanitize::escAttr($token); ?>">
 			<div class="vt-form-group">
 				<label for="member_name">Name:</label>
 				<input type="text" id="member_name" name="member_name" required>
 			</div>
 			<div class="vt-form-group">
 				<label for="member_email">Email:</label>
-				<input type="email" id="member_email" name="member_email" value="<?php echo esc_attr($invitation->invited_email); ?>" readonly>
+				<input type="email" id="member_email" name="member_email" value="<?php echo VT_Sanitize::escAttr($invitation->invited_email); ?>" readonly>
 			</div>
 			<div class="vt-form-group">
 				<label for="member_bio">Bio (optional):</label>
@@ -631,10 +631,10 @@ class VT_Community_Ajax_Handler {
 			VT_Ajax::send_error('You must be logged in to join communities. Please login or create an account first.');
 		}
 
-		$token = sanitize_text_field($_POST['invitation_token'] ?? '');
+		$token = VT_Sanitize::textField($_POST['invitation_token'] ?? '');
 		$community_id = intval($_POST['community_id'] ?? 0);
-		$member_name = sanitize_text_field($_POST['member_name'] ?? '');
-		$member_email = sanitize_email($_POST['member_email'] ?? '');
+		$member_name = VT_Sanitize::textField($_POST['member_name'] ?? '');
+		$member_email = VT_Sanitize::email($_POST['member_email'] ?? '');
 		$member_bio = VT_Security::sanitize_textarea($_POST['member_bio'] ?? '');
 
 		// Validate required fields
@@ -716,7 +716,7 @@ class VT_Community_Ajax_Handler {
 		// Generate generic join form HTML
 		ob_start();
 		?>
-		<form id="community-join-form" data-community-id="<?php echo esc_attr($community_id); ?>">
+		<form id="community-join-form" data-community-id="<?php echo VT_Sanitize::escAttr($community_id); ?>">
 			<div class="vt-form-group">
 				<label for="member_name">Name:</label>
 				<input type="text" id="member_name" name="member_name" required>

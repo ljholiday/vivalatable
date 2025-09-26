@@ -78,7 +78,7 @@ class VT_Profile_Manager {
 		$result = $db->insert('user_profiles', $default_data);
 
 		if ($result) {
-			$default_data['id'] = $db->lastInsertId();
+			$default_data['id'] = $db->insert_id;
 			return $default_data;
 		}
 

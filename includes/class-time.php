@@ -6,8 +6,13 @@
 
 class VT_Time {
 
-    public static function current_time($type = 'timestamp', $gmt = 0) {
+    public static function currentTime($type = 'timestamp', $gmt = 0) {
         return self::current($type, $gmt);
+    }
+
+    // Backward compatibility
+    public static function current_time($type = 'timestamp', $gmt = 0) {
+        return self::currentTime($type, $gmt);
     }
 
     public static function current($type = 'timestamp', $gmt = 0) {

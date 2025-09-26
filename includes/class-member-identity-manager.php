@@ -73,7 +73,7 @@ class VT_Member_Identity_Manager {
 				$this->db->update(
 					'member_identities',
 					array(
-						'display_name' => sanitize_text_field($vt_user->display_name),
+						'display_name' => VT_Sanitize::textField($vt_user->display_name),
 						'updated_at' => VT_Time::current_time('mysql'),
 					),
 					array('user_id' => $user_id)
@@ -89,8 +89,8 @@ class VT_Member_Identity_Manager {
 		// Create identity record
 		$insert_data = array(
 			'user_id' => $user_id,
-			'email' => sanitize_email($email),
-			'display_name' => sanitize_text_field($vt_user->display_name),
+			'email' => VT_Sanitize::email($email),
+			'display_name' => VT_Sanitize::textField($vt_user->display_name),
 			'at_protocol_did' => $did,
 			'at_protocol_handle' => $handle,
 			'pds_url' => $this->get_default_pds(),
@@ -248,7 +248,7 @@ class VT_Member_Identity_Manager {
 	 */
 	private function generate_member_handle($user_id, $display_name) {
 		// Create a handle based on display name and user ID
-		$base_handle = sanitize_title($display_name);
+		$base_handle = VT_Sanitize::slug($display_name);
 		$base_handle = preg_replace('/[^a-z0-9\-]/', '', $base_handle);
 
 		if (empty($base_handle)) {
@@ -368,7 +368,7 @@ class VT_Member_Identity_Manager {
 		$result = $this->db->update(
 			'member_identities',
 			array(
-				'pds_url' => sanitize_url($pds_url),
+				'pds_url' => VT_Sanitize::url($pds_url),
 				'updated_at' => VT_Time::current_time('mysql'),
 			),
 			array('user_id' => $user_id)
@@ -424,7 +424,7 @@ class VT_Member_Identity_Manager {
 		}
 
 		$profile_data = $identity->at_protocol_data;
-		$profile_data['sync_status']['last_error'] = sanitize_text_field($error_message);
+		$profile_data['sync_status']['last_error'] = VT_Sanitize::textField($error_message);
 		$profile_data['sync_status']['last_error_at'] = VT_Time::current_time('mysql');
 
 		return $this->update_at_protocol_data($user_id, $profile_data);

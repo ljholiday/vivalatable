@@ -63,8 +63,8 @@ class VT_Conversation_Ajax_Handler {
 			$user_name = $current_user->display_name;
 			$user_id = VT_Auth::getCurrentUserId();
 		} else {
-			$user_email = sanitize_email($_POST['guest_email'] ?? '');
-			$user_name = sanitize_text_field($_POST['guest_name'] ?? '');
+			$user_email = VT_Sanitize::email($_POST['guest_email'] ?? '');
+			$user_name = VT_Sanitize::textField($_POST['guest_name'] ?? '');
 			if (empty($user_email) || empty($user_name)) {
 				VT_Ajax::send_error('Please provide your name and email to start a conversation.');
 			}
@@ -72,7 +72,7 @@ class VT_Conversation_Ajax_Handler {
 
 		$event_id = intval($_POST['event_id'] ?? 0);
 		$community_id = intval($_POST['community_id'] ?? 0);
-		$title = sanitize_text_field($_POST['title'] ?? '');
+		$title = VT_Sanitize::textField($_POST['title'] ?? '');
 		$content = VT_Security::kses_post($_POST['content'] ?? '');
 
 		if (empty($title) || empty($content)) {
@@ -171,8 +171,8 @@ class VT_Conversation_Ajax_Handler {
 			$user_name = $current_user->display_name;
 			$user_id = VT_Auth::getCurrentUserId();
 		} else {
-			$user_email = sanitize_email($_POST['guest_email'] ?? '');
-			$user_name = sanitize_text_field($_POST['guest_name'] ?? '');
+			$user_email = VT_Sanitize::email($_POST['guest_email'] ?? '');
+			$user_name = VT_Sanitize::textField($_POST['guest_name'] ?? '');
 			if (empty($user_email) || empty($user_name)) {
 				VT_Ajax::send_error('Please provide your name and email to reply.');
 			}
@@ -206,11 +206,11 @@ class VT_Conversation_Ajax_Handler {
 
 						// Add image to content if it's an image file
 						if (strpos($file['type'], 'image/') === 0) {
-							$content .= "\n\n<img src=\"" . esc_url($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
+							$content .= "\n\n<img src=\"" . VT_Sanitize::escUrl($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
 						} else {
 							// For non-images, add as a download link
-							$filename = sanitize_file_name($file['name']);
-							$content .= "\n\n<a href=\"" . esc_url($attachment_url) . "\" target=\"_blank\">📎 " . esc_html($filename) . "</a>";
+							$filename = VT_Sanitize::fileName($file['name']);
+							$content .= "\n\n<a href=\"" . VT_Sanitize::escUrl($attachment_url) . "\" target=\"_blank\">📎 " . VT_Sanitize::escHtml($filename) . "</a>";
 						}
 					}
 				}
@@ -274,9 +274,9 @@ class VT_Conversation_Ajax_Handler {
 	public function ajax_get_conversations() {
 		VT_Security::verifyNonce('vt_nonce', 'nonce');
 
-		$circle = sanitize_text_field($_POST['circle'] ?? 'inner');
-		$filter = sanitize_text_field($_POST['filter'] ?? '');
-		$topic_slug = sanitize_title($_POST['topic_slug'] ?? '');
+		$circle = VT_Sanitize::textField($_POST['circle'] ?? 'inner');
+		$filter = VT_Sanitize::textField($_POST['filter'] ?? '');
+		$topic_slug = VT_Sanitize::slug($_POST['topic_slug'] ?? '');
 		$page = max(1, intval($_POST['page'] ?? 1));
 		$per_page = 20;
 
@@ -339,8 +339,8 @@ class VT_Conversation_Ajax_Handler {
 					<div class="conversation-item vt-card vt-mb-4">
 						<div class="vt-card-header vt-flex vt-flex-between">
 							<h3 class="vt-heading vt-heading-sm">
-								<a href="<?php echo esc_url(VT_Config::get('site_url') . '/conversations/' . $conversation->slug); ?>">
-									<?php echo esc_html($conversation->title); ?>
+								<a href="<?php echo VT_Sanitize::escUrl(VT_Config::get('site_url') . '/conversations/' . $conversation->slug); ?>">
+									<?php echo VT_Sanitize::escHtml($conversation->title); ?>
 								</a>
 							</h3>
 							<div class="vt-text-muted vt-text-sm">
@@ -348,17 +348,17 @@ class VT_Conversation_Ajax_Handler {
 							</div>
 						</div>
 						<div class="vt-card-body">
-							<p><?php echo wp_trim_words(strip_tags($conversation->content), 30); ?></p>
+							<p><?php echo VT_Text::truncateWords(strip_tags($conversation->content), 30); ?></p>
 							<div class="vt-flex vt-gap-2 vt-text-sm vt-text-muted">
-								<span><?php echo esc_html($conversation->author_name); ?></span>
+								<span><?php echo VT_Sanitize::escHtml($conversation->author_name); ?></span>
 								<span>•</span>
 								<span><?php echo intval($conversation->reply_count ?? 0); ?> replies</span>
 								<?php if ($conversation->event_title): ?>
 									<span>•</span>
-									<span>Event: <?php echo esc_html($conversation->event_title); ?></span>
+									<span>Event: <?php echo VT_Sanitize::escHtml($conversation->event_title); ?></span>
 								<?php elseif ($conversation->community_name): ?>
 									<span>•</span>
-									<span>Community: <?php echo esc_html($conversation->community_name); ?></span>
+									<span>Community: <?php echo VT_Sanitize::escHtml($conversation->community_name); ?></span>
 								<?php endif; ?>
 							</div>
 						</div>
@@ -389,9 +389,9 @@ class VT_Conversation_Ajax_Handler {
 		}
 
 		$conversation_id = intval($_POST['conversation_id'] ?? 0);
-		$title = sanitize_text_field($_POST['title'] ?? '');
+		$title = VT_Sanitize::textField($_POST['title'] ?? '');
 		$content = VT_Security::kses_post($_POST['content'] ?? '');
-		$privacy = sanitize_text_field($_POST['privacy'] ?? 'public');
+		$privacy = VT_Sanitize::textField($_POST['privacy'] ?? 'public');
 
 		if (!$conversation_id || !$title || !$content) {
 			VT_Ajax::send_error('All fields are required.');
@@ -571,11 +571,11 @@ class VT_Conversation_Ajax_Handler {
 
 						// Add image to content if it's an image file
 						if (strpos($file['type'], 'image/') === 0) {
-							$content .= "\n\n<img src=\"" . esc_url($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
+							$content .= "\n\n<img src=\"" . VT_Sanitize::escUrl($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
 						} else {
 							// For non-images, add as a download link
-							$filename = sanitize_file_name($file['name']);
-							$content .= "\n\n<a href=\"" . esc_url($attachment_url) . "\" target=\"_blank\">📎 " . esc_html($filename) . "</a>";
+							$filename = VT_Sanitize::fileName($file['name']);
+							$content .= "\n\n<a href=\"" . VT_Sanitize::escUrl($attachment_url) . "\" target=\"_blank\">📎 " . VT_Sanitize::escHtml($filename) . "</a>";
 						}
 					}
 				}

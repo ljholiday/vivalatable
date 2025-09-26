@@ -70,14 +70,14 @@ class VT_Event_Ajax_Handler {
 			}
 
 			$event_data = array(
-				'title' => sanitize_text_field($_POST['event_title']),
+				'title' => VT_Sanitize::textField($_POST['event_title']),
 				'description' => VT_Security::kses_post($_POST['event_description'] ?? ''),
-				'event_date' => sanitize_text_field($_POST['event_date']),
-				'venue' => sanitize_text_field($_POST['venue_info'] ?? ''),
+				'event_date' => VT_Sanitize::textField($_POST['event_date']),
+				'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-				'host_email' => sanitize_email($_POST['host_email']),
+				'host_email' => VT_Sanitize::email($_POST['host_email']),
 				'host_notes' => VT_Security::kses_post($_POST['host_notes'] ?? ''),
-				'privacy' => sanitize_text_field($_POST['privacy'] ?? 'public'),
+				'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
 				'community_id' => intval($_POST['community_id'] ?? 0),
 			);
 		}
@@ -162,14 +162,14 @@ class VT_Event_Ajax_Handler {
 			}
 
 			$event_data = array(
-				'title' => sanitize_text_field($_POST['event_title']),
+				'title' => VT_Sanitize::textField($_POST['event_title']),
 				'description' => VT_Security::kses_post($_POST['event_description'] ?? ''),
-				'event_date' => sanitize_text_field($_POST['event_date']),
-				'venue' => sanitize_text_field($_POST['venue_info'] ?? ''),
+				'event_date' => VT_Sanitize::textField($_POST['event_date']),
+				'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-				'host_email' => sanitize_email($_POST['host_email']),
+				'host_email' => VT_Sanitize::email($_POST['host_email']),
 				'host_notes' => VT_Security::kses_post($_POST['host_notes'] ?? ''),
-				'privacy' => sanitize_text_field($_POST['privacy'] ?? 'public'),
+				'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
 			);
 		}
 
@@ -219,8 +219,8 @@ class VT_Event_Ajax_Handler {
 			$user_name = $current_user->display_name;
 			$user_id = VT_Auth::getCurrentUserId();
 		} else {
-			$user_email = sanitize_email($_POST['guest_email'] ?? '');
-			$user_name = sanitize_text_field($_POST['guest_name'] ?? '');
+			$user_email = VT_Sanitize::email($_POST['guest_email'] ?? '');
+			$user_name = VT_Sanitize::textField($_POST['guest_name'] ?? '');
 
 			if (empty($user_email) || empty($user_name)) {
 				VT_Ajax::send_error('Email and name are required for guest access.');
@@ -246,7 +246,7 @@ class VT_Event_Ajax_Handler {
 		}
 
 		$event_id = intval($_POST['event_id']);
-		$email = sanitize_email($_POST['email']);
+		$email = VT_Sanitize::email($_POST['email']);
 		$message = VT_Security::sanitize_textarea($_POST['message'] ?? '');
 
 		if (!$event_id || !$email) {
@@ -373,7 +373,7 @@ class VT_Event_Ajax_Handler {
 
 				$html .= '<div class="vt-invitation-item">';
 				$html .= '<div class="vt-invitation-badges">';
-				$html .= '<span class="vt-badge vt-badge-' . $status_class . '">' . esc_html($status_text) . '</span>';
+				$html .= '<span class="vt-badge vt-badge-' . $status_class . '">' . VT_Sanitize::escHtml($status_text) . '</span>';
 
 				$source = $guest->invitation_source ?? 'direct';
 				$source_badges = array(
@@ -382,29 +382,29 @@ class VT_Event_Ajax_Handler {
 					'bluesky' => array('label' => 'BlueSky', 'class' => 'vt-badge-info'),
 				);
 				$source_info = $source_badges[$source] ?? $source_badges['direct'];
-				$html .= '<span class="vt-badge ' . $source_info['class'] . '">' . esc_html($source_info['label']) . '</span>';
+				$html .= '<span class="vt-badge ' . $source_info['class'] . '">' . VT_Sanitize::escHtml($source_info['label']) . '</span>';
 				$html .= '</div>';
 
 				$html .= '<div class="vt-invitation-details">';
-				$html .= '<h4>' . esc_html($guest->email) . '</h4>';
+				$html .= '<h4>' . VT_Sanitize::escHtml($guest->email) . '</h4>';
 				if (!empty($guest->name)) {
-					$html .= '<div class="vt-text-muted">' . esc_html($guest->name) . '</div>';
+					$html .= '<div class="vt-text-muted">' . VT_Sanitize::escHtml($guest->name) . '</div>';
 				}
 				$html .= '<div class="vt-text-muted">';
 				$html .= sprintf('Invited on %s', date('M j, Y', strtotime($guest->rsvp_date)));
 				$html .= '</div>';
 				if (!empty($guest->dietary_restrictions)) {
-					$html .= '<div class="vt-text-muted"><strong>Dietary:</strong> ' . esc_html($guest->dietary_restrictions) . '</div>';
+					$html .= '<div class="vt-text-muted"><strong>Dietary:</strong> ' . VT_Sanitize::escHtml($guest->dietary_restrictions) . '</div>';
 				}
 				if (!empty($guest->notes)) {
-					$html .= '<div class="vt-text-muted"><em>"' . esc_html($guest->notes) . '"</em></div>';
+					$html .= '<div class="vt-text-muted"><em>"' . VT_Sanitize::escHtml($guest->notes) . '"</em></div>';
 				}
 				$html .= '</div>';
 
 				$html .= '<div class="vt-invitation-actions">';
-				$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-secondary" onclick="copyInvitationUrl(\'' . esc_js($guest->invitation_url) . '\')">Copy Link</button>';
+				$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-secondary" onclick="copyInvitationUrl(\'' . VT_Sanitize::escJs($guest->invitation_url) . '\')">Copy Link</button>';
 				if ($guest->status === 'pending') {
-					$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-danger cancel-event-invitation" data-invitation-id="' . esc_attr($guest->id) . '">Remove</button>';
+					$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-danger cancel-event-invitation" data-invitation-id="' . VT_Sanitize::escAttr($guest->id) . '">Remove</button>';
 				}
 				$html .= '</div>';
 
@@ -654,12 +654,12 @@ class VT_Event_Ajax_Handler {
 		}
 
 		$event_data = array(
-			'title' => sanitize_text_field($_POST['event_title']),
+			'title' => VT_Sanitize::textField($_POST['event_title']),
 			'description' => VT_Security::kses_post($_POST['event_description'] ?? ''),
-			'event_date' => sanitize_text_field($_POST['event_date']),
-			'venue' => sanitize_text_field($_POST['venue_info'] ?? ''),
+			'event_date' => VT_Sanitize::textField($_POST['event_date']),
+			'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
 			'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-			'host_email' => sanitize_email($_POST['host_email']),
+			'host_email' => VT_Sanitize::email($_POST['host_email']),
 			'host_notes' => VT_Security::kses_post($_POST['host_notes'] ?? ''),
 			'community_id' => $community_id,
 			// Privacy will be inherited from community - no need to pass it
@@ -763,41 +763,41 @@ class VT_Event_Ajax_Handler {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><?php echo esc_html($event->title); ?> - Event Invitation</title>
+	<title><?php echo VT_Sanitize::escHtml($event->title); ?> - Event Invitation</title>
 </head>
 <body>
 	<div>
 		<!-- Header -->
 		<div>
 			<h1>You're Invited!</h1>
-			<p><?php echo esc_html($event->title); ?></p>
+			<p><?php echo VT_Sanitize::escHtml($event->title); ?></p>
 		</div>
 
 		<!-- Main Content -->
 		<div>
 			<p>Hi there!</p>
 
-			<p><strong><?php echo esc_html($host_name); ?></strong> has invited you to their event. Here are all the details:</p>
+			<p><strong><?php echo VT_Sanitize::escHtml($host_name); ?></strong> has invited you to their event. Here are all the details:</p>
 
 			<!-- Event Details Card -->
 			<div>
-				<h2><?php echo esc_html($event->title); ?></h2>
+				<h2><?php echo VT_Sanitize::escHtml($event->title); ?></h2>
 
 				<div>
 					<p><strong>When:</strong> <?php echo $event_day; ?>, <?php echo $event_date; ?> at <?php echo $event_time; ?></p>
 					<?php if ($event->venue_info) : ?>
-					<p><strong>Where:</strong> <?php echo esc_html($event->venue_info); ?></p>
+					<p><strong>Where:</strong> <?php echo VT_Sanitize::escHtml($event->venue_info); ?></p>
 					<?php endif; ?>
 					<?php if ($event->description) : ?>
 					<p><strong>Details:</strong></p>
-					<p><?php echo nl2br(esc_html($event->description)); ?></p>
+					<p><?php echo nl2br(VT_Sanitize::escHtml($event->description)); ?></p>
 					<?php endif; ?>
 				</div>
 
 				<?php if ($personal_message) : ?>
 				<div>
-					<p><strong>Personal message from <?php echo esc_html($host_name); ?>:</strong></p>
-					<p>"<?php echo esc_html($personal_message); ?>"</p>
+					<p><strong>Personal message from <?php echo VT_Sanitize::escHtml($host_name); ?>:</strong></p>
+					<p>"<?php echo VT_Sanitize::escHtml($personal_message); ?>"</p>
 				</div>
 				<?php endif; ?>
 			</div>
@@ -806,33 +806,33 @@ class VT_Event_Ajax_Handler {
 			<div>
 				<p>Can you make it?</p>
 				<div>
-					<a href="<?php echo esc_url($rsvp_yes_url); ?>">
+					<a href="<?php echo VT_Sanitize::escUrl($rsvp_yes_url); ?>">
 						Yes, I'll be there!
 					</a>
-					<a href="<?php echo esc_url($rsvp_maybe_url); ?>">
+					<a href="<?php echo VT_Sanitize::escUrl($rsvp_maybe_url); ?>">
 						Maybe
 					</a>
-					<a href="<?php echo esc_url($rsvp_no_url); ?>">
+					<a href="<?php echo VT_Sanitize::escUrl($rsvp_no_url); ?>">
 						Can't make it
 					</a>
 				</div>
 				<p>
-					Or <a href="<?php echo esc_url($invitation_url); ?>">click here to RSVP with more details</a>
+					Or <a href="<?php echo VT_Sanitize::escUrl($invitation_url); ?>">click here to RSVP with more details</a>
 				</p>
 			</div>
 
 			<!-- Host Contact -->
 			<div>
 				<p>
-					Questions about the event? Just reply to this email to reach <?php echo esc_html($host_name); ?> directly.
+					Questions about the event? Just reply to this email to reach <?php echo VT_Sanitize::escHtml($host_name); ?> directly.
 				</p>
 			</div>
 		</div>
 
 		<!-- Footer -->
 		<div>
-			<p>This invitation was sent through <a href="<?php echo esc_url($site_url); ?>"><?php echo esc_html($site_name); ?></a></p>
-			<p>If you can't click the buttons above, copy and paste this link: <br><?php echo esc_url($invitation_url); ?></p>
+			<p>This invitation was sent through <a href="<?php echo VT_Sanitize::escUrl($site_url); ?>"><?php echo VT_Sanitize::escHtml($site_name); ?></a></p>
+			<p>If you can't click the buttons above, copy and paste this link: <br><?php echo VT_Sanitize::escUrl($invitation_url); ?></p>
 		</div>
 	</div>
 </body>

@@ -44,9 +44,11 @@ if ($user_logged_in) {
 	$all_events = $event_manager->get_upcoming_events(50);
 
 	// Add guest stats to each event in all_events
-	foreach ($all_events as $event) {
-		if (!isset($event->guest_stats)) {
-			$event->guest_stats = $event_manager->get_guest_stats($event->id);
+	if ($all_events && is_array($all_events)) {
+		foreach ($all_events as $event) {
+			if (!isset($event->guest_stats)) {
+				$event->guest_stats = $event_manager->get_guest_stats($event->id);
+			}
 		}
 	}
 } else {
@@ -125,7 +127,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 									</div>
 									<div class="vt-text-sm vt-text-muted">
 										<?php
-										$guest_count = isset($event->guest_stats['confirmed']) ? $event->guest_stats['confirmed'] : 0;
+										$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
 										echo $guest_count . ' guest' . ($guest_count !== 1 ? 's' : '');
 										?>
 									</div>
@@ -197,7 +199,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 									</div>
 									<div class="vt-text-sm vt-text-muted">
 										<?php
-										$guest_count = isset($event->guest_stats['confirmed']) ? $event->guest_stats['confirmed'] : 0;
+										$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
 										echo $guest_count . ' guest' . ($guest_count !== 1 ? 's' : '');
 										?>
 									</div>
@@ -261,7 +263,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 									</div>
 									<div class="vt-text-sm vt-text-muted">
 										<?php
-										$guest_count = isset($event->guest_stats['confirmed']) ? $event->guest_stats['confirmed'] : 0;
+										$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
 										echo $guest_count . ' guest' . ($guest_count !== 1 ? 's' : '');
 										?>
 									</div>

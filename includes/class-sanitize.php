@@ -67,11 +67,11 @@ class VT_Sanitize {
         return self::kses($data, $allowed_tags);
     }
 
-    public static function stripTags($string, $remove_breaks = false) {
+    public static function stripTags($string, $removeBreaks = false) {
         $string = preg_replace('@<(script|style)[^>]*?>.*?</\\1>@si', '', $string);
         $string = strip_tags($string);
 
-        if ($remove_breaks) {
+        if ($removeBreaks) {
             $string = preg_replace('/[\r\n\t ]+/', ' ', $string);
         }
 
@@ -89,7 +89,7 @@ class VT_Sanitize {
         return strip_tags($string, $allowed_tags);
     }
 
-    public static function filename($filename) {
+    public static function fileName($filename) {
         $filename = preg_replace('/[^a-zA-Z0-9._-]/', '', $filename);
         return trim($filename, '.');
     }
@@ -109,6 +109,36 @@ class VT_Sanitize {
     public static function sql($value) {
         $db = VT_Database::getInstance();
         return $db->escape($value);
+    }
+
+    // Escaping functions for output
+    public static function escHtml($text) {
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
+
+    public static function escAttr($text) {
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
+
+    public static function escUrl($url) {
+        // First validate the URL
+        $url = filter_var($url, FILTER_VALIDATE_URL);
+        if ($url === false) {
+            return '';
+        }
+
+        // Then escape for HTML output
+        return htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+    }
+
+    public static function escJs($text) {
+        // Properly escape for JavaScript strings
+        $text = str_replace(
+            array('\\', '/', '"', "'", "\n", "\r", "\t"),
+            array('\\\\', '\\/', '\\"', "\\'", '\\n', '\\r', '\\t'),
+            $text
+        );
+        return $text;
     }
 
     // Helper functions for textField

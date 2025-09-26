@@ -45,7 +45,7 @@ class VT_Event_Manager {
             'community_id' => VT_Sanitize::int($event_data['community_id'] ?? 0),
             'meta_title' => VT_Sanitize::textField($event_data['title']),
             'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
-            'created_by' => VT_Auth::getCurrentUserId() ?: 1
+            'created_by' => VT_Auth::getCurrentUserId() ?: 1,
         ]);
 
         if ($result === false) {
@@ -80,9 +80,6 @@ class VT_Event_Manager {
             return $privacy;
         }
 
-        // Generate post_id (using timestamp + random for uniqueness)
-        $post_id = time() . rand(100, 999);
-
         // Insert event data
         $result = $db->insert('events', [
             'title' => VT_Sanitize::textField($event_data['title']),
@@ -102,7 +99,6 @@ class VT_Event_Manager {
             'meta_title' => VT_Sanitize::textField($event_data['title']),
             'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
             'created_by' => VT_Auth::getCurrentUserId() ?: 1,
-            'post_id' => $post_id
         ]);
 
         if ($result === false) {
@@ -216,49 +212,35 @@ class VT_Event_Manager {
         $db = VT_Database::getInstance();
         $current_user_id = VT_Auth::getCurrentUserId();
 
-        // Enhanced privacy logic that respects inheritance
+        // Restore proper conditional logic but fix the SQL
         if ($current_user_id && VT_Auth::isLoggedIn()) {
-            // For logged-in users: show ALL events they have permission to view
-            $query = "SELECT DISTINCT e.* FROM vt_events e
-                     LEFT JOIN vt_communities c ON e.community_id = c.id
-                     LEFT JOIN vt_guests g ON e.id = g.event_id AND g.email = (SELECT email FROM vt_users WHERE id = $current_user_id)
+            // For logged-in users: show their events + public events
+            $query = "SELECT DISTINCT e.* FROM {$db->prefix}events e
                      WHERE e.event_status = 'active'
                      AND (
-                        e.author_id = $current_user_id OR
-                        g.event_id IS NOT NULL OR
-                        ((e.community_id IS NULL OR e.community_id = 0) AND e.privacy = 'public') OR
-                        (e.community_id IS NOT NULL AND e.community_id != 0 AND (
-                            c.visibility = 'public' OR
-                            c.creator_id = $current_user_id OR
-                            EXISTS(
-                                SELECT 1 FROM vt_community_members m
-                                WHERE m.community_id = c.id AND m.user_id = $current_user_id
-                                AND m.status = 'active'
-                            )
-                        ))
-                    )
+                        e.privacy = 'public' OR
+                        e.author_id = " . intval($current_user_id) . "
+                     )
                      ORDER BY e.event_date ASC
-                     LIMIT $limit";
-
+                     LIMIT " . intval($limit);
             $results = $db->get_results($query);
         } else {
-            // Not logged in: only show public events and events from public communities
-            $query = "SELECT DISTINCT e.* FROM vt_events e
-                     LEFT JOIN vt_communities c ON e.community_id = c.id
+            // Not logged in: only show public events
+            $query = "SELECT e.* FROM {$db->prefix}events e
                      WHERE e.event_status = 'active'
-                     AND (
-                        ((e.community_id IS NULL OR e.community_id = 0) AND e.privacy = 'public') OR
-                        (e.community_id IS NOT NULL AND e.community_id != 0 AND c.visibility = 'public')
-                    )
+                     AND e.privacy = 'public'
                      ORDER BY e.event_date ASC
-                     LIMIT $limit";
-
+                     LIMIT " . intval($limit);
             $results = $db->get_results($query);
         }
 
         // Add guest stats to each event
-        foreach ($results as $event) {
-            $event->guest_stats = $this->get_guest_stats($event->id);
+        if ($results && is_array($results)) {
+            foreach ($results as $event) {
+                $event->guest_stats = $this->get_guest_stats($event->id);
+            }
+        } else {
+            $results = array(); // Return empty array instead of null
         }
 
         return $results;

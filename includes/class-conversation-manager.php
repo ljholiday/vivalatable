@@ -137,17 +137,17 @@ class VT_Conversation_Manager {
 		$insert_data = array(
 			'event_id' => $data['event_id'] ?? null,
 			'community_id' => $community_id,
-			'title' => sanitize_text_field($data['title']),
+			'title' => VT_Sanitize::textField($data['title']),
 			'slug' => $slug,
 			'content' => VT_Security::kses_post($data['content']),
 			'author_id' => $data['author_id'],
-			'author_name' => sanitize_text_field($data['author_name']),
-			'author_email' => sanitize_email($data['author_email']),
+			'author_name' => VT_Sanitize::textField($data['author_name']),
+			'author_email' => VT_Sanitize::email($data['author_email']),
 			'privacy' => $this->validate_conversation_privacy($data['privacy'] ?? 'public', $data),
 			'is_pinned' => $data['is_pinned'] ?? 0,
 			'created_at' => VT_Time::current_time('mysql'),
 			'last_reply_date' => VT_Time::current_time('mysql'),
-			'last_reply_author' => sanitize_text_field($data['author_name']),
+			'last_reply_author' => VT_Sanitize::textField($data['author_name']),
 		);
 
 		$result = $this->db->insert('conversations', $insert_data);
@@ -190,8 +190,8 @@ class VT_Conversation_Manager {
 			'parent_reply_id' => $data['parent_reply_id'] ?? null,
 			'content' => VT_Security::kses_post($data['content']),
 			'author_id' => $data['author_id'],
-			'author_name' => sanitize_text_field($data['author_name']),
-			'author_email' => sanitize_email($data['author_email']),
+			'author_name' => VT_Sanitize::textField($data['author_name']),
+			'author_email' => VT_Sanitize::email($data['author_email']),
 			'depth_level' => $depth,
 			'created_at' => VT_Time::current_time('mysql'),
 		);
@@ -215,7 +215,7 @@ class VT_Conversation_Manager {
 			array(
 				'reply_count' => $reply_count,
 				'last_reply_date' => VT_Time::current_time('mysql'),
-				'last_reply_author' => sanitize_text_field($data['author_name']),
+				'last_reply_author' => VT_Sanitize::textField($data['author_name']),
 			),
 			array('id' => $conversation_id)
 		);
@@ -338,7 +338,7 @@ class VT_Conversation_Manager {
 	 */
 	private function generate_conversation_slug($title, $exclude_id = null) {
 		$conversations_table = $this->db->prefix . 'conversations';
-		$base_slug = sanitize_title($title);
+		$base_slug = VT_Sanitize::slug($title);
 		$slug = $base_slug;
 		$counter = 1;
 
@@ -484,7 +484,7 @@ class VT_Conversation_Manager {
 		// For standalone conversations, validate the provided privacy
 		$allowed_privacy_settings = array('public', 'friends', 'members');
 
-		$privacy = sanitize_text_field($privacy);
+		$privacy = VT_Sanitize::textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid
@@ -893,7 +893,7 @@ class VT_Conversation_Manager {
 
 		// Prepare update data
 		$data = array(
-			'title' => sanitize_text_field($update_data['title']),
+			'title' => VT_Sanitize::textField($update_data['title']),
 			'content' => VT_Security::kses_post($update_data['content']),
 			'slug' => $this->generate_conversation_slug($update_data['title'], $conversation_id),
 		);
@@ -967,7 +967,7 @@ class VT_Conversation_Manager {
 	private function validate_privacy_setting($privacy) {
 		$allowed_privacy_settings = array('public', 'friends', 'members');
 
-		$privacy = sanitize_text_field($privacy);
+		$privacy = VT_Sanitize::textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid

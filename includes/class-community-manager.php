@@ -131,7 +131,7 @@ class VT_Community_Manager {
 	 * Get community by slug
 	 */
 	public function get_community_by_slug($slug) {
-		$slug = sanitize_title($slug);
+		$slug = VT_Sanitize::slug($slug);
 		if (!$slug) {
 			return null;
 		}
@@ -172,10 +172,10 @@ class VT_Community_Manager {
 			if (in_array($field, $allowed_fields)) {
 				switch ($field) {
 					case 'name':
-						$sanitized_data[$field] = sanitize_text_field($value);
+						$sanitized_data[$field] = VT_Sanitize::textField($value);
 						break;
 					case 'description':
-						$sanitized_data[$field] = sanitize_textarea_field($value);
+						$sanitized_data[$field] = VT_Sanitize::post($value);
 						break;
 					case 'visibility':
 						$sanitized_data[$field] = $this->validate_privacy_setting($value);
@@ -238,8 +238,8 @@ class VT_Community_Manager {
 		// Sanitize member data
 		$sanitized_data = array(
 			'community_id' => $community_id,
-			'email' => sanitize_email($member_data['email']),
-			'display_name' => sanitize_text_field($member_data['display_name'] ?? ''),
+			'email' => VT_Sanitize::email($member_data['email']),
+			'display_name' => VT_Sanitize::textField($member_data['display_name'] ?? ''),
 			'role' => in_array($member_data['role'] ?? 'member', array('admin', 'member')) ? $member_data['role'] : 'member',
 			'status' => in_array($member_data['status'] ?? 'active', array('active', 'inactive')) ? $member_data['status'] : 'active',
 			'joined_at' => VT_Time::current_time('mysql')
@@ -291,7 +291,7 @@ class VT_Community_Manager {
 			$where_conditions['user_id'] = intval($user_id);
 			$where_format[] = '%d';
 		} else if ($email) {
-			$where_conditions['email'] = sanitize_email($email);
+			$where_conditions['email'] = VT_Sanitize::email($email);
 			$where_format[] = '%s';
 		} else {
 			return false;
@@ -330,7 +330,7 @@ class VT_Community_Manager {
 		if ($user_id) {
 			$where_conditions['user_id'] = intval($user_id);
 		} else if ($email) {
-			$where_conditions['email'] = sanitize_email($email);
+			$where_conditions['email'] = VT_Sanitize::email($email);
 		} else {
 			return null;
 		}
@@ -405,7 +405,7 @@ class VT_Community_Manager {
 			$this->db->prepare(
 				"SELECT id FROM {$this->db->prefix}community_invitations
 				 WHERE community_id = %d AND invited_email = %s AND status = 'pending'",
-				$community_id, sanitize_email($invitation_data['invited_email'])
+				$community_id, VT_Sanitize::email($invitation_data['invited_email'])
 			)
 		);
 
@@ -423,11 +423,11 @@ class VT_Community_Manager {
 		// Prepare invitation data
 		$insert_data = array(
 			'community_id' => $community_id,
-			'invited_email' => sanitize_email($invitation_data['invited_email']),
-			'invited_display_name' => sanitize_text_field($invitation_data['invited_display_name'] ?? ''),
+			'invited_email' => VT_Sanitize::email($invitation_data['invited_email']),
+			'invited_display_name' => VT_Sanitize::textField($invitation_data['invited_display_name'] ?? ''),
 			'invitation_token' => $invitation_token,
 			'invited_by_member_id' => $inviter_member->id,
-			'personal_message' => sanitize_textarea_field($invitation_data['personal_message'] ?? ''),
+			'personal_message' => VT_Sanitize::post($invitation_data['personal_message'] ?? ''),
 			'status' => 'pending',
 			'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
 			'created_at' => VT_Time::current_time('mysql')
@@ -483,28 +483,28 @@ class VT_Community_Manager {
 		<html>
 		<body>
 			<div>
-				<h2>You've been invited to join <?php echo esc_html($invitation->community_name); ?></h2>
+				<h2>You've been invited to join <?php echo VT_Sanitize::escHtml($invitation->community_name); ?></h2>
 
 				<p>Hi there!</p>
 
-				<p><?php echo esc_html($invitation->inviter_name); ?> has invited you to join the community "<?php echo esc_html($invitation->community_name); ?>".</p>
+				<p><?php echo VT_Sanitize::escHtml($invitation->inviter_name); ?> has invited you to join the community "<?php echo VT_Sanitize::escHtml($invitation->community_name); ?>".</p>
 
 				<?php if ($invitation->community_description): ?>
 				<div>
 					<p><strong>About this community:</strong></p>
-					<p><?php echo nl2br(esc_html($invitation->community_description)); ?></p>
+					<p><?php echo nl2br(VT_Sanitize::escHtml($invitation->community_description)); ?></p>
 				</div>
 				<?php endif; ?>
 
 				<?php if ($invitation->personal_message): ?>
 				<div>
-					<p><strong>Personal message from <?php echo esc_html($invitation->inviter_name); ?>:</strong></p>
-					<p><?php echo nl2br(esc_html($invitation->personal_message)); ?></p>
+					<p><strong>Personal message from <?php echo VT_Sanitize::escHtml($invitation->inviter_name); ?>:</strong></p>
+					<p><?php echo nl2br(VT_Sanitize::escHtml($invitation->personal_message)); ?></p>
 				</div>
 				<?php endif; ?>
 
 				<div>
-					<a href="<?php echo esc_url($invitation_url); ?>">
+					<a href="<?php echo VT_Sanitize::escUrl($invitation_url); ?>">
 						Accept Invitation
 					</a>
 				</div>
@@ -516,9 +516,9 @@ class VT_Community_Manager {
 				<hr>
 
 				<p>
-					If you have any questions about this invitation, please contact <?php echo esc_html($invitation->inviter_name); ?>.
+					If you have any questions about this invitation, please contact <?php echo VT_Sanitize::escHtml($invitation->inviter_name); ?>.
 					<br>
-					You can also copy and paste this link into your browser: <?php echo esc_url($invitation_url); ?>
+					You can also copy and paste this link into your browser: <?php echo VT_Sanitize::escUrl($invitation_url); ?>
 				</p>
 			</div>
 		</body>
@@ -619,7 +619,7 @@ class VT_Community_Manager {
 	private function validate_privacy_setting($privacy) {
 		$allowed_privacy_settings = array('public', 'friends', 'private');
 
-		$privacy = sanitize_text_field($privacy);
+		$privacy = VT_Sanitize::textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid

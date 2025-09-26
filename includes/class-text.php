@@ -20,7 +20,7 @@ class VT_Text {
 	/**
 	 * Truncate text by words
 	 */
-	public static function truncate_words($text, $words = 10, $suffix = '...') {
+	public static function truncateWords($text, $words = 10, $suffix = '...') {
 		$word_array = explode(' ', $text);
 		if (count($word_array) <= $words) {
 			return $text;
@@ -32,7 +32,7 @@ class VT_Text {
 	/**
 	 * Convert text to slug
 	 */
-	public static function to_slug($text) {
+	public static function toSlug($text) {
 		// Convert to lowercase
 		$text = strtolower($text);
 
@@ -57,7 +57,7 @@ class VT_Text {
 	/**
 	 * Format time ago
 	 */
-	public static function time_ago($datetime) {
+	public static function timeAgo($datetime) {
 		$time = time() - strtotime($datetime);
 
 		if ($time < 60) {
@@ -102,7 +102,7 @@ class VT_Text {
 	/**
 	 * Generate secure random token
 	 */
-	public static function random_token($length = 32) {
+	public static function randomToken($length = 32) {
 		return bin2hex(random_bytes($length / 2));
 	}
 }

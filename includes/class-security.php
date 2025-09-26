@@ -77,7 +77,7 @@ class VT_Security {
         $field = '<input type="hidden" name="' . $name . '" value="' . $nonce . '" />';
 
         if ($referer) {
-            $field .= '<input type="hidden" name="_wp_http_referer" value="' . esc_attr($_SERVER['REQUEST_URI']) . '" />';
+            $field .= '<input type="hidden" name="_wp_http_referer" value="' . VT_Sanitize::escAttr($_SERVER['REQUEST_URI']) . '" />';
         }
 
         if ($echo) {

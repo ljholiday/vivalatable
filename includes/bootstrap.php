@@ -37,8 +37,8 @@ require_once __DIR__ . '/class-mail.php';
 require_once __DIR__ . '/class-time.php';
 require_once __DIR__ . '/class-http.php';
 
-// Load WordPress replacements
-require_once '/Users/lonnholiday/Repositories/vivalatable-docs/wp_replacements.php';
+// WordPress functions have been replaced with native VT class methods
+// No translation layer needed
 
 // Load all business logic classes
 $class_files = glob(__DIR__ . '/class-*.php');

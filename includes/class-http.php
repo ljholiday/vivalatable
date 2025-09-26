@@ -68,7 +68,7 @@ class VT_Http {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title><?php echo esc_html($title); ?> - VivalaTable</title>
+            <title><?php echo VT_Sanitize::escHtml($title); ?> - VivalaTable</title>
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -116,10 +116,10 @@ class VT_Http {
         </head>
         <body>
             <div class="error-container">
-                <h1><?php echo esc_html($code); ?></h1>
-                <h2><?php echo esc_html($title); ?></h2>
+                <h1><?php echo VT_Sanitize::escHtml($code); ?></h1>
+                <h2><?php echo VT_Sanitize::escHtml($title); ?></h2>
                 <?php if ($message): ?>
-                    <p><?php echo esc_html($message); ?></p>
+                    <p><?php echo VT_Sanitize::escHtml($message); ?></p>
                 <?php endif; ?>
                 <a href="/" class="btn">Go Home</a>
             </div>
