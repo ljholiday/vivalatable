@@ -668,7 +668,7 @@ The %s Team',
                     return ['error' => 'Community not found'];
                 }
 
-                return $community->privacy;
+                return $community->visibility;
             }
         }
 
@@ -687,7 +687,7 @@ The %s Team',
 
                 if ($community && $community->visibility !== $provided_privacy) {
                     return VT_Http::jsonError(
-                        sprintf('Event privacy must match community privacy (%s)', $community->privacy),
+                        sprintf('Event privacy must match community privacy (%s)', $community->visibility),
                         'privacy_mismatch'
                     );
                 }
@@ -705,7 +705,7 @@ The %s Team',
                 $community = $community_manager->get_community($event->community_id);
 
                 if ($community) {
-                    return $community->privacy;
+                    return $community->visibility;
                 }
             }
         }

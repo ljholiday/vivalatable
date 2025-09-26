@@ -67,6 +67,15 @@ class VT_Pages {
 	}
 
 	/**
+	 * Manage event page
+	 */
+	public static function manage_event($params) {
+		self::require_auth();
+		$event_id = $params['id'];
+		self::render_page('manage-event', 'Manage Event', null, 'two-column', compact('event_id'));
+	}
+
+	/**
 	 * Communities list page
 	 */
 	public static function communities_list() {
@@ -106,6 +115,15 @@ class VT_Pages {
 	}
 
 	/**
+	 * Manage community page
+	 */
+	public static function manage_community($params) {
+		self::require_auth();
+		$community_id = $params['id'];
+		self::render_page('manage-community', 'Manage Community', null, 'two-column', compact('community_id'));
+	}
+
+	/**
 	 * Conversations list page
 	 */
 	public static function conversations_list() {
@@ -126,6 +144,15 @@ class VT_Pages {
 	public static function single_conversation($params) {
 		$conversation_id = $params['id'];
 		self::render_page('single-conversation', 'Conversation', null, 'two-column', compact('conversation_id'));
+	}
+
+	/**
+	 * Edit conversation page
+	 */
+	public static function edit_conversation($params) {
+		self::require_auth();
+		$conversation_id = $params['id'];
+		self::render_page('edit-conversation', 'Edit Conversation', null, 'form', compact('conversation_id'));
 	}
 
 	/**
@@ -206,10 +233,10 @@ class VT_Pages {
 		include $content_template;
 		$content = ob_get_clean();
 
-		// For two-column layout, capture sidebar if it exists
+		// For two-column layout, capture sidebar using standardized sidebar
 		$sidebar_content = '';
 		if ($base_template === 'two-column') {
-			$sidebar_template = VT_Config::get('templates_path', '/templates') . '/' . $template . '-sidebar.php';
+			$sidebar_template = VT_Config::get('templates_path', VT_PLUGIN_DIR . '/templates') . '/partials/sidebar-secondary-nav.php';
 			if (file_exists($sidebar_template)) {
 				ob_start();
 				include $sidebar_template;

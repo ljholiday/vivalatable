@@ -425,7 +425,7 @@ class VT_Conversation_Manager {
 	private function build_conversation_privacy_filter($current_user_id) {
 		$members_table = $this->db->prefix . 'community_members';
 		$guests_table = $this->db->prefix . 'guests';
-		$invitations_table = $this->db->prefix . 'invitations';
+		// $invitations_table = $this->db->prefix . 'invitations'; // TODO: Phase 3.5
 
 		if (!$current_user_id || !VT_Auth::isLoggedIn()) {
 			// Non-logged in users can only see conversations from public events/communities
@@ -450,11 +450,6 @@ class VT_Conversation_Manager {
 				(e.privacy = 'private' AND EXISTS(
 					SELECT 1 FROM $guests_table g
 					WHERE g.event_id = e.id AND g.email = '$user_email'
-				)) OR
-				(e.privacy = 'private' AND EXISTS(
-					SELECT 1 FROM $invitations_table i
-					WHERE i.event_id = e.id AND i.invited_email = '$user_email'
-					AND i.status = 'pending' AND i.expires_at > NOW()
 				))
 			)) OR
 			(c.community_id IS NOT NULL AND (

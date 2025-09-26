@@ -42,9 +42,15 @@ class VT_Profile_Manager {
 			'display_name' => $user_data ? $user_data->display_name : '',
 			'bio' => '',
 			'location' => '',
-			'website' => '',
-			'avatar_url' => '',
+			'website_url' => '',
+			'profile_image' => '',
+			'cover_image' => '',
 			'social_links' => json_encode(array()),
+			'hosting_preferences' => json_encode(array()),
+			'available_times' => json_encode(array()),
+			'dietary_restrictions' => '',
+			'accessibility_needs' => '',
+			'notification_preferences' => json_encode(array()),
 			'privacy_settings' => json_encode(
 				array(
 					'profile_visibility' => 'public',
@@ -52,8 +58,8 @@ class VT_Profile_Manager {
 			),
 			'events_hosted' => 0,
 			'events_attended' => 0,
-			'reputation_score' => 0,
-			'last_active_at' => VT_Time::current_time('mysql'),
+			'host_rating' => 0.00,
+			'host_reviews_count' => 0,
 			'created_at' => VT_Time::current_time('mysql'),
 			'updated_at' => VT_Time::current_time('mysql'),
 		);
@@ -84,7 +90,7 @@ class VT_Profile_Manager {
 
 		// Display name
 		if (isset($data['display_name'])) {
-			$display_name = VT_Sanitize::text($data['display_name']);
+			$display_name = VT_Sanitize::textField($data['display_name']);
 			if (strlen($display_name) > 255) {
 				$errors[] = 'Display name must be 255 characters or less.';
 			} else {
@@ -104,7 +110,7 @@ class VT_Profile_Manager {
 
 		// Location
 		if (isset($data['location'])) {
-			$location = VT_Sanitize::text($data['location']);
+			$location = VT_Sanitize::textField($data['location']);
 			if (strlen($location) > 255) {
 				$errors[] = 'Location must be 255 characters or less.';
 			} else {
@@ -114,7 +120,7 @@ class VT_Profile_Manager {
 
 		// Avatar source
 		if (isset($data['avatar_source'])) {
-			$avatar_source = VT_Sanitize::text($data['avatar_source']);
+			$avatar_source = VT_Sanitize::textField($data['avatar_source']);
 			if (in_array($avatar_source, array('custom', 'gravatar'))) {
 				$update_data['avatar_source'] = $avatar_source;
 			}
@@ -140,6 +146,24 @@ class VT_Profile_Manager {
 			$update_data['accessibility_needs'] = VT_Sanitize::textarea($data['accessibility_needs']);
 		}
 
+		// Hosting preferences
+		if (isset($data['hosting_preferences'])) {
+			if (is_array($data['hosting_preferences'])) {
+				$update_data['hosting_preferences'] = json_encode($data['hosting_preferences']);
+			} else {
+				$update_data['hosting_preferences'] = VT_Sanitize::textarea($data['hosting_preferences']);
+			}
+		}
+
+		// Available times for hosting
+		if (isset($data['available_times'])) {
+			if (is_array($data['available_times'])) {
+				$update_data['available_times'] = json_encode($data['available_times']);
+			} else {
+				$update_data['available_times'] = VT_Sanitize::textarea($data['available_times']);
+			}
+		}
+
 		// Notification preferences
 		if (isset($data['notifications']) && is_array($data['notifications'])) {
 			$notifications = array();
@@ -154,7 +178,7 @@ class VT_Profile_Manager {
 		if (isset($data['privacy']) && is_array($data['privacy'])) {
 			$privacy = array();
 			if (isset($data['privacy']['profile_visibility'])) {
-				$visibility = VT_Sanitize::text($data['privacy']['profile_visibility']);
+				$visibility = VT_Sanitize::textField($data['privacy']['profile_visibility']);
 				if (in_array($visibility, array('public', 'community', 'private'))) {
 					$privacy['profile_visibility'] = $visibility;
 				} else {

@@ -36,6 +36,13 @@ class VT_Sanitize {
         return (float) $float;
     }
 
+    public static function textarea($data) {
+        // Plain text only - strip all HTML tags and normalize whitespace
+        $data = strip_tags($data);
+        $data = preg_replace('/\s+/', ' ', $data); // Normalize whitespace
+        return trim($data);
+    }
+
     public static function post($data) {
         // Allow safe HTML tags
         $allowed_tags = [

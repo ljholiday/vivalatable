@@ -419,7 +419,7 @@ class VT_Community_Manager {
 		}
 
 		// Generate invitation token
-		$invitation_token = VT_Security::generate_token(32);
+		$invitation_token = VT_Security::generateToken();
 
 		// Prepare invitation data
 		$insert_data = array(
@@ -618,7 +618,7 @@ class VT_Community_Manager {
 	 * Validate privacy setting for communities
 	 */
 	private function validate_privacy_setting($privacy) {
-		$allowed_privacy_settings = array('public', 'friends', 'private');
+		$allowed_privacy_settings = array('public', 'private');
 
 		$privacy = VT_Sanitize::textField($privacy);
 

@@ -305,7 +305,7 @@ class VT_Guest_Manager {
 
     public function get_guest_by_token($rsvp_token) {
         $db = VT_Database::getInstance();
-        return $db->get_row("SELECT * FROM vt_guests WHERE rsvp_token = '" . VT_Sanitize::textField($rsvp_token) . "'");
+        return $db->get_row("SELECT * FROM {$db->prefix}guests WHERE rsvp_token = '" . VT_Sanitize::textField($rsvp_token) . "'");
     }
 
     public function convert_guest_to_user($guest_id, $user_data) {
@@ -340,8 +340,6 @@ class VT_Guest_Manager {
 
         // Create/update user profile with dietary preferences
         if (class_exists('VT_Profile_Manager')) {
-            $profile_manager = new VT_Profile_Manager();
-
             $profile_data = [
                 'dietary_restrictions' => $guest->dietary_restrictions
             ];
@@ -350,7 +348,7 @@ class VT_Guest_Manager {
                 $profile_data = array_merge($profile_data, $user_data);
             }
 
-            $profile_manager->update_user_profile($user_id, $profile_data);
+            VT_Profile_Manager::update_profile($user_id, $profile_data);
         }
 
         return $user_id;
