@@ -87,7 +87,7 @@ $breadcrumbs = array();
 										<?php endif; ?>
 									</div>
 									<div class="vt-text-muted">
-										<?php echo sprintf('Joined %s ago', VT_Text::time_ago($community->joined_at)); ?>
+										<?php echo sprintf('Joined %s', VT_Text::timeAgo($community->joined_at)); ?>
 									</div>
 								</div>
 								<div class="vt-stat vt-text-center">
@@ -98,7 +98,7 @@ $breadcrumbs = array();
 
 							<?php if ($community->description) : ?>
 							<div class="vt-mb-4">
-								<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncate_words($community->description, 15)); ?></p>
+								<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncateWords($community->description, 15)); ?></p>
 							</div>
 							<?php endif; ?>
 
@@ -169,7 +169,7 @@ $breadcrumbs = array();
 
 					<?php if ($community->description) : ?>
 					<div class="vt-mb-4">
-						<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncate_words($community->description, 20)); ?></p>
+						<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncateWords($community->description, 20)); ?></p>
 					</div>
 					<?php endif; ?>
 
@@ -181,7 +181,7 @@ $breadcrumbs = array();
 
 						<?php if ($user_logged_in) : ?>
 							<?php
-							$is_member = VT_Community_Manager::is_member($community->id, $current_user->id);
+							$is_member = $community_manager->is_member($community->id, $current_user->id);
 							?>
 							<a href="/communities/<?php echo htmlspecialchars($community->slug); ?>"
 								class="vt-btn <?php echo $is_member ? 'vt-btn' : ''; ?>">

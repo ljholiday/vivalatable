@@ -235,20 +235,22 @@ class VT_Community_Manager {
 			return new VT_Error('permission_denied', 'You do not have permission to add members to this community');
 		}
 
+		// Ensure we have a user_id (required field)
+		$user_id = isset($member_data['user_id']) ? intval($member_data['user_id']) : VT_Auth::getCurrentUserId();
+		if (!$user_id) {
+			return new VT_Error('user_id_required', 'User ID is required for community membership');
+		}
+
 		// Sanitize member data
 		$sanitized_data = array(
 			'community_id' => $community_id,
+			'user_id' => $user_id,
 			'email' => VT_Sanitize::email($member_data['email']),
 			'display_name' => VT_Sanitize::textField($member_data['display_name'] ?? ''),
 			'role' => in_array($member_data['role'] ?? 'member', array('admin', 'member')) ? $member_data['role'] : 'member',
 			'status' => in_array($member_data['status'] ?? 'active', array('active', 'inactive')) ? $member_data['status'] : 'active',
 			'joined_at' => VT_Time::current_time('mysql')
 		);
-
-		// Add user_id if provided
-		if (isset($member_data['user_id'])) {
-			$sanitized_data['user_id'] = intval($member_data['user_id']);
-		}
 
 		$member_id = $this->db->insert('community_members', $sanitized_data);
 
@@ -284,25 +286,23 @@ class VT_Community_Manager {
 			$email = $current_user->email;
 		}
 
-		$where_conditions = array('community_id' => $community_id, 'status' => 'active');
-		$where_format = array('%d', '%s');
-
 		if ($user_id) {
-			$where_conditions['user_id'] = intval($user_id);
-			$where_format[] = '%d';
+			$member = $this->db->get_row(
+				$this->db->prepare(
+					"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND user_id = %d AND status = %s",
+					$community_id, intval($user_id), 'active'
+				)
+			);
 		} else if ($email) {
-			$where_conditions['email'] = VT_Sanitize::email($email);
-			$where_format[] = '%s';
+			$member = $this->db->get_row(
+				$this->db->prepare(
+					"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
+					$community_id, VT_Sanitize::email($email), 'active'
+				)
+			);
 		} else {
 			return false;
 		}
-
-		$member = $this->db->get_row(
-			$this->db->prepare(
-				"SELECT id FROM {$this->db->prefix}community_members WHERE " . implode(' = %s AND ', array_keys($where_conditions)) . " = %s",
-				array_values($where_conditions)
-			)
-		);
 
 		return $member !== null;
 	}
@@ -325,22 +325,23 @@ class VT_Community_Manager {
 			$email = $current_user->email;
 		}
 
-		$where_conditions = array('community_id' => $community_id, 'status' => 'active');
-
 		if ($user_id) {
-			$where_conditions['user_id'] = intval($user_id);
+			$member = $this->db->get_row(
+				$this->db->prepare(
+					"SELECT role FROM {$this->db->prefix}community_members WHERE community_id = %d AND user_id = %d AND status = %s",
+					$community_id, intval($user_id), 'active'
+				)
+			);
 		} else if ($email) {
-			$where_conditions['email'] = VT_Sanitize::email($email);
+			$member = $this->db->get_row(
+				$this->db->prepare(
+					"SELECT role FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
+					$community_id, VT_Sanitize::email($email), 'active'
+				)
+			);
 		} else {
 			return null;
 		}
-
-		$member = $this->db->get_row(
-			$this->db->prepare(
-				"SELECT role FROM {$this->db->prefix}community_members WHERE " . implode(' = %s AND ', array_keys($where_conditions)) . " = %s",
-				array_values($where_conditions)
-			)
-		);
 
 		return $member ? $member->role : null;
 	}

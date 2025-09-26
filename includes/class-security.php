@@ -154,6 +154,14 @@ class VT_Security {
         }
         return $_SESSION['csrf_token'];
     }
+
+    public static function kses_post($data) {
+        return VT_Sanitize::post($data);
+    }
+
+    public static function sanitize_textarea($data) {
+        return VT_Sanitize::post($data);
+    }
 }
 
 // Initialize security system

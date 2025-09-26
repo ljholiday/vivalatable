@@ -42,20 +42,9 @@ class VT_Profile_Manager {
 			'display_name' => $user_data ? $user_data->display_name : '',
 			'bio' => '',
 			'location' => '',
-			'profile_image' => '',
-			'cover_image' => '',
-			'avatar_source' => 'gravatar',
-			'website_url' => '',
+			'website' => '',
+			'avatar_url' => '',
 			'social_links' => json_encode(array()),
-			'hosting_preferences' => json_encode(array()),
-			'notification_preferences' => json_encode(
-				array(
-					'new_events' => true,
-					'event_invitations' => true,
-					'rsvp_updates' => true,
-					'community_activity' => false,
-				)
-			),
 			'privacy_settings' => json_encode(
 				array(
 					'profile_visibility' => 'public',
@@ -63,14 +52,8 @@ class VT_Profile_Manager {
 			),
 			'events_hosted' => 0,
 			'events_attended' => 0,
-			'host_rating' => 0.00,
-			'host_reviews_count' => 0,
-			'available_times' => json_encode(array()),
-			'dietary_restrictions' => '',
-			'accessibility_needs' => '',
-			'is_verified' => 0,
-			'is_active' => 1,
-			'last_active' => VT_Time::current_time('mysql'),
+			'reputation_score' => 0,
+			'last_active_at' => VT_Time::current_time('mysql'),
 			'created_at' => VT_Time::current_time('mysql'),
 			'updated_at' => VT_Time::current_time('mysql'),
 		);

@@ -5,7 +5,10 @@
       "Bash(curl:*)",
       "Bash(mysql:*)",
       "Read(//Users/lonnholiday/Documents/partyminder/**)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Read(//Users/lonnholiday/Local Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/assets/js/**)",
+      "Read(//Users/lonnholiday/Local Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/includes/**)",
+      "Read(//Users/lonnholiday/Local Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/**)"
     ],
     "deny": [],
     "ask": []

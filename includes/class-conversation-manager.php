@@ -140,7 +140,7 @@ class VT_Conversation_Manager {
 			'title' => VT_Sanitize::textField($data['title']),
 			'slug' => $slug,
 			'content' => VT_Security::kses_post($data['content']),
-			'author_id' => $data['author_id'],
+			'author_id' => $data['author_id'] ?? VT_Auth::getCurrentUserId(),
 			'author_name' => VT_Sanitize::textField($data['author_name']),
 			'author_email' => VT_Sanitize::email($data['author_email']),
 			'privacy' => $this->validate_conversation_privacy($data['privacy'] ?? 'public', $data),
@@ -159,7 +159,8 @@ class VT_Conversation_Manager {
 		$conversation_id = $this->db->insert_id;
 
 		// Auto-follow the conversation creator
-		$this->follow_conversation($conversation_id, $data['author_id'], $data['author_email']);
+		$author_id = $insert_data['author_id'];
+		$this->follow_conversation($conversation_id, $author_id, $data['author_email']);
 
 		return $conversation_id;
 	}
@@ -189,7 +190,7 @@ class VT_Conversation_Manager {
 			'conversation_id' => $conversation_id,
 			'parent_reply_id' => $data['parent_reply_id'] ?? null,
 			'content' => VT_Security::kses_post($data['content']),
-			'author_id' => $data['author_id'],
+			'author_id' => $data['author_id'] ?? VT_Auth::getCurrentUserId(),
 			'author_name' => VT_Sanitize::textField($data['author_name']),
 			'author_email' => VT_Sanitize::email($data['author_email']),
 			'depth_level' => $depth,
