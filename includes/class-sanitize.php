@@ -15,17 +15,8 @@ class VT_Sanitize {
     }
 
     public static function textField($str) {
-        $filtered = wp_check_invalid_utf8($str);
-
-        if (strpos($filtered, '<') !== false) {
-            $filtered = wp_pre_kses_less_than($filtered);
-            $filtered = wp_strip_all_tags($filtered, false);
-            $filtered = str_replace('<', '&lt;', $filtered);
-        }
-
-        $filtered = trim($filtered);
-        $filtered = wp_normalize_whitespace($filtered);
-
+        $filtered = strip_tags(trim($str));
+        $filtered = preg_replace('/\s+/', ' ', $filtered);
         return $filtered;
     }
 

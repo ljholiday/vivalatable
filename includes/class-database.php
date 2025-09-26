@@ -30,7 +30,7 @@ class VT_Database {
         ];
 
         $dsn = sprintf(
-            'mysql:unix_socket=/Users/lonnholiday/Library/Application Support/Local/run/mDX5952Ws/mysql/mysqld.sock;dbname=%s;charset=utf8mb4',
+            'mysql:unix_socket=/tmp/mysql.sock;dbname=%s;charset=utf8mb4',
             $config['database']
         );
 
@@ -127,6 +127,31 @@ class VT_Database {
             $query_str = $query instanceof PDOStatement ? 'prepared statement' : $query;
             error_log('Database query failed: ' . $e->getMessage() . ' Query: ' . $query_str);
             return null;
+        }
+    }
+
+    public function get_col($query, $x = 0) {
+        try {
+            // Handle if $query is already a prepared statement
+            if ($query instanceof PDOStatement) {
+                $stmt = $query;
+            } else {
+                $stmt = $this->pdo->query($query);
+            }
+            $results = $stmt->fetchAll(PDO::FETCH_NUM);
+
+            $col = array();
+            foreach ($results as $row) {
+                if (isset($row[$x])) {
+                    $col[] = $row[$x];
+                }
+            }
+
+            return $col;
+        } catch (PDOException $e) {
+            $query_str = $query instanceof PDOStatement ? 'prepared statement' : $query;
+            error_log('Database query failed: ' . $e->getMessage() . ' Query: ' . $query_str);
+            return array();
         }
     }
 

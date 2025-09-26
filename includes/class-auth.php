@@ -25,12 +25,12 @@ class VT_Auth {
         }
     }
 
-    public static function login($email, $password) {
+    public static function login($email_or_username, $password) {
         $db = VT_Database::getInstance();
 
-        $query = "SELECT * FROM vt_users WHERE email = ? AND status = 'active' LIMIT 1";
+        $query = "SELECT * FROM vt_users WHERE (email = ? OR login = ?) AND status = 'active' LIMIT 1";
         $stmt = $db->prepare($query);
-        $stmt->execute([$email]);
+        $stmt->execute([$email_or_username, $email_or_username]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user->password_hash)) {
@@ -39,7 +39,7 @@ class VT_Auth {
             self::$current_user = $user;
 
             // Update last login
-            $db->update('users', ['updated_at' => current_time('mysql')], ['id' => $user->id]);
+            $db->update('users', ['updated_at' => date('Y-m-d H:i:s')], ['id' => $user->id]);
 
             return true;
         }

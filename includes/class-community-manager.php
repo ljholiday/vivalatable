@@ -19,28 +19,28 @@ class VT_Community_Manager {
 	public function create_community($community_data) {
 		// Validate required fields
 		if (empty($community_data['name'])) {
-			return new VT_Error('name_required', 'Community name is required');
+			return ['error' => 'Community name is required'];
 		}
 
 		if (empty($community_data['creator_email'])) {
-			return new VT_Error('creator_email_required', 'Creator email is required');
+			return ['error' => 'Creator email is required'];
 		}
 
 		$current_user = VT_Auth::getCurrentUser();
 		$current_user_id = VT_Auth::getCurrentUserId();
 
 		if (!$current_user_id) {
-			return new VT_Error('user_required', 'You must be logged in to create a community');
+			return ['error' => 'You must be logged in to create a community'];
 		}
 
 		// Sanitize input data
-		$name = sanitize_text_field($community_data['name']);
-		$description = sanitize_textarea_field($community_data['description'] ?? '');
+		$name = VT_Sanitize::textField($community_data['name']);
+		$description = VT_Sanitize::post($community_data['description'] ?? '');
 		$visibility = $this->validate_privacy_setting($community_data['visibility'] ?? 'public');
-		$creator_email = sanitize_email($community_data['creator_email']);
+		$creator_email = VT_Sanitize::email($community_data['creator_email']);
 
 		// Generate unique slug
-		$slug = sanitize_title($name);
+		$slug = VT_Sanitize::slug($name);
 		$original_slug = $slug;
 		$counter = 1;
 

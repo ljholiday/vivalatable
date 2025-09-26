@@ -11,7 +11,7 @@ class VT_Pages {
 	 * Dashboard page
 	 */
 	public static function dashboard() {
-		self::render_page('dashboard', 'Dashboard', 'Your social event hub');
+		self::render_page('dashboard', 'Dashboard', 'Your social event hub', 'two-column');
 	}
 
 	/**

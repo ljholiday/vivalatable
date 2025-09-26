@@ -38,7 +38,7 @@ require_once __DIR__ . '/class-time.php';
 require_once __DIR__ . '/class-http.php';
 
 // Load WordPress replacements
-require_once '/Users/lonnholiday/vivalatable-migration-docs/wp_replacements.php';
+require_once '/Users/lonnholiday/Repositories/vivalatable-docs/wp_replacements.php';
 
 // Load all business logic classes
 $class_files = glob(__DIR__ . '/class-*.php');

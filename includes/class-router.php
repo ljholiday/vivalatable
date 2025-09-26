@@ -24,6 +24,7 @@ class VT_Router {
 	private static function register_default_routes() {
 		// Auth routes
 		self::add_route('GET', '/', array('VT_Pages', 'dashboard'));
+		self::add_route('GET', '/dashboard', array('VT_Pages', 'dashboard'));
 		self::add_route('GET', '/login', array('VT_Pages', 'login'));
 		self::add_route('POST', '/login', array('VT_Pages', 'login'));
 		self::add_route('GET', '/logout', array('VT_Auth', 'logout_and_redirect'));

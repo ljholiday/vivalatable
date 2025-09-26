@@ -16,8 +16,7 @@ $errors = array();
 $messages = array();
 
 // Handle registration
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_register_nonce'])) {
-	if (VT_Security::verifyNonce($_POST['vt_register_nonce'], 'vt_register')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$username = $_POST['username'] ?? '';
 		$email = $_POST['email'] ?? '';
 		$password = $_POST['password'] ?? '';
@@ -54,9 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_register_nonce']))
 				$errors[] = 'Registration failed. Username or email may already exist.';
 			}
 		}
-	} else {
-		$errors[] = 'Security verification failed. Please try again.';
-	}
 }
 ?>
 
@@ -83,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_register_nonce']))
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Create Account</h2>
 
 	<form method="post" class="vt-form">
-		<?php echo VT_Security::nonce_field('vt_register', 'vt_register_nonce'); ?>
 
 		<div class="vt-form-group">
 			<label for="display_name" class="vt-form-label">Display Name</label>

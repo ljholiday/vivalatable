@@ -54,7 +54,7 @@ if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_P
 		if (empty($errors)) {
 			$user_id = VT_Auth::create_user($username, $password, $email, $display_name);
 
-			if ($user_id && !is_wp_error($user_id)) {
+			if ($user_id) {
 				// Create profile
 				VT_Profile_Manager::create_default_profile($user_id);
 
@@ -72,18 +72,17 @@ if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_P
 }
 
 // Handle login
-if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_login_nonce'])) {
-	if (VT_Security::verifyNonce($_POST['vt_login_nonce'], 'vt_login')) {
-		$username = VT_Sanitizer::sanitize_username($_POST['username']);
+if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+		$username = trim($_POST['username'] ?? '');
 		$password = $_POST['password'];
 		$remember = isset($_POST['remember']);
 
 		if (empty($username) || empty($password)) {
 			$errors[] = 'Username and password are required.';
 		} else {
-			$user = VT_Auth::authenticate($username, $password, $remember);
+			$user = VT_Auth::login($username, $password);
 
-			if ($user && !is_wp_error($user)) {
+			if ($user) {
 				$redirect_to = $_GET['redirect_to'] ?? '/dashboard';
 				header('Location: ' . $redirect_to);
 				exit;
@@ -91,7 +90,6 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST
 				$errors[] = 'Invalid username or password.';
 			}
 		}
-	}
 }
 
 // Set up template variables
@@ -200,7 +198,6 @@ $breadcrumbs = array(
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Sign In</h2>
 
 	<form method="post" class="vt-form">
-		<?php echo VT_Security::nonce_field('vt_login', 'vt_login_nonce'); ?>
 
 		<div class="vt-form-group">
 			<label for="username" class="vt-form-label">Username or Email</label>
@@ -233,7 +230,7 @@ $breadcrumbs = array(
 
 	<div class="vt-text-center vt-mt-4">
 		<p class="vt-text-muted vt-mb-4">New to VivalaTable?
-			<a href="<?php echo htmlspecialchars(add_query_arg('action', 'register')); ?>" class="vt-text-primary">Create Account</a>
+			<a href="/register" class="vt-text-primary">Create Account</a>
 		</p>
 		<p><a href="/reset-password" class="vt-text-primary">Forgot your password?</a></p>
 	</div>

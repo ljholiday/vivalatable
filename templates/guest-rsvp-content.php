@@ -155,7 +155,6 @@ $event_time_formatted = date('g:i A', strtotime($event->event_date));
 			<div class="vt-card-body">
 				<div class="vt-flex vt-flex-column vt-gap">
 					<div class="vt-flex vt-gap">
-						<span style="font-size: 1.2rem;">📅</span>
 						<div>
 							<strong>When:</strong>
 							<div><?php echo $event_day . ', ' . $event_date_formatted . ' at ' . $event_time_formatted; ?></div>
@@ -163,7 +162,6 @@ $event_time_formatted = date('g:i A', strtotime($event->event_date));
 					</div>
 					<?php if ($event->venue_info) : ?>
 					<div class="vt-flex vt-gap">
-						<span style="font-size: 1.2rem;">📍</span>
 						<div>
 							<strong>Where:</strong>
 							<div><?php echo htmlspecialchars($event->venue_info); ?></div>
@@ -172,7 +170,6 @@ $event_time_formatted = date('g:i A', strtotime($event->event_date));
 					<?php endif; ?>
 					<?php if ($event->description) : ?>
 					<div class="vt-flex vt-gap">
-						<span style="font-size: 1.2rem;">ℹ️</span>
 						<div>
 							<strong>Details:</strong>
 							<div><?php echo nl2br(htmlspecialchars($event->description)); ?></div>

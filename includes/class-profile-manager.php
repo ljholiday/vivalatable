@@ -290,12 +290,10 @@ class VT_Profile_Manager {
 		// Ensure profile exists
 		self::get_user_profile($user_id);
 
-		$db->query(
-			$db->prepare(
-				"UPDATE $table_name SET events_hosted = events_hosted + 1, updated_at = %s WHERE user_id = %d",
-				VT_Time::current_time('mysql'),
-				$user_id
-			)
+		$db->prepare(
+			"UPDATE $table_name SET events_hosted = events_hosted + 1, updated_at = %s WHERE user_id = %d",
+			VT_Time::current_time('mysql'),
+			$user_id
 		);
 	}
 

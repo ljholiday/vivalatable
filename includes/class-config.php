@@ -109,9 +109,11 @@ class VT_Config {
         $db = VT_Database::getInstance();
         $options = $db->get_results("SELECT option_name, option_value FROM vt_config WHERE autoload = 'yes'");
 
-        foreach ($options as $option) {
-            $value = @unserialize($option->option_value);
-            self::$cache[$option->option_name] = ($value !== false || $option->option_value === 'b:0;') ? $value : $option->option_value;
+        if ($options) {
+            foreach ($options as $option) {
+                $value = @unserialize($option->option_value);
+                self::$cache[$option->option_name] = ($value !== false || $option->option_value === 'b:0;') ? $value : $option->option_value;
+            }
         }
     }
 

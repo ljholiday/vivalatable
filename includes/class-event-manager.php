@@ -63,6 +63,63 @@ class VT_Event_Manager {
         return $event_id;
     }
 
+    public function create_event_form($event_data) {
+        $db = VT_Database::getInstance();
+
+        // Validate required fields
+        if (empty($event_data['title']) || empty($event_data['event_date'])) {
+            return ['error' => 'Event title and date are required'];
+        }
+
+        // Generate unique slug
+        $slug = $this->generate_unique_slug($event_data['title']);
+
+        // Determine privacy based on inheritance model
+        $privacy = $this->determine_event_privacy($event_data);
+        if (is_array($privacy) && isset($privacy['error'])) {
+            return $privacy;
+        }
+
+        // Generate post_id (using timestamp + random for uniqueness)
+        $post_id = time() . rand(100, 999);
+
+        // Insert event data
+        $result = $db->insert('events', [
+            'title' => VT_Sanitize::textField($event_data['title']),
+            'slug' => $slug,
+            'description' => VT_Sanitize::post($event_data['description'] ?? ''),
+            'excerpt' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 250)),
+            'event_date' => VT_Sanitize::textField($event_data['event_date']),
+            'event_time' => VT_Sanitize::textField($event_data['event_time'] ?? ''),
+            'guest_limit' => VT_Sanitize::int($event_data['guest_limit'] ?? 0),
+            'venue_info' => VT_Sanitize::textField($event_data['venue'] ?? ''),
+            'host_email' => VT_Sanitize::email($event_data['host_email'] ?? ''),
+            'host_notes' => VT_Sanitize::post($event_data['host_notes'] ?? ''),
+            'privacy' => $privacy,
+            'event_status' => 'active',
+            'author_id' => VT_Auth::getCurrentUserId() ?: 1,
+            'community_id' => VT_Sanitize::int($event_data['community_id'] ?? 0),
+            'meta_title' => VT_Sanitize::textField($event_data['title']),
+            'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
+            'created_by' => VT_Auth::getCurrentUserId() ?: 1,
+            'post_id' => $post_id
+        ]);
+
+        if ($result === false) {
+            return ['error' => 'Failed to create event'];
+        }
+
+        $event_id = $result;
+
+        // Update profile stats for event creation
+        if (class_exists('VT_Profile_Manager')) {
+            $author_id = VT_Sanitize::int($event_data['author_id'] ?? VT_Auth::getCurrentUserId());
+            VT_Profile_Manager::increment_events_hosted($author_id);
+        }
+
+        return ['success' => true, 'event_id' => $event_id];
+    }
+
     private function generate_unique_slug($title) {
         $db = VT_Database::getInstance();
 

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/lonnholiday/Repositories/vivalatable-docs/**)",
+      "Bash(curl:*)",
+      "Bash(mysql:*)",
+      "Read(//Users/lonnholiday/Documents/partyminder/**)",
+      "Bash(php:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
