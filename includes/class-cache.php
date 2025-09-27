@@ -12,7 +12,17 @@ class VT_Cache {
      * Get cached value
      */
     public static function get($key) {
-        return isset(self::$cache[$key]) ? self::$cache[$key] : null;
+        if (!isset(self::$cache[$key])) {
+            return false;
+        }
+
+        // Check if expired
+        if (time() > self::$cache[$key]['expires']) {
+            unset(self::$cache[$key]);
+            return false;
+        }
+
+        return self::$cache[$key]['value'];
     }
 
     /**

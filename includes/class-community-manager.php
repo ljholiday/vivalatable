@@ -36,7 +36,7 @@ class VT_Community_Manager {
 		// Sanitize input data
 		$name = VT_Sanitize::textField($community_data['name']);
 		$description = VT_Sanitize::post($community_data['description'] ?? '');
-		$visibility = $this->validateprivacy_setting($community_data['visibility'] ?? 'public');
+		$visibility = $this->validatePrivacySetting($community_data['visibility'] ?? 'public');
 		$creator_email = VT_Sanitize::email($community_data['creator_email']);
 
 		// Generate unique slug
@@ -44,7 +44,7 @@ class VT_Community_Manager {
 		$original_slug = $slug;
 		$counter = 1;
 
-		while ($this->community_slug_exists($slug)) {
+		while ($this->communitySlugExists($slug)) {
 			$slug = $original_slug . '-' . $counter;
 			$counter++;
 		}
@@ -57,6 +57,7 @@ class VT_Community_Manager {
 			'visibility' => $visibility,
 			'creator_id' => $current_user_id,
 			'creator_email' => $creator_email,
+			'created_by' => $current_user_id,
 			'is_active' => 1,
 			'member_count' => 1,
 			'created_at' => VT_Time::currentTime('mysql'),
@@ -81,7 +82,7 @@ class VT_Community_Manager {
 			'status' => 'active'
 		);
 
-		$member_result = $this->add_member($community_id, $member_data);
+		$member_result = $this->addMember($community_id, $member_data, true);
 
 		if (is_vt_error($member_result)) {
 			// Clean up - delete the community if member creation failed
@@ -110,10 +111,7 @@ class VT_Community_Manager {
 
 		if ($community === false) {
 			$community = $this->db->getRow(
-				$this->db->prepare(
-					"SELECT * FROM {$this->db->prefix}communities WHERE id = %d AND is_active = 1",
-					$community_id
-				)
+				"SELECT * FROM {$this->db->prefix}communities WHERE id = " . intval($community_id) . " AND is_active = 1"
 			);
 
 			if ($community && $community->settings) {
@@ -160,7 +158,7 @@ class VT_Community_Manager {
 		}
 
 		// Check permissions
-		if (!$this->can_manage_community($community_id)) {
+		if (!$this->canManageCommunity($community_id)) {
 			return new VT_Error('permission_denied', 'You do not have permission to manage this community');
 		}
 
@@ -178,7 +176,7 @@ class VT_Community_Manager {
 						$sanitized_data[$field] = VT_Sanitize::post($value);
 						break;
 					case 'visibility':
-						$sanitized_data[$field] = $this->validateprivacy_setting($value);
+						$sanitized_data[$field] = $this->validatePrivacySetting($value);
 						break;
 					case 'settings':
 						$sanitized_data[$field] = is_array($value) ? json_encode($value) : $value;
@@ -231,7 +229,7 @@ class VT_Community_Manager {
 		}
 
 		// Permission check (skip for auto-join scenarios)
-		if (!$skip_invitation && !$this->can_manage_community($community_id)) {
+		if (!$skip_invitation && !$this->canManageCommunity($community_id)) {
 			return new VT_Error('permission_denied', 'You do not have permission to add members to this community');
 		}
 
@@ -259,7 +257,7 @@ class VT_Community_Manager {
 		}
 
 		// Update community member count
-		$this->updatemember_count($community_id);
+		$this->updateMemberCount($community_id);
 
 		// Clear cache
 		VT_Cache::delete('community_' . $community_id);
@@ -389,7 +387,7 @@ class VT_Community_Manager {
 		}
 
 		// Permission check
-		if (!$this->can_manage_community($community_id)) {
+		if (!$this->canManageCommunity($community_id)) {
 			return new VT_Error('permission_denied', 'You do not have permission to send invitations for this community');
 		}
 
@@ -441,7 +439,7 @@ class VT_Community_Manager {
 		}
 
 		// Send invitation email
-		$this->sendinvitation_email($invitation_id);
+		$this->sendInvitationEmail($invitation_id);
 
 		return $invitation_id;
 	}
@@ -470,7 +468,7 @@ class VT_Community_Manager {
 
 		$subject = sprintf('%s invited you to join %s', $invitation->inviter_name, $invitation->community_name);
 
-		$message = $this->getinvitation_email_template($invitation, $invitation_url);
+		$message = $this->getInvitationEmailTemplate($invitation, $invitation_url);
 
 		return VT_Mail::send($invitation->invited_email, $subject, $message);
 	}
@@ -741,7 +739,7 @@ class VT_Community_Manager {
 		// Default to true for all public communities
 		$default = ($community->visibility === 'public');
 
-		return $this->getcommunity_setting($community_id, 'allow_auto_join_on_reply', $default);
+		return $this->getCommunitySetting($community_id, 'allow_auto_join_on_reply', $default);
 	}
 
 	/**
@@ -775,7 +773,7 @@ class VT_Community_Manager {
 			'status' => 'active'
 		);
 
-		return $this->add_member($community_id, $member_data, true);
+		return $this->addMember($community_id, $member_data, true);
 	}
 
 	/**
@@ -801,7 +799,7 @@ class VT_Community_Manager {
 	 */
 	public function acceptCommunityInvitation($token, $user_id, $member_data = array()) {
 		// Get invitation
-		$invitation = $this->getinvitation_by_token($token);
+		$invitation = $this->getInvitationByToken($token);
 		if (!$invitation) {
 			return new VT_Error('invitation_not_found', 'Invitation not found');
 		}
@@ -833,7 +831,7 @@ class VT_Community_Manager {
 		}
 
 		// Add member
-		$member_result = $this->add_member(
+		$member_result = $this->addMember(
 			$invitation->community_id,
 			array_merge(
 				array(
