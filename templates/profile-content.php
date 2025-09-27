@@ -28,18 +28,18 @@ if (!$user_data) {
 }
 
 // Get VivalaTable profile data
-$profile_data = VT_Profile_Manager::get_user_profile($user_id);
+$profile_data = VT_Profile_Manager::getUserProfile($user_id);
 
 // Handle profile form submission
 $profile_updated = false;
 $form_errors = array();
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_profile_nonce'])) {
 	if (VT_Security::verifyNonce($_POST['vt_profile_nonce'], 'vt_profile_update')) {
-		$result = VT_Profile_Manager::update_profile($user_id, $_POST);
+		$result = VT_Profile_Manager::updateProfile($user_id, $_POST);
 		if ($result['success']) {
 			$profile_updated = true;
 			// Refresh profile data
-			$profile_data = VT_Profile_Manager::get_user_profile($user_id);
+			$profile_data = VT_Profile_Manager::getUserProfile($user_id);
 		} else {
 			$form_errors = $result['errors'];
 		}
@@ -89,7 +89,7 @@ if ($is_editing) {
 	?>
 
 	<form method="post" class="vt-form" enctype="multipart/form-data">
-		<?php echo VT_Security::nonce_field('vt_profile_update', 'vt_profile_nonce'); ?>
+		<?php echo VT_Security::nonceField('vt_profile_update', 'vt_profile_nonce'); ?>
 
 		<div class="vt-mb-4">
 			<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Basic Information</h3>
@@ -137,7 +137,7 @@ if ($is_editing) {
 							style="width: 100%; height: 100%; object-fit: cover;"
 							alt="Profile photo">
 						<?php else : ?>
-						<img src="<?php echo htmlspecialchars(VT_Avatar::get_avatar_url($user_id, 120)); ?>"
+						<img src="<?php echo htmlspecialchars(VT_Avatar::getAvatarUrl($user_id, 120)); ?>"
 							style="width: 100%; height: 100%; object-fit: cover;"
 							alt="Profile photo">
 						<?php endif; ?>
@@ -305,7 +305,7 @@ if ($is_editing) {
 					if (isCustom && hasCustomImage) {
 						img.src = '<?php echo addslashes($profile_data['profile_image'] ?? ''); ?>';
 					} else {
-						img.src = '<?php echo addslashes(VT_Avatar::get_avatar_url($user_id, 120)); ?>';
+						img.src = '<?php echo addslashes(VT_Avatar::getAvatarUrl($user_id, 120)); ?>';
 					}
 				});
 			});
@@ -319,7 +319,7 @@ if ($is_editing) {
 	// Profile Header Section
 	$cover_photo = $profile_data['cover_image'] ?? '';
 	$cover_photo_url = $cover_photo ? htmlspecialchars($cover_photo) : '';
-	$avatar_url = VT_Avatar::get_avatar_url($user_id, 120);
+	$avatar_url = VT_Avatar::getAvatarUrl($user_id, 120);
 	?>
 
 	<!-- Modern Profile Header -->
@@ -362,7 +362,7 @@ if ($is_editing) {
 
 		<!-- Identity/text row -->
 		<div class="vt-profile-identity">
-			<h1 class="vt-heading vt-heading-xl vt-mb"><?php echo htmlspecialchars(VT_Profile_Manager::get_display_name($user_id)); ?></h1>
+			<h1 class="vt-heading vt-heading-xl vt-mb"><?php echo htmlspecialchars(VT_Profile_Manager::getDisplayName($user_id)); ?></h1>
 			<div class="vt-text-muted vt-mb">@<?php echo htmlspecialchars($user_data->username); ?></div>
 		</div>
 	</section>

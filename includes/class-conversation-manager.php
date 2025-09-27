@@ -16,7 +16,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Get recent conversations across all types
 	 */
-	public function get_recent_conversations($limit = 10, $exclude_event_conversations = false, $exclude_community_conversations = false) {
+	public function getRecentConversations($limit = 10, $exclude_event_conversations = false, $exclude_community_conversations = false) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$events_table = $this->db->prefix . 'events';
 		$communities_table = $this->db->prefix . 'communities';
@@ -28,9 +28,9 @@ class VT_Conversation_Manager {
 		$current_user_id = VT_Auth::getCurrentUserId();
 
 		// Build privacy filter for conversations
-		$privacy_filter = $this->build_conversation_privacy_filter($current_user_id);
+		$privacy_filter = $this->buildConversationPrivacyFilter($current_user_id);
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT c.*, e.title as event_title, e.slug as event_slug, cm.name as community_name, cm.slug as community_slug
 				FROM $conversations_table c
@@ -47,7 +47,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Get event-related conversations
 	 */
-	public function get_event_conversations($event_id = null, $limit = 10) {
+	public function getEventConversations($event_id = null, $limit = 10) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$events_table = $this->db->prefix . 'events';
 
@@ -55,7 +55,7 @@ class VT_Conversation_Manager {
 		$prepare_values = $event_id ? array($event_id, $limit) : array($limit);
 
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT DISTINCT c.*, e.title as event_title, e.slug as event_slug, e.event_date
 				FROM $conversations_table c
@@ -71,14 +71,14 @@ class VT_Conversation_Manager {
 	/**
 	 * Get community-related conversations
 	 */
-	public function get_community_conversations($community_id = null, $limit = 10) {
+	public function getCommunityConversations($community_id = null, $limit = 10) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$communities_table = $this->db->prefix . 'communities';
 
 		$where_clause = $community_id ? 'WHERE c.community_id = %d' : 'WHERE c.community_id IS NOT NULL';
 		$prepare_values = $community_id ? array($community_id, $limit) : array($limit);
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT DISTINCT c.*, cm.name as community_name, cm.slug as community_slug
 				FROM $conversations_table c
@@ -94,14 +94,14 @@ class VT_Conversation_Manager {
 	/**
 	 * Get general conversations (not tied to events or communities)
 	 */
-	public function get_general_conversations($limit = 10) {
+	public function getGeneralConversations($limit = 10) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$current_user_id = VT_Auth::getCurrentUserId();
 
 		// Build privacy filter for conversations
-		$privacy_filter = $this->build_conversation_privacy_filter($current_user_id);
+		$privacy_filter = $this->buildConversationPrivacyFilter($current_user_id);
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT c.*, NULL as event_title, NULL as event_slug, NULL as community_name, NULL as community_slug
 				FROM $conversations_table c
@@ -117,14 +117,14 @@ class VT_Conversation_Manager {
 	/**
 	 * Create a new conversation
 	 */
-	public function create_conversation($data) {
+	public function createConversation($data) {
 		$conversations_table = $this->db->prefix . 'conversations';
 
 		// If no community specified, default to author's personal community
 		$community_id = $data['community_id'] ?? null;
 		if ((!$community_id || $community_id == 0) && !empty($data['author_id']) && VT_Config::get('general_convo_default_to_personal', true)) {
 			if (class_exists('VT_Personal_Community_Service')) {
-				$personal_community = VT_Personal_Community_Service::get_personal_community_for_user($data['author_id']);
+				$personal_community = VT_Personal_Community_Service::getPersonalCommunityForUser($data['author_id']);
 				if ($personal_community) {
 					$community_id = $personal_community->id;
 				}
@@ -132,21 +132,21 @@ class VT_Conversation_Manager {
 		}
 
 		// Generate slug from title
-		$slug = $this->generate_conversation_slug($data['title']);
+		$slug = $this->generateconversation_slug($data['title']);
 
 		$insert_data = array(
 			'event_id' => $data['event_id'] ?? null,
 			'community_id' => $community_id,
 			'title' => VT_Sanitize::textField($data['title']),
 			'slug' => $slug,
-			'content' => VT_Security::kses_post($data['content']),
+			'content' => VT_Security::ksesPost($data['content']),
 			'author_id' => $data['author_id'] ?? VT_Auth::getCurrentUserId(),
 			'author_name' => VT_Sanitize::textField($data['author_name']),
 			'author_email' => VT_Sanitize::email($data['author_email']),
-			'privacy' => $this->validate_conversation_privacy($data['privacy'] ?? 'public', $data),
+			'privacy' => $this->validateconversation_privacy($data['privacy'] ?? 'public', $data),
 			'is_pinned' => $data['is_pinned'] ?? 0,
-			'created_at' => VT_Time::current_time('mysql'),
-			'last_reply_date' => VT_Time::current_time('mysql'),
+			'created_at' => VT_Time::currentTime('mysql'),
+			'last_reply_date' => VT_Time::currentTime('mysql'),
 			'last_reply_author' => VT_Sanitize::textField($data['author_name']),
 		);
 
@@ -168,14 +168,14 @@ class VT_Conversation_Manager {
 	/**
 	 * Add a reply to a conversation
 	 */
-	public function add_reply($conversation_id, $data) {
+	public function addReply($conversation_id, $data) {
 		$replies_table = $this->db->prefix . 'conversation_replies';
 		$conversations_table = $this->db->prefix . 'conversations';
 
 		// Calculate depth level
 		$depth = 0;
 		if (!empty($data['parent_reply_id'])) {
-			$parent = $this->db->get_row(
+			$parent = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT depth_level FROM $replies_table WHERE id = %d",
 					$data['parent_reply_id']
@@ -189,12 +189,12 @@ class VT_Conversation_Manager {
 		$insert_data = array(
 			'conversation_id' => $conversation_id,
 			'parent_reply_id' => $data['parent_reply_id'] ?? null,
-			'content' => VT_Security::kses_post($data['content']),
+			'content' => VT_Security::ksesPost($data['content']),
 			'author_id' => $data['author_id'] ?? VT_Auth::getCurrentUserId(),
 			'author_name' => VT_Sanitize::textField($data['author_name']),
 			'author_email' => VT_Sanitize::email($data['author_email']),
 			'depth_level' => $depth,
-			'created_at' => VT_Time::current_time('mysql'),
+			'created_at' => VT_Time::currentTime('mysql'),
 		);
 
 		$result = $this->db->insert('conversation_replies', $insert_data);
@@ -204,7 +204,7 @@ class VT_Conversation_Manager {
 		}
 
 		// Update conversation reply count and last reply info
-		$reply_count = $this->db->get_var(
+		$reply_count = $this->db->getVar(
 			$this->db->prepare(
 				"SELECT COUNT(*) FROM $replies_table WHERE conversation_id = %d",
 				$conversation_id
@@ -215,7 +215,7 @@ class VT_Conversation_Manager {
 			'conversations',
 			array(
 				'reply_count' => $reply_count,
-				'last_reply_date' => VT_Time::current_time('mysql'),
+				'last_reply_date' => VT_Time::currentTime('mysql'),
 				'last_reply_author' => VT_Sanitize::textField($data['author_name']),
 			),
 			array('id' => $conversation_id)
@@ -235,11 +235,11 @@ class VT_Conversation_Manager {
 	/**
 	 * Get conversation by ID or slug
 	 */
-	public function get_conversation($identifier, $by_slug = false) {
+	public function getConversation($identifier, $by_slug = false) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$field = $by_slug ? 'slug' : 'id';
 
-		$conversation = $this->db->get_row(
+		$conversation = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT c.* FROM $conversations_table c WHERE c.$field = %s",
 				$identifier
@@ -248,7 +248,7 @@ class VT_Conversation_Manager {
 
 		if ($conversation && $by_slug === false) {
 			// Get replies if getting by ID
-			$conversation->replies = $this->get_conversation_replies($conversation->id);
+			$conversation->replies = $this->getconversation_replies($conversation->id);
 		}
 
 		return $conversation;
@@ -257,10 +257,10 @@ class VT_Conversation_Manager {
 	/**
 	 * Get replies for a conversation
 	 */
-	public function get_conversation_replies($conversation_id) {
+	public function getConversationReplies($conversation_id) {
 		$replies_table = $this->db->prefix . 'conversation_replies';
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT * FROM $replies_table
 				WHERE conversation_id = %d
@@ -273,11 +273,11 @@ class VT_Conversation_Manager {
 	/**
 	 * Follow a conversation
 	 */
-	public function follow_conversation($conversation_id, $user_id, $email) {
+	public function followConversation($conversation_id, $user_id, $email) {
 		$follows_table = $this->db->prefix . 'conversation_follows';
 
 		// Check if already following
-		$existing = $this->db->get_var(
+		$existing = $this->db->getVar(
 			$this->db->prepare(
 				"SELECT id FROM $follows_table
 				WHERE conversation_id = %d AND user_id = %d AND email = %s",
@@ -293,9 +293,9 @@ class VT_Conversation_Manager {
 			'conversation_id' => $conversation_id,
 			'user_id' => $user_id,
 			'email' => $email,
-			'last_read_at' => VT_Time::current_time('mysql'),
+			'last_read_at' => VT_Time::currentTime('mysql'),
 			'notification_frequency' => 'immediate',
-			'created_at' => VT_Time::current_time('mysql'),
+			'created_at' => VT_Time::currentTime('mysql'),
 		);
 
 		$result = $this->db->insert('conversation_follows', $insert_data);
@@ -306,7 +306,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Unfollow a conversation
 	 */
-	public function unfollow_conversation($conversation_id, $user_id, $email) {
+	public function unfollowConversation($conversation_id, $user_id, $email) {
 		$follows_table = $this->db->prefix . 'conversation_follows';
 
 		return $this->db->delete(
@@ -322,10 +322,10 @@ class VT_Conversation_Manager {
 	/**
 	 * Check if user is following a conversation
 	 */
-	public function is_following($conversation_id, $user_id, $email) {
+	public function isFollowing($conversation_id, $user_id, $email) {
 		$follows_table = $this->db->prefix . 'conversation_follows';
 
-		return (bool) $this->db->get_var(
+		return (bool) $this->db->getVar(
 			$this->db->prepare(
 				"SELECT id FROM $follows_table
 				WHERE conversation_id = %d AND user_id = %d AND email = %s",
@@ -337,7 +337,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Generate unique slug for conversation
 	 */
-	private function generate_conversation_slug($title, $exclude_id = null) {
+	private function generateConversationSlug($title, $exclude_id = null) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$base_slug = VT_Sanitize::slug($title);
 		$slug = $base_slug;
@@ -351,7 +351,7 @@ class VT_Conversation_Manager {
 			$params[] = $exclude_id;
 		}
 
-		while ($this->db->get_var($this->db->prepare("SELECT id FROM $conversations_table $where_clause", $params))) {
+		while ($this->db->getVar($this->db->prepare("SELECT id FROM $conversations_table $where_clause", $params))) {
 			$slug = $base_slug . '-' . $counter;
 			$params[0] = $slug;
 			++$counter;
@@ -363,16 +363,16 @@ class VT_Conversation_Manager {
 	/**
 	 * Get conversation statistics
 	 */
-	public function get_stats() {
+	public function getStats() {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$replies_table = $this->db->prefix . 'conversation_replies';
 		$follows_table = $this->db->prefix . 'conversation_follows';
 
 		$stats = new stdClass();
-		$stats->total_conversations = $this->db->get_var("SELECT COUNT(*) FROM $conversations_table");
-		$stats->total_replies = $this->db->get_var("SELECT COUNT(*) FROM $replies_table");
-		$stats->total_follows = $this->db->get_var("SELECT COUNT(*) FROM $follows_table");
-		$stats->active_conversations = $this->db->get_var(
+		$stats->total_conversations = $this->db->getVar("SELECT COUNT(*) FROM $conversations_table");
+		$stats->total_replies = $this->db->getVar("SELECT COUNT(*) FROM $replies_table");
+		$stats->total_follows = $this->db->getVar("SELECT COUNT(*) FROM $follows_table");
+		$stats->active_conversations = $this->db->getVar(
 			"SELECT COUNT(*) FROM $conversations_table
 			WHERE last_reply_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)"
 		);
@@ -383,7 +383,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Auto-create event conversation when event is created
 	 */
-	public function create_event_conversation($event_id, $event_data) {
+	public function createEventConversation($event_id, $event_data) {
 		$conversation_data = array(
 			'event_id' => $event_id,
 			'title' => sprintf('Planning: %s', $event_data['title']),
@@ -396,13 +396,13 @@ class VT_Conversation_Manager {
 			'author_email' => $event_data['author_email'],
 		);
 
-		return $this->create_conversation($conversation_data);
+		return $this->createConversation($conversation_data);
 	}
 
 	/**
 	 * Auto-create community conversation when community is created
 	 */
-	public function create_community_conversation($community_id, $community_data) {
+	public function createCommunityConversation($community_id, $community_data) {
 		$conversation_data = array(
 			'community_id' => $community_id,
 			'title' => sprintf('Welcome to %s!', $community_data['name']),
@@ -416,13 +416,13 @@ class VT_Conversation_Manager {
 			'is_pinned' => 1, // Pin the welcome conversation
 		);
 
-		return $this->create_conversation($conversation_data);
+		return $this->createConversation($conversation_data);
 	}
 
 	/**
 	 * Build privacy filter for conversations based on parent event/community privacy
 	 */
-	private function build_conversation_privacy_filter($current_user_id) {
+	private function buildConversationPrivacyFilter($current_user_id) {
 		$members_table = $this->db->prefix . 'community_members';
 		$guests_table = $this->db->prefix . 'guests';
 		// $invitations_table = $this->db->prefix . 'invitations'; // TODO: Phase 3.5
@@ -467,14 +467,14 @@ class VT_Conversation_Manager {
 	/**
 	 * Validate conversation privacy setting and implement inheritance
 	 */
-	private function validate_conversation_privacy($privacy, $data) {
+	private function validateConversationPrivacy($privacy, $data) {
 		// If conversation is tied to an event or community, inherit their privacy
 		if (!empty($data['event_id'])) {
-			return $this->get_event_privacy($data['event_id']);
+			return $this->getevent_privacy($data['event_id']);
 		}
 
 		if (!empty($data['community_id'])) {
-			return $this->get_community_privacy($data['community_id']);
+			return $this->getcommunity_privacy($data['community_id']);
 		}
 
 		// For standalone conversations, validate the provided privacy
@@ -492,9 +492,9 @@ class VT_Conversation_Manager {
 	/**
 	 * Get effective privacy for an event
 	 */
-	private function get_event_privacy($event_id) {
+	private function getEventPrivacy($event_id) {
 		$events_table = $this->db->prefix . 'events';
-		$event = $this->db->get_row(
+		$event = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT privacy, community_id FROM $events_table WHERE id = %d",
 				$event_id
@@ -507,7 +507,7 @@ class VT_Conversation_Manager {
 
 		// If event is part of a community, it inherits community privacy
 		if ($event->community_id) {
-			return $this->get_community_privacy($event->community_id);
+			return $this->getcommunity_privacy($event->community_id);
 		}
 
 		return $event->privacy;
@@ -516,9 +516,9 @@ class VT_Conversation_Manager {
 	/**
 	 * Get effective privacy for a community
 	 */
-	private function get_community_privacy($community_id) {
+	private function getCommunityPrivacy($community_id) {
 		$communities_table = $this->db->prefix . 'communities';
-		$privacy = $this->db->get_var(
+		$privacy = $this->db->getVar(
 			$this->db->prepare(
 				"SELECT visibility FROM $communities_table WHERE id = %d",
 				$community_id
@@ -531,13 +531,13 @@ class VT_Conversation_Manager {
 	/**
 	 * Get the effective privacy for a conversation (resolving inheritance)
 	 */
-	public function get_conversation_privacy($conversation) {
+	public function getConversationPrivacy($conversation) {
 		if ($conversation->event_id) {
-			return $this->get_event_privacy($conversation->event_id);
+			return $this->getevent_privacy($conversation->event_id);
 		}
 
 		if ($conversation->community_id) {
-			return $this->get_community_privacy($conversation->community_id);
+			return $this->getcommunity_privacy($conversation->community_id);
 		}
 
 		return $conversation->privacy;
@@ -546,12 +546,12 @@ class VT_Conversation_Manager {
 	/**
 	 * Get conversations created by a specific user
 	 */
-	public function get_user_conversations($user_id, $limit = 10) {
+	public function getUserConversations($user_id, $limit = 10) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$events_table = $this->db->prefix . 'events';
 		$communities_table = $this->db->prefix . 'communities';
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT c.*, e.title as event_title, e.slug as event_slug, cm.name as community_name, cm.slug as community_slug
 				FROM $conversations_table c
@@ -568,7 +568,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Generate a contextual display title for conversations
 	 */
-	public function get_display_title($conversation, $show_context = true) {
+	public function getDisplayTitle($conversation, $show_context = true) {
 		$title = $conversation->title;
 
 		if (!$show_context) {
@@ -589,7 +589,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Get conversations filtered by circle scope
 	 */
-	public function get_conversations_by_scope($scope, $topic_slug = '', $page = 1, $per_page = 20) {
+	public function getConversationsByScope($scope, $topic_slug = '', $page = 1, $per_page = 20) {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$events_table = $this->db->prefix . 'events';
 		$communities_table = $this->db->prefix . 'communities';
@@ -629,13 +629,13 @@ class VT_Conversation_Manager {
 			$per_page, $offset
 		);
 
-		return $this->db->get_results($query);
+		return $this->db->getResults($query);
 	}
 
 	/**
 	 * Get count of conversations in scope
 	 */
-	public function get_conversations_count_by_scope($scope, $topic_slug = '') {
+	public function getConversationsCountByScope($scope, $topic_slug = '') {
 		$conversations_table = $this->db->prefix . 'conversations';
 
 		// Build WHERE clause for scope filtering
@@ -660,7 +660,7 @@ class VT_Conversation_Manager {
 
 		$where_clause = '(' . implode(' OR ', $where_conditions) . ')';
 
-		return intval($this->db->get_var(
+		return intval($this->db->getVar(
 			"SELECT COUNT(*) FROM $conversations_table WHERE $where_clause"
 		));
 	}
@@ -668,7 +668,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Process content for URL embeds
 	 */
-	public function process_content_embeds($content) {
+	public function processContentEmbeds($content) {
 		if (empty($content)) {
 			return '';
 		}
@@ -680,19 +680,19 @@ class VT_Conversation_Manager {
 		$content = VT_Text::autop($content);
 
 		// Check for URLs and add embed cards
-		$url = VT_Text::first_url_in_text($original_content);
+		$url = VT_Text::firstUrlInText($original_content);
 		$embed = null;
 
 		if ($url && class_exists('VT_Embed')) {
-			$embed = VT_Embed::build_embed_from_url($url);
+			$embed = VT_Embed::buildEmbedFromUrl($url);
 			if ($embed) {
 				// Add the embed card after the content
-				$content .= VT_Embed::render_embed_card($embed);
+				$content .= VT_Embed::renderEmbedCard($embed);
 			}
 		}
 
 		// Sanitize content but allow embeds
-		$allowed_html = VT_Security::get_allowed_html();
+		$allowed_html = VT_Security::getAllowedHtml();
 
 		// Add iframe support for embeds
 		$allowed_html['iframe'] = array(
@@ -719,11 +719,11 @@ class VT_Conversation_Manager {
 	/**
 	 * Update a reply in a conversation
 	 */
-	public function update_reply($reply_id, $data) {
+	public function updateReply($reply_id, $data) {
 		$replies_table = $this->db->prefix . 'conversation_replies';
 
 		// Get current reply for validation
-		$reply = $this->get_reply($reply_id);
+		$reply = $this->getReply($reply_id);
 		if (!$reply) {
 			return new VT_Error('reply_not_found', 'Reply not found');
 		}
@@ -731,7 +731,7 @@ class VT_Conversation_Manager {
 		// Prepare update data
 		$update_data = array();
 		if (isset($data['content'])) {
-			$update_data['content'] = VT_Security::kses_post($data['content']);
+			$update_data['content'] = VT_Security::ksesPost($data['content']);
 		}
 
 		if (empty($update_data)) {
@@ -755,10 +755,10 @@ class VT_Conversation_Manager {
 	/**
 	 * Get a single reply by ID
 	 */
-	public function get_reply($reply_id) {
+	public function getReply($reply_id) {
 		$replies_table = $this->db->prefix . 'conversation_replies';
 
-		return $this->db->get_row($this->db->prepare(
+		return $this->db->getRow($this->db->prepare(
 			"SELECT * FROM $replies_table WHERE id = %d",
 			$reply_id
 		));
@@ -767,12 +767,12 @@ class VT_Conversation_Manager {
 	/**
 	 * Delete a reply from a conversation
 	 */
-	public function delete_reply($reply_id) {
+	public function deleteReply($reply_id) {
 		$replies_table = $this->db->prefix . 'conversation_replies';
 		$conversations_table = $this->db->prefix . 'conversations';
 
 		// Get reply data first for permission checking and conversation updates
-		$reply = $this->db->get_row(
+		$reply = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM $replies_table WHERE id = %d",
 				$reply_id
@@ -809,7 +809,7 @@ class VT_Conversation_Manager {
 		$conversation_id = $reply->conversation_id;
 
 		// Get updated reply count
-		$new_reply_count = $this->db->get_var(
+		$new_reply_count = $this->db->getVar(
 			$this->db->prepare(
 				"SELECT COUNT(*) FROM $replies_table WHERE conversation_id = %d",
 				$conversation_id
@@ -817,7 +817,7 @@ class VT_Conversation_Manager {
 		);
 
 		// Get last reply info
-		$last_reply = $this->db->get_row(
+		$last_reply = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT created_at, author_name FROM $replies_table
 				WHERE conversation_id = %d
@@ -841,7 +841,7 @@ class VT_Conversation_Manager {
 			);
 		} else {
 			// No more replies, use conversation creation date
-			$conversation = $this->db->get_row(
+			$conversation = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT created_at, author_name FROM $conversations_table WHERE id = %d",
 					$conversation_id
@@ -865,10 +865,10 @@ class VT_Conversation_Manager {
 	/**
 	 * Get conversation by ID
 	 */
-	public function get_conversation_by_id($conversation_id) {
+	public function getConversationById($conversation_id) {
 		$conversations_table = $this->db->prefix . 'conversations';
 
-		return $this->db->get_row(
+		return $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM $conversations_table WHERE id = %d",
 				$conversation_id
@@ -879,7 +879,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Update conversation
 	 */
-	public function update_conversation($conversation_id, $update_data) {
+	public function updateConversation($conversation_id, $update_data) {
 		$conversations_table = $this->db->prefix . 'conversations';
 
 		// Validate required fields
@@ -890,13 +890,13 @@ class VT_Conversation_Manager {
 		// Prepare update data
 		$data = array(
 			'title' => VT_Sanitize::textField($update_data['title']),
-			'content' => VT_Security::kses_post($update_data['content']),
-			'slug' => $this->generate_conversation_slug($update_data['title'], $conversation_id),
+			'content' => VT_Security::ksesPost($update_data['content']),
+			'slug' => $this->generateconversation_slug($update_data['title'], $conversation_id),
 		);
 
 		// Only update privacy if provided (for standalone conversations)
 		if (isset($update_data['privacy'])) {
-			$data['privacy'] = $this->validate_privacy_setting($update_data['privacy']);
+			$data['privacy'] = $this->validateprivacy_setting($update_data['privacy']);
 		}
 
 		$result = $this->db->update(
@@ -915,9 +915,9 @@ class VT_Conversation_Manager {
 	/**
 	 * Delete conversation and all related data
 	 */
-	public function delete_conversation($conversation_id) {
+	public function deleteConversation($conversation_id) {
 		// Get conversation first
-		$conversation = $this->get_conversation_by_id($conversation_id);
+		$conversation = $this->getConversationById($conversation_id);
 		if (!$conversation) {
 			return new VT_Error('conversation_not_found', 'Conversation not found');
 		}
@@ -960,7 +960,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Validate privacy setting for standalone conversations
 	 */
-	private function validate_privacy_setting($privacy) {
+	private function validatePrivacySetting($privacy) {
 		$allowed_privacy_settings = array('public', 'friends', 'members');
 
 		$privacy = VT_Sanitize::textField($privacy);
@@ -975,7 +975,7 @@ class VT_Conversation_Manager {
 	/**
 	 * Mark conversation as updated for activity tracking
 	 */
-	private function mark_conversation_updated($conversation_id) {
+	private function markConversationUpdated($conversation_id) {
 		if (class_exists('VT_Activity_Tracker')) {
 			$tracking_table = $this->db->prefix . 'user_activity_tracking';
 

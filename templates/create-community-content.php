@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	// If no validation errors, create community
 	if (empty($errors)) {
 		$community_manager = new VT_Community_Manager();
-		$result = $community_manager->create_community($community_data);
+		$result = $community_manager->createCommunity($community_data);
 
 		if (isset($result['error'])) {
 			$errors[] = $result['error'];

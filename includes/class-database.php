@@ -71,7 +71,7 @@ private function connect() {
         }
     }
 
-    public function get_results($query, $output_type = OBJECT) {
+    public function getResults($query, $output_type = OBJECT) {
         try {
             // Handle if $query is already a prepared statement
             if ($query instanceof PDOStatement) {
@@ -94,7 +94,7 @@ private function connect() {
         }
     }
 
-    public function get_row($query, $output_type = OBJECT, $y = 0) {
+    public function getRow($query, $output_type = OBJECT, $y = 0) {
         try {
             // Handle if $query is already a prepared statement
             if ($query instanceof PDOStatement) {
@@ -119,7 +119,7 @@ private function connect() {
         }
     }
 
-    public function get_var($query, $x = 0, $y = 0) {
+    public function getVar($query, $x = 0, $y = 0) {
         try {
             // Handle if $query is already a prepared statement
             if ($query instanceof PDOStatement) {
@@ -137,7 +137,7 @@ private function connect() {
         }
     }
 
-    public function get_col($query, $x = 0) {
+    public function getCol($query, $x = 0) {
         try {
             // Handle if $query is already a prepared statement
             if ($query instanceof PDOStatement) {
@@ -267,7 +267,7 @@ private function connect() {
         return $this->pdo->quote($text);
     }
 
-    public function esc_like($text) {
+    public function escLike($text) {
         return str_replace(['%', '_'], ['\%', '\_'], $text);
     }
 

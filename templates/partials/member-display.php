@@ -55,10 +55,10 @@ if (!$user_obj) {
 }
 
 // Get display name using Profile Manager
-$display_name = VT_Profile_Manager::get_display_name($user_obj->id);
+$display_name = VT_Profile_Manager::getDisplayName($user_obj->id);
 
 // Get profile URL
-$profile_url = VT_Profile_Manager::get_profile_url($user_obj->id);
+$profile_url = VT_Profile_Manager::getProfileUrl($user_obj->id);
 
 // Generate avatar HTML (simplified since we don't have gravatar integration yet)
 $avatar_html = '<div class="vt-avatar vt-avatar-sm vt-rounded-full vt-bg-gray-300 vt-flex vt-items-center vt-justify-center" style="width: ' . intval($args['avatar_size']) . 'px; height: ' . intval($args['avatar_size']) . 'px;">' .

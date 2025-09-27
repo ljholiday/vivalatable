@@ -10,7 +10,7 @@ class VT_Search_API {
 	/**
 	 * Search all content types
 	 */
-	public static function search_content($params = array()) {
+	public static function searchContent($params = array()) {
 		$query = isset($_GET['q']) ? trim($_GET['q']) : '';
 		$types = isset($_GET['types']) ? $_GET['types'] : array();
 		$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
@@ -36,7 +36,7 @@ class VT_Search_API {
 		}
 
 		// Perform search
-		$results = self::perform_search($query, $entity_types, $limit);
+		$results = self::performSearch($query, $entity_types, $limit);
 
 		// Format results
 		$formatted_results = array();
@@ -45,7 +45,7 @@ class VT_Search_API {
 				'entity_type' => $result->entity_type,
 				'entity_id' => (int) $result->entity_id,
 				'title' => $result->title,
-				'snippet' => self::create_snippet($result->content, $query),
+				'snippet' => self::createSnippet($result->content, $query),
 				'url' => $result->url,
 				'score' => (float) $result->match_score,
 			);
@@ -57,13 +57,13 @@ class VT_Search_API {
 	/**
 	 * Perform the actual search query
 	 */
-	private static function perform_search($query, $entity_types = array(), $limit = 20) {
+	private static function performSearch($query, $entity_types = array(), $limit = 20) {
 		$db = VT_Database::getInstance();
 		$search_table = $db->prefix . 'search';
 		$current_user_id = VT_Auth::getCurrentUserId();
 
 		// Create search terms
-		$search_terms = self::prepare_search_terms($query);
+		$search_terms = self::prepareSearchTerms($query);
 
 		// Base query - using LIKE for broader compatibility
 		$sql = "SELECT entity_type, entity_id, title, content, url,
@@ -76,7 +76,7 @@ class VT_Search_API {
 		        FROM $search_table
 		        WHERE (title LIKE %s OR content LIKE %s)";
 
-		$search_pattern = '%' . $db->esc_like($query) . '%';
+		$search_pattern = '%' . $db->escLike($query) . '%';
 		$params = array($search_pattern, $search_pattern, $search_pattern, $search_pattern);
 
 		// Add entity type filter
@@ -97,7 +97,7 @@ class VT_Search_API {
 		$sql .= " ORDER BY match_score DESC, last_activity_at DESC LIMIT %d";
 		$params[] = $limit;
 
-		$results = $db->get_results($db->prepare($sql, $params));
+		$results = $db->getResults($db->prepare($sql, $params));
 
 		return $results ?: array();
 	}
@@ -105,7 +105,7 @@ class VT_Search_API {
 	/**
 	 * Prepare search terms for better matching
 	 */
-	private static function prepare_search_terms($query) {
+	private static function prepareSearchTerms($query) {
 		// Split into words and remove very short ones
 		$words = array_filter(
 			explode(' ', strtolower(trim($query))),
@@ -120,7 +120,7 @@ class VT_Search_API {
 	/**
 	 * Create snippet from content with highlighted query terms
 	 */
-	private static function create_snippet($content, $query, $length = 150) {
+	private static function createSnippet($content, $query, $length = 150) {
 		$content = strip_tags($content);
 		$query_lower = strtolower($query);
 		$content_lower = strtolower($content);
@@ -154,10 +154,10 @@ class VT_Search_API {
 	/**
 	 * Search events specifically
 	 */
-	public static function search_events($query, $limit = 20) {
+	public static function searchEvents($query, $limit = 20) {
 		$db = VT_Database::getInstance();
 		$events_table = $db->prefix . 'events';
-		$search_pattern = '%' . $db->esc_like($query) . '%';
+		$search_pattern = '%' . $db->escLike($query) . '%';
 
 		$sql = "SELECT id, title, description, event_date, venue_info, privacy
 		        FROM $events_table
@@ -180,16 +180,16 @@ class VT_Search_API {
 		$params[] = $search_pattern;
 		$params[] = $limit;
 
-		return $db->get_results($db->prepare($sql, $params));
+		return $db->getResults($db->prepare($sql, $params));
 	}
 
 	/**
 	 * Search communities specifically
 	 */
-	public static function search_communities($query, $limit = 20) {
+	public static function searchCommunities($query, $limit = 20) {
 		$db = VT_Database::getInstance();
 		$communities_table = $db->prefix . 'communities';
-		$search_pattern = '%' . $db->esc_like($query) . '%';
+		$search_pattern = '%' . $db->escLike($query) . '%';
 
 		$sql = "SELECT id, name, description, visibility, member_count
 		        FROM $communities_table
@@ -212,16 +212,16 @@ class VT_Search_API {
 		$params[] = $search_pattern;
 		$params[] = $limit;
 
-		return $db->get_results($db->prepare($sql, $params));
+		return $db->getResults($db->prepare($sql, $params));
 	}
 
 	/**
 	 * Search conversations specifically
 	 */
-	public static function search_conversations($query, $limit = 20) {
+	public static function searchConversations($query, $limit = 20) {
 		$db = VT_Database::getInstance();
 		$conversations_table = $db->prefix . 'conversations';
-		$search_pattern = '%' . $db->esc_like($query) . '%';
+		$search_pattern = '%' . $db->escLike($query) . '%';
 
 		$sql = "SELECT id, title, content, event_id, community_id, reply_count
 		        FROM $conversations_table
@@ -234,16 +234,16 @@ class VT_Search_API {
 
 		$params = array($search_pattern, $search_pattern, $search_pattern, $limit);
 
-		return $db->get_results($db->prepare($sql, $params));
+		return $db->getResults($db->prepare($sql, $params));
 	}
 
 	/**
 	 * Search members/profiles specifically
 	 */
-	public static function search_members($query, $limit = 20) {
+	public static function searchMembers($query, $limit = 20) {
 		$db = VT_Database::getInstance();
 		$profiles_table = $db->prefix . 'user_profiles';
-		$search_pattern = '%' . $db->esc_like($query) . '%';
+		$search_pattern = '%' . $db->escLike($query) . '%';
 
 		$sql = "SELECT user_id, display_name, bio, location, profile_image
 		        FROM $profiles_table
@@ -257,13 +257,13 @@ class VT_Search_API {
 
 		$params = array($search_pattern, $search_pattern, $search_pattern, $search_pattern, $limit);
 
-		return $db->get_results($db->prepare($sql, $params));
+		return $db->getResults($db->prepare($sql, $params));
 	}
 
 	/**
 	 * Get search suggestions for autocomplete
 	 */
-	public static function get_suggestions($query, $limit = 10) {
+	public static function getSuggestions($query, $limit = 10) {
 		if (strlen($query) < 2) {
 			return array();
 		}
@@ -271,7 +271,7 @@ class VT_Search_API {
 		$suggestions = array();
 
 		// Get event suggestions
-		$events = self::search_events($query, 3);
+		$events = self::searchEvents($query, 3);
 		foreach ($events as $event) {
 			$suggestions[] = array(
 				'type' => 'event',
@@ -281,7 +281,7 @@ class VT_Search_API {
 		}
 
 		// Get community suggestions
-		$communities = self::search_communities($query, 3);
+		$communities = self::searchCommunities($query, 3);
 		foreach ($communities as $community) {
 			$suggestions[] = array(
 				'type' => 'community',
@@ -291,7 +291,7 @@ class VT_Search_API {
 		}
 
 		// Get member suggestions
-		$members = self::search_members($query, 3);
+		$members = self::searchMembers($query, 3);
 		foreach ($members as $member) {
 			$suggestions[] = array(
 				'type' => 'member',

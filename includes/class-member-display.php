@@ -14,7 +14,7 @@ class VT_Member_Display {
 	 * @param array $args Optional display arguments
 	 * @return string HTML output
 	 */
-	public static function get_member_display($user_id, $args = array()) {
+	public static function getMemberDisplay($user_id, $args = array()) {
 		$defaults = array(
 			'avatar_size' => 32,
 			'show_avatar' => true,
@@ -29,18 +29,18 @@ class VT_Member_Display {
 			return '<span class="' . VT_Sanitize::escAttr($args['class']) . '">Unknown User</span>';
 		}
 
-		$profile = VT_Profile_Manager::get_user_profile($user_id);
+		$profile = VT_Profile_Manager::getUserProfile($user_id);
 		$display_name = $profile['display_name'] ?: $user->display_name ?: $user->username;
 
 		$output = '<div class="' . VT_Sanitize::escAttr($args['class']) . ' vt-flex vt-gap-2 vt-items-center">';
 
 		if ($args['show_avatar']) {
-			$avatar_html = self::get_avatar_html($profile, $args['avatar_size']);
+			$avatar_html = self::getAvatarHtml($profile, $args['avatar_size']);
 			$output .= $avatar_html;
 		}
 
 		if ($args['show_profile_link']) {
-			$profile_url = VT_Profile_Manager::get_profile_url($user_id);
+			$profile_url = VT_Profile_Manager::getProfileUrl($user_id);
 			$output .= '<a href="' . VT_Sanitize::escUrl($profile_url) . '" class="vt-text-primary vt-font-medium">';
 			$output .= VT_Sanitize::escHtml($display_name);
 			$output .= '</a>';
@@ -56,14 +56,14 @@ class VT_Member_Display {
 	/**
 	 * Echo member display
 	 */
-	public static function member_display($user_id, $args = array()) {
-		echo self::get_member_display($user_id, $args);
+	public static function memberDisplay($user_id, $args = array()) {
+		echo self::getMemberDisplay($user_id, $args);
 	}
 
 	/**
 	 * Display host information for events
 	 */
-	public static function get_event_host_display($event, $args = array()) {
+	public static function getEventHostDisplay($event, $args = array()) {
 		$defaults = array(
 			'prefix' => 'Hosted by ',
 			'avatar_size' => 24,
@@ -75,11 +75,11 @@ class VT_Member_Display {
 
 		// Try to get user by author_id first, then fall back to host_email
 		if (!empty($event->author_id)) {
-			$output .= self::get_member_display($event->author_id, $args);
+			$output .= self::getMemberDisplay($event->author_id, $args);
 		} elseif (!empty($event->host_email)) {
 			$user = VT_Auth::getUserByEmail($event->host_email);
 			if ($user) {
-				$output .= self::get_member_display($user->id, $args);
+				$output .= self::getMemberDisplay($user->id, $args);
 			} else {
 				$output .= '<span class="vt-member-display">' . VT_Sanitize::escHtml($event->host_email) . '</span>';
 			}
@@ -93,19 +93,19 @@ class VT_Member_Display {
 	/**
 	 * Echo event host display
 	 */
-	public static function event_host_display($event, $args = array()) {
-		echo self::get_event_host_display($event, $args);
+	public static function eventHostDisplay($event, $args = array()) {
+		echo self::getEventHostDisplay($event, $args);
 	}
 
 	/**
 	 * Get avatar HTML for user
 	 */
-	private static function get_avatar_html($profile, $size = 32) {
+	private static function getAvatarHtml($profile, $size = 32) {
 		$avatar_url = '';
 
 		// Check for custom profile image
 		if (!empty($profile['profile_image'])) {
-			$avatar_url = VT_Image_Manager::get_image_url($profile['profile_image']);
+			$avatar_url = VT_Image_Manager::getImageUrl($profile['profile_image']);
 		} elseif ($profile['avatar_source'] === 'gravatar' && !empty($profile['email'])) {
 			// Use Gravatar
 			$hash = md5(strtolower(trim($profile['email'])));
@@ -128,14 +128,14 @@ class VT_Member_Display {
 	/**
 	 * Get user's display name with fallback
 	 */
-	public static function get_display_name($user_id) {
-		return VT_Profile_Manager::get_display_name($user_id);
+	public static function getDisplayName($user_id) {
+		return VT_Profile_Manager::getDisplayName($user_id);
 	}
 
 	/**
 	 * Generate member list HTML
 	 */
-	public static function get_member_list_html($members, $args = array()) {
+	public static function getMemberListHtml($members, $args = array()) {
 		$defaults = array(
 			'avatar_size' => 24,
 			'max_display' => 5,
@@ -159,7 +159,7 @@ class VT_Member_Display {
 			}
 
 			$member_id = is_object($member) ? $member->user_id : $member;
-			$output .= self::get_member_display($member_id, array(
+			$output .= self::getMemberDisplay($member_id, array(
 				'avatar_size' => $args['avatar_size'],
 				'class' => 'vt-member-list-item',
 			));

@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	// If no validation errors, create event
 	if (empty($errors)) {
 		$event_manager = new VT_Event_Manager();
-		$result = $event_manager->create_event_form($event_data);
+		$result = $event_manager->createEventForm($event_data);
 
 		if (isset($result['success']) && $result['success']) {
 			$messages[] = 'Event created successfully!';

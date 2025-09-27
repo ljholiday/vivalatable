@@ -12,7 +12,7 @@ echo "🔍 Debugging Database Issues...\n\n";
 // Test basic connection
 echo "Testing connection: ";
 try {
-    $result = $db->get_var("SELECT 1");
+    $result = $db->getVar("SELECT 1");
     echo "✅ Connected (result: $result)\n";
 } catch (Exception $e) {
     echo "❌ Failed: " . $e->getMessage() . "\n";
@@ -21,7 +21,7 @@ try {
 
 // Test table existence
 echo "Testing vt_config table: ";
-$exists = $db->get_var("SHOW TABLES LIKE 'vt_config'");
+$exists = $db->getVar("SHOW TABLES LIKE 'vt_config'");
 echo $exists ? "✅ Exists\n" : "❌ Missing\n";
 
 // Test simple insert with detailed error reporting
@@ -79,7 +79,7 @@ try {
         echo "✅ VT_Database insert successful, ID: $result\n";
 
         // Verify
-        $retrieved = $db->get_var("SELECT option_value FROM vt_config WHERE option_name = '{$test_data2['option_name']}'");
+        $retrieved = $db->getVar("SELECT option_value FROM vt_config WHERE option_name = '{$test_data2['option_name']}'");
         echo "Retrieved value: $retrieved\n";
 
         // Clean up

@@ -10,7 +10,7 @@ class VT_Event_Manager {
         // Pure custom table system
     }
 
-    public function create_event($event_data) {
+    public function createEvent($event_data) {
         $db = VT_Database::getInstance();
 
         // Validate required fields
@@ -19,10 +19,10 @@ class VT_Event_Manager {
         }
 
         // Generate unique slug
-        $slug = $this->generate_unique_slug($event_data['title']);
+        $slug = $this->generateUniqueSlug($event_data['title']);
 
         // Determine privacy based on inheritance model
-        $privacy = $this->determine_event_privacy($event_data);
+        $privacy = $this->determineEventPrivacy($event_data);
         if (is_array($privacy) && isset($privacy['error'])) {
             return $privacy;
         }
@@ -57,13 +57,13 @@ class VT_Event_Manager {
         // Update profile stats for event creation
         if (class_exists('VT_Profile_Manager')) {
             $author_id = VT_Sanitize::int($event_data['author_id'] ?? VT_Auth::getCurrentUserId());
-            VT_Profile_Manager::increment_events_hosted($author_id);
+            VT_Profile_Manager::incrementEventsHosted($author_id);
         }
 
         return $event_id;
     }
 
-    public function create_event_form($event_data) {
+    public function createEventForm($event_data) {
         $db = VT_Database::getInstance();
 
         // Validate required fields
@@ -72,10 +72,10 @@ class VT_Event_Manager {
         }
 
         // Generate unique slug
-        $slug = $this->generate_unique_slug($event_data['title']);
+        $slug = $this->generateUniqueSlug($event_data['title']);
 
         // Determine privacy based on inheritance model
-        $privacy = $this->determine_event_privacy($event_data);
+        $privacy = $this->determineEventPrivacy($event_data);
         if (is_array($privacy) && isset($privacy['error'])) {
             return $privacy;
         }
@@ -110,20 +110,20 @@ class VT_Event_Manager {
         // Update profile stats for event creation
         if (class_exists('VT_Profile_Manager')) {
             $author_id = VT_Sanitize::int($event_data['author_id'] ?? VT_Auth::getCurrentUserId());
-            VT_Profile_Manager::increment_events_hosted($author_id);
+            VT_Profile_Manager::incrementEventsHosted($author_id);
         }
 
         return ['success' => true, 'event_id' => $event_id];
     }
 
-    private function generate_unique_slug($title) {
+    private function generateUniqueSlug($title) {
         $db = VT_Database::getInstance();
 
         $base_slug = VT_Sanitize::slug($title);
         $slug = $base_slug;
         $counter = 1;
 
-        while ($db->get_var("SELECT id FROM vt_events WHERE slug = '$slug'")) {
+        while ($db->getVar("SELECT id FROM vt_events WHERE slug = '$slug'")) {
             $slug = $base_slug . '-' . $counter;
             $counter++;
         }
@@ -131,37 +131,37 @@ class VT_Event_Manager {
         return $slug;
     }
 
-    public function get_event($event_id) {
+    public function getEvent($event_id) {
         $db = VT_Database::getInstance();
 
-        $event = $db->get_row("SELECT * FROM vt_events WHERE id = $event_id");
+        $event = $db->getRow("SELECT * FROM vt_events WHERE id = $event_id");
 
         if (!$event) {
             return null;
         }
 
         // Get guest stats
-        $event->guest_stats = $this->get_guest_stats($event_id);
+        $event->guest_stats = $this->getGuestStats($event_id);
 
         return $event;
     }
 
-    public function get_event_by_slug($slug) {
+    public function getEventBySlug($slug) {
         $db = VT_Database::getInstance();
 
-        $event = $db->get_row("SELECT * FROM vt_events WHERE slug = '$slug' AND event_status = 'active'");
+        $event = $db->getRow("SELECT * FROM vt_events WHERE slug = '$slug' AND event_status = 'active'");
 
         if (!$event) {
             return null;
         }
 
         // Get guest stats
-        $event->guest_stats = $this->get_guest_stats($event->id);
+        $event->guest_stats = $this->getGuestStats($event->id);
 
         return $event;
     }
 
-    public function can_user_view_event($event) {
+    public function canUserViewEvent($event) {
         if (!$event) {
             return false;
         }
@@ -184,7 +184,7 @@ class VT_Event_Manager {
 
             $db = VT_Database::getInstance();
 
-            $guest_record = $db->get_var("
+            $guest_record = $db->getVar("
                 SELECT id FROM vt_guests
                 WHERE event_id = $event->id AND email = '$user_email'
             ");
@@ -194,7 +194,7 @@ class VT_Event_Manager {
             }
 
             // Also check if user has a pending invitation
-            $invitation_record = $db->get_var("
+            $invitation_record = $db->getVar("
                 SELECT id FROM vt_guests
                 WHERE event_id = $event->id AND email = '$user_email'
                 AND status = 'pending' AND rsvp_token != ''
@@ -208,7 +208,7 @@ class VT_Event_Manager {
         return false;
     }
 
-    public function get_upcoming_events($limit = 10) {
+    public function getUpcomingEvents($limit = 10) {
         $db = VT_Database::getInstance();
         $current_user_id = VT_Auth::getCurrentUserId();
 
@@ -223,7 +223,7 @@ class VT_Event_Manager {
                      )
                      ORDER BY e.event_date ASC
                      LIMIT " . intval($limit);
-            $results = $db->get_results($query);
+            $results = $db->getResults($query);
         } else {
             // Not logged in: only show public events
             $query = "SELECT e.* FROM {$db->prefix}events e
@@ -231,13 +231,13 @@ class VT_Event_Manager {
                      AND e.privacy = 'public'
                      ORDER BY e.event_date ASC
                      LIMIT " . intval($limit);
-            $results = $db->get_results($query);
+            $results = $db->getResults($query);
         }
 
         // Add guest stats to each event
         if ($results && is_array($results)) {
             foreach ($results as $event) {
-                $event->guest_stats = $this->get_guest_stats($event->id);
+                $event->guest_stats = $this->getGuestStats($event->id);
             }
         } else {
             $results = array(); // Return empty array instead of null
@@ -246,15 +246,15 @@ class VT_Event_Manager {
         return $results;
     }
 
-    public function get_guest_stats($event_id) {
+    public function getGuestStats($event_id) {
         if (class_exists('VT_Guest_Manager')) {
             $guest_manager = new VT_Guest_Manager();
-            return $guest_manager->get_guest_stats($event_id);
+            return $guest_manager->getGuestStats($event_id);
         }
         return ['total' => 0, 'attending' => 0, 'declined' => 0, 'pending' => 0];
     }
 
-    public function update_event($event_id, $event_data) {
+    public function updateEvent($event_id, $event_data) {
         $db = VT_Database::getInstance();
 
         // Validate required fields
@@ -263,7 +263,7 @@ class VT_Event_Manager {
         }
 
         // Get current event
-        $current_event = $this->get_event($event_id);
+        $current_event = $this->getEvent($event_id);
         if (!$current_event) {
             return VT_Http::jsonError('Event not found', 'event_not_found');
         }
@@ -277,7 +277,7 @@ class VT_Event_Manager {
         // Generate unique slug if title changed
         $slug = $current_event->slug;
         if ($current_event->title !== $event_data['title']) {
-            $slug = $this->generate_unique_slug($event_data['title']);
+            $slug = $this->generateUniqueSlug($event_data['title']);
         }
 
         // Update event data
@@ -292,7 +292,7 @@ class VT_Event_Manager {
             'venue_info' => VT_Sanitize::textField($event_data['venue'] ?? ''),
             'host_email' => VT_Sanitize::email($event_data['host_email'] ?? ''),
             'host_notes' => VT_Sanitize::post($event_data['host_notes'] ?? ''),
-            'privacy' => $this->validate_privacy_setting($event_data['privacy'] ?? 'public'),
+            'privacy' => $this->validateprivacy_setting($event_data['privacy'] ?? 'public'),
             'meta_title' => VT_Sanitize::textField($event_data['title']),
             'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
         ];
@@ -306,11 +306,11 @@ class VT_Event_Manager {
         return $event_id;
     }
 
-    public function send_event_invitation($event_id, $email, $message = '') {
+    public function sendEventInvitation($event_id, $email, $message = '') {
         $db = VT_Database::getInstance();
 
         // Get event
-        $event = $this->get_event($event_id);
+        $event = $this->getEvent($event_id);
         if (!$event) {
             return VT_Http::jsonError('Event not found', 'event_not_found');
         }
@@ -331,7 +331,7 @@ class VT_Event_Manager {
         }
 
         // Check if user is already RSVP'd
-        $existing_rsvp = $db->get_row("
+        $existing_rsvp = $db->getRow("
             SELECT * FROM vt_guests
             WHERE event_id = $event_id AND email = '$email'
         ");
@@ -367,7 +367,7 @@ class VT_Event_Manager {
         $invitation_id = $result;
 
         // Send invitation email
-        $email_sent = $this->send_event_invitation_email($event, $current_user, $email, $token, $message);
+        $email_sent = $this->sendevent_invitation_email($event, $current_user, $email, $token, $message);
 
         return [
             'invitation_id' => $invitation_id,
@@ -377,7 +377,7 @@ class VT_Event_Manager {
         ];
     }
 
-    private function send_event_invitation_email($event, $inviter, $email, $token, $message = '') {
+    private function sendEventInvitationEmail($event, $inviter, $email, $token, $message = '') {
         $site_name = VT_Config::get('site_title', 'VivalaTable');
         $invitation_url = VT_Http::getBaseUrl() . '/events/' . $event->slug . '?token=' . $token;
 
@@ -418,16 +418,16 @@ The %s Team',
         return VT_Mail::send($email, $subject, $email_message);
     }
 
-    public function get_event_invitations($event_id, $limit = 20, $offset = 0) {
+    public function getEventInvitations($event_id, $limit = 20, $offset = 0) {
         $db = VT_Database::getInstance();
 
         // Get event
-        $event = $this->get_event($event_id);
+        $event = $this->getEvent($event_id);
         if (!$event) {
             return VT_Http::jsonError('Event not found', 'event_not_found');
         }
 
-        $invitations = $db->get_results("
+        $invitations = $db->getResults("
             SELECT * FROM vt_event_invitations
             WHERE event_id = $event_id AND status = 'pending'
             ORDER BY created_at DESC
@@ -437,11 +437,11 @@ The %s Team',
         return $invitations ?: [];
     }
 
-    public function cancel_event_invitation($event_id, $invitation_id) {
+    public function cancelEventInvitation($event_id, $invitation_id) {
         $db = VT_Database::getInstance();
 
         // Get event
-        $event = $this->get_event($event_id);
+        $event = $this->getEvent($event_id);
         if (!$event) {
             return VT_Http::jsonError('Event not found', 'event_not_found');
         }
@@ -470,10 +470,10 @@ The %s Team',
         return true;
     }
 
-    public function get_invitation_by_token($token) {
+    public function getInvitationByToken($token) {
         $db = VT_Database::getInstance();
 
-        return $db->get_row("
+        return $db->getRow("
             SELECT g.*, e.title as event_title, e.slug as event_slug, e.description as event_description,
                 e.event_date, e.venue_info
             FROM vt_event_invitations g
@@ -482,11 +482,11 @@ The %s Team',
         ");
     }
 
-    public function accept_event_invitation($token, $user_id, $guest_data = []) {
+    public function acceptEventInvitation($token, $user_id, $guest_data = []) {
         $db = VT_Database::getInstance();
 
         // Get invitation
-        $invitation = $this->get_invitation_by_token($token);
+        $invitation = $this->getinvitation_by_token($token);
         if (!$invitation) {
             return VT_Http::jsonError('Invitation not found', 'invitation_not_found');
         }
@@ -500,7 +500,7 @@ The %s Team',
         }
 
         // Check if user already RSVP'd
-        $existing_rsvp = $db->get_row("
+        $existing_rsvp = $db->getRow("
             SELECT * FROM vt_guests
             WHERE event_id = $invitation->event_id AND email = '$invitation->invited_email'
         ");
@@ -510,7 +510,7 @@ The %s Team',
         }
 
         // Get user info
-        $user = $db->get_row("SELECT * FROM vt_users WHERE id = $user_id");
+        $user = $db->getRow("SELECT * FROM vt_users WHERE id = $user_id");
         if (!$user) {
             return VT_Http::jsonError('User not found', 'user_not_found');
         }
@@ -539,11 +539,11 @@ The %s Team',
         return $rsvp_result;
     }
 
-    public function delete_event($event_id) {
+    public function deleteEvent($event_id) {
         $db = VT_Database::getInstance();
 
         // Get event first to check if it exists
-        $event = $this->get_event($event_id);
+        $event = $this->getEvent($event_id);
         if (!$event) {
             return VT_Http::jsonError('Event not found', 'event_not_found');
         }
@@ -586,10 +586,10 @@ The %s Team',
         }
     }
 
-    public function get_user_events($user_id, $limit = 6) {
+    public function getUserEvents($user_id, $limit = 6) {
         $db = VT_Database::getInstance();
 
-        $events = $db->get_results("
+        $events = $db->getResults("
             SELECT e.id, e.title, e.slug, e.event_date, e.event_time, e.venue_info
             FROM vt_events e
             WHERE e.author_id = $user_id AND e.event_status = 'active'
@@ -599,20 +599,20 @@ The %s Team',
 
         // Add guest stats to each event
         foreach ($events as $event) {
-            $event->guest_stats = $this->get_guest_stats($event->id);
+            $event->guest_stats = $this->getGuestStats($event->id);
         }
 
         return $events;
     }
 
-    public function get_community_events($community_id, $limit = 20) {
+    public function getCommunityEvents($community_id, $limit = 20) {
         $db = VT_Database::getInstance();
         $current_user_id = VT_Auth::getCurrentUserId();
 
         // Get community to check privacy
         if (class_exists('VT_Community_Manager')) {
             $community_manager = new VT_Community_Manager();
-            $community = $community_manager->get_community($community_id);
+            $community = $community_manager->getCommunity($community_id);
 
             if (!$community) {
                 return [];
@@ -625,7 +625,7 @@ The %s Team',
                 $can_access_community = true;
             } elseif ($current_user_id && VT_Auth::isLoggedIn()) {
                 if ($community->creator_id == $current_user_id ||
-                    $community_manager->is_member($community_id, $current_user_id)) {
+                    $community_manager->isMember($community_id, $current_user_id)) {
                     $can_access_community = true;
                 }
             }
@@ -635,7 +635,7 @@ The %s Team',
             }
         }
 
-        $events = $db->get_results("
+        $events = $db->getResults("
             SELECT DISTINCT e.* FROM vt_events e
             WHERE e.event_status = 'active'
             AND e.community_id = $community_id
@@ -649,20 +649,20 @@ The %s Team',
 
         // Add guest stats to each event
         foreach ($events as $event) {
-            $event->guest_stats = $this->get_guest_stats($event->id);
+            $event->guest_stats = $this->getGuestStats($event->id);
         }
 
         return $events;
     }
 
-    private function determine_event_privacy($event_data) {
+    private function determineEventPrivacy($event_data) {
         $community_id = VT_Sanitize::int($event_data['community_id'] ?? 0);
 
         // For community events, inherit privacy from community
         if ($community_id) {
             if (class_exists('VT_Community_Manager')) {
                 $community_manager = new VT_Community_Manager();
-                $community = $community_manager->get_community($community_id);
+                $community = $community_manager->getCommunity($community_id);
 
                 if (!$community) {
                     return ['error' => 'Community not found'];
@@ -673,17 +673,17 @@ The %s Team',
         }
 
         // For non-community events, use provided privacy or default to public
-        return $this->validate_privacy_setting($event_data['privacy'] ?? 'public');
+        return $this->validateprivacy_setting($event_data['privacy'] ?? 'public');
     }
 
-    public function validate_event_privacy_inheritance($event_data) {
+    public function validateEventPrivacyInheritance($event_data) {
         $community_id = VT_Sanitize::int($event_data['community_id'] ?? 0);
         $provided_privacy = $event_data['privacy'] ?? null;
 
         if ($community_id && $provided_privacy) {
             if (class_exists('VT_Community_Manager')) {
                 $community_manager = new VT_Community_Manager();
-                $community = $community_manager->get_community($community_id);
+                $community = $community_manager->getCommunity($community_id);
 
                 if ($community && $community->visibility !== $provided_privacy) {
                     return VT_Http::jsonError(
@@ -697,12 +697,12 @@ The %s Team',
         return true;
     }
 
-    public function get_event_privacy($event) {
+    public function getEventPrivacy($event) {
         // If event is part of a community, inherit community privacy
         if ($event->community_id) {
             if (class_exists('VT_Community_Manager')) {
                 $community_manager = new VT_Community_Manager();
-                $community = $community_manager->get_community($event->community_id);
+                $community = $community_manager->getCommunity($event->community_id);
 
                 if ($community) {
                     return $community->visibility;
@@ -713,7 +713,7 @@ The %s Team',
         return $event->privacy;
     }
 
-    private function validate_privacy_setting($privacy) {
+    private function validatePrivacySetting($privacy) {
         $allowed_privacy_settings = ['public', 'private'];
 
         $privacy = VT_Sanitize::textField($privacy);
@@ -727,6 +727,6 @@ The %s Team',
 
     private function getUserIdByEmail($email) {
         $db = VT_Database::getInstance();
-        return $db->get_var("SELECT id FROM vt_users WHERE email = '$email'");
+        return $db->getVar("SELECT id FROM vt_users WHERE email = '$email'");
     }
 }

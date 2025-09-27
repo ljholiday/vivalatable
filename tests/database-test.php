@@ -32,7 +32,7 @@ class VT_Database_Test {
     private function test_database_connection() {
         echo "Testing database connection... ";
         try {
-            $result = $this->db->get_var("SELECT 1");
+            $result = $this->db->getVar("SELECT 1");
             if ($result == 1) {
                 $this->pass("Database connection successful");
             } else {
@@ -55,7 +55,7 @@ class VT_Database_Test {
 
         $missing_tables = [];
         foreach ($required_tables as $table) {
-            $exists = $this->db->get_var("SHOW TABLES LIKE '$table'");
+            $exists = $this->db->getVar("SHOW TABLES LIKE '$table'");
             if (!$exists) {
                 $missing_tables[] = $table;
             }
@@ -87,7 +87,7 @@ class VT_Database_Test {
             }
 
             // Test SELECT
-            $retrieved = $this->db->get_row("SELECT * FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
+            $retrieved = $this->db->getRow("SELECT * FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
 
             if (!$retrieved || $retrieved->option_value !== $test_data['option_value']) {
                 $this->fail("SELECT operation failed");
@@ -107,7 +107,7 @@ class VT_Database_Test {
             }
 
             // Verify update
-            $updated = $this->db->get_var("SELECT option_value FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
+            $updated = $this->db->getVar("SELECT option_value FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
 
             if ($updated !== $new_value) {
                 $this->fail("UPDATE verification failed");
@@ -123,7 +123,7 @@ class VT_Database_Test {
             }
 
             // Verify deletion
-            $deleted = $this->db->get_var("SELECT COUNT(*) FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
+            $deleted = $this->db->getVar("SELECT COUNT(*) FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
 
             if ($deleted != 0) {
                 $this->fail("DELETE verification failed");
@@ -142,7 +142,7 @@ class VT_Database_Test {
 
         try {
             // Create test user first
-            $test_user_id = $this->create_test_user();
+            $test_user_id = $this->createtest_user();
 
             // Test event creation
             $event_data = [
@@ -164,7 +164,7 @@ class VT_Database_Test {
             }
 
             // Test event retrieval
-            $event = $this->db->get_row("SELECT * FROM vt_events WHERE id = $event_id");
+            $event = $this->db->getRow("SELECT * FROM vt_events WHERE id = $event_id");
 
             if (!$event || $event->title !== $event_data['title']) {
                 $this->fail("Event retrieval failed");
@@ -199,8 +199,8 @@ class VT_Database_Test {
 
         try {
             // Create test event
-            $test_user_id = $this->create_test_user();
-            $event_id = $this->create_test_event($test_user_id);
+            $test_user_id = $this->createtest_user();
+            $event_id = $this->createtest_event($test_user_id);
 
             // Test guest creation
             $guest_data = [
@@ -220,7 +220,7 @@ class VT_Database_Test {
             }
 
             // Test guest token retrieval
-            $guest = $this->db->get_row("SELECT * FROM vt_guests WHERE rsvp_token = '{$guest_data['rsvp_token']}'");
+            $guest = $this->db->getRow("SELECT * FROM vt_guests WHERE rsvp_token = '{$guest_data['rsvp_token']}'");
 
             if (!$guest || $guest->email !== $guest_data['email']) {
                 $this->fail("Guest token retrieval failed");
@@ -239,7 +239,7 @@ class VT_Database_Test {
             }
 
             // Test guest stats
-            $stats = $this->db->get_row("
+            $stats = $this->db->getRow("
                 SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed
@@ -284,7 +284,7 @@ class VT_Database_Test {
             }
 
             // Test user authentication data
-            $user = $this->db->get_row("SELECT * FROM vt_users WHERE email = '{$user_data['email']}'");
+            $user = $this->db->getRow("SELECT * FROM vt_users WHERE email = '{$user_data['email']}'");
 
             if (!$user || !password_verify('testpass123', $user->password_hash)) {
                 $this->fail("User password verification failed");

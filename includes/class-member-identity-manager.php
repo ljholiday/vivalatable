@@ -16,8 +16,8 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Create member identity when user registers
 	 */
-	public function create_member_identity($user_id) {
-		$user = $this->db->get_row(
+	public function createMemberIdentity($user_id) {
+		$user = $this->db->getRow(
 			$this->db->prepare("SELECT * FROM {$this->db->prefix}users WHERE id = %d", $user_id)
 		);
 
@@ -25,24 +25,24 @@ class VT_Member_Identity_Manager {
 			return false;
 		}
 
-		return $this->ensure_identity_exists($user_id, $user->email, $user->display_name);
+		return $this->ensureIdentityExists($user_id, $user->email, $user->display_name);
 	}
 
 	/**
 	 * Ensure member identity exists on login
 	 */
-	public function ensure_member_identity($user_login, $user) {
+	public function ensureMemberIdentity($user_login, $user) {
 		if (!$user || !$user->id) {
 			return false;
 		}
 
-		return $this->ensure_identity_exists($user->id, $user->email, $user->display_name);
+		return $this->ensureIdentityExists($user->id, $user->email, $user->display_name);
 	}
 
 	/**
 	 * Ensure identity record exists for user
 	 */
-	public function ensure_identity_exists($user_id, $email, $display_name = '') {
+	public function ensureIdentityExists($user_id, $email, $display_name = '') {
 		if (!VT_Config::get('at_protocol_enabled', false)) {
 			return false;
 		}
@@ -50,7 +50,7 @@ class VT_Member_Identity_Manager {
 		$identities_table = $this->db->prefix . 'member_identities';
 
 		// Validate that the user actually exists first
-		$vt_user = $this->db->get_row(
+		$vt_user = $this->db->getRow(
 			$this->db->prepare("SELECT * FROM {$this->db->prefix}users WHERE id = %d", $user_id)
 		);
 
@@ -60,7 +60,7 @@ class VT_Member_Identity_Manager {
 		}
 
 		// Check if identity already exists
-		$existing_identity = $this->db->get_row(
+		$existing_identity = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM $identities_table WHERE user_id = %d",
 				$user_id
@@ -74,7 +74,7 @@ class VT_Member_Identity_Manager {
 					'member_identities',
 					array(
 						'display_name' => VT_Sanitize::textField($vt_user->display_name),
-						'updated_at' => VT_Time::current_time('mysql'),
+						'updated_at' => VT_Time::currentTime('mysql'),
 					),
 					array('user_id' => $user_id)
 				);
@@ -83,8 +83,8 @@ class VT_Member_Identity_Manager {
 		}
 
 		// Generate new DID and handle using user data
-		$did = $this->generate_member_did($user_id, $email);
-		$handle = $this->generate_member_handle($user_id, $vt_user->display_name);
+		$did = $this->generatemember_did($user_id, $email);
+		$handle = $this->generatemember_handle($user_id, $vt_user->display_name);
 
 		// Create identity record
 		$insert_data = array(
@@ -93,10 +93,10 @@ class VT_Member_Identity_Manager {
 			'display_name' => VT_Sanitize::textField($vt_user->display_name),
 			'at_protocol_did' => $did,
 			'at_protocol_handle' => $handle,
-			'pds_url' => $this->get_default_pds(),
-			'profile_data' => json_encode($this->get_default_at_protocol_data()),
+			'pds_url' => $this->getdefault_pds(),
+			'profile_data' => json_encode($this->getdefault_at_protocol_data()),
 			'is_verified' => 0,
-			'created_at' => VT_Time::current_time('mysql'),
+			'created_at' => VT_Time::currentTime('mysql'),
 		);
 
 		$result = $this->db->insert('member_identities', $insert_data);
@@ -115,10 +115,10 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get member identity by user ID
 	 */
-	public function get_member_identity($user_id) {
+	public function getMemberIdentity($user_id) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
-		$identity = $this->db->get_row(
+		$identity = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM $identities_table WHERE user_id = %d",
 				$user_id
@@ -135,10 +135,10 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get member identity by DID
 	 */
-	public function get_member_identity_by_did($did) {
+	public function getMemberIdentityByDid($did) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
-		$identity = $this->db->get_row(
+		$identity = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM $identities_table WHERE at_protocol_did = %s",
 				$did
@@ -155,10 +155,10 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get member identity by email
 	 */
-	public function get_member_identity_by_email($email) {
+	public function getMemberIdentityByEmail($email) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
-		$identity = $this->db->get_row(
+		$identity = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM $identities_table WHERE email = %s",
 				$email
@@ -175,15 +175,15 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Update member identity AT Protocol data
 	 */
-	public function update_at_protocol_data($user_id, $at_protocol_data) {
+	public function updateAtProtocolData($user_id, $at_protocol_data) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
 		$result = $this->db->update(
 			'member_identities',
 			array(
 				'profile_data' => json_encode($at_protocol_data),
-				'last_sync_at' => VT_Time::current_time('mysql'),
-				'updated_at' => VT_Time::current_time('mysql'),
+				'last_sync_at' => VT_Time::currentTime('mysql'),
+				'updated_at' => VT_Time::currentTime('mysql'),
 			),
 			array('user_id' => $user_id)
 		);
@@ -194,14 +194,14 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Mark identity as verified
 	 */
-	public function verify_identity($user_id) {
+	public function verifyIdentity($user_id) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
 		$result = $this->db->update(
 			'member_identities',
 			array(
 				'is_verified' => 1,
-				'updated_at' => VT_Time::current_time('mysql'),
+				'updated_at' => VT_Time::currentTime('mysql'),
 			),
 			array('user_id' => $user_id)
 		);
@@ -216,11 +216,11 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get all identities for sync
 	 */
-	public function get_identities_for_sync($limit = 50) {
+	public function getIdentitiesForSync($limit = 50) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
 		// Get identities that haven't been synced in the last 24 hours
-		$identities = $this->db->get_results(
+		$identities = $this->db->getResults(
 			$this->db->prepare(
 				"SELECT * FROM $identities_table
 				WHERE last_sync_at IS NULL OR last_sync_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
@@ -236,7 +236,7 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Generate member DID
 	 */
-	private function generate_member_did($user_id, $email) {
+	private function generateMemberDid($user_id, $email) {
 		// Generate a deterministic but unique DID using VivalaTable salt
 		$salt = VT_Config::get('auth_salt', 'vivalatable_default_salt');
 		$hash = substr(md5('user:' . $user_id . ':' . $email . ':' . $salt), 0, 16);
@@ -246,7 +246,7 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Generate member handle
 	 */
-	private function generate_member_handle($user_id, $display_name) {
+	private function generateMemberHandle($user_id, $display_name) {
 		// Create a handle based on display name and user ID
 		$base_handle = VT_Sanitize::slug($display_name);
 		$base_handle = preg_replace('/[^a-z0-9\-]/', '', $base_handle);
@@ -261,7 +261,7 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get default PDS (Personal Data Server)
 	 */
-	private function get_default_pds() {
+	private function getDefaultPds() {
 		// Use VivalaTable's own PDS
 		return VT_Config::get('at_protocol_pds', 'pds.vivalatable.social');
 	}
@@ -269,7 +269,7 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get default AT Protocol data structure
 	 */
-	private function get_default_at_protocol_data() {
+	private function getDefaultAtProtocolData() {
 		return array(
 			'profile' => array(
 				'displayName' => '',
@@ -293,16 +293,16 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get member stats for admin
 	 */
-	public function get_member_stats() {
+	public function getMemberStats() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return array();
 		}
 
 		$identities_table = $this->db->prefix . 'member_identities';
 
-		$total_identities = $this->db->get_var("SELECT COUNT(*) FROM $identities_table");
-		$verified_identities = $this->db->get_var("SELECT COUNT(*) FROM $identities_table WHERE is_verified = 1");
-		$synced_identities = $this->db->get_var("SELECT COUNT(*) FROM $identities_table WHERE last_sync_at IS NOT NULL");
+		$total_identities = $this->db->getVar("SELECT COUNT(*) FROM $identities_table");
+		$verified_identities = $this->db->getVar("SELECT COUNT(*) FROM $identities_table WHERE is_verified = 1");
+		$synced_identities = $this->db->getVar("SELECT COUNT(*) FROM $identities_table WHERE last_sync_at IS NOT NULL");
 
 		return array(
 			'total_identities' => (int) $total_identities,
@@ -315,21 +315,21 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Bulk create identities for existing users (admin function)
 	 */
-	public function bulk_create_identities_for_existing_users() {
+	public function bulkCreateIdentitiesForExistingUsers() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
 
-		$users = $this->db->get_results(
+		$users = $this->db->getResults(
 			"SELECT id, email, display_name FROM {$this->db->prefix}users WHERE status = 'active'"
 		);
 
 		$created_count = 0;
 
 		foreach ($users as $user) {
-			$existing_identity = $this->get_member_identity($user->id);
+			$existing_identity = $this->getmember_identity($user->id);
 			if (!$existing_identity) {
-				$did = $this->ensure_identity_exists($user->id, $user->email, $user->display_name);
+				$did = $this->ensureIdentityExists($user->id, $user->email, $user->display_name);
 				if ($did) {
 					++$created_count;
 				}
@@ -344,7 +344,7 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Delete member identity when user is deleted
 	 */
-	public function delete_member_identity($user_id) {
+	public function deleteMemberIdentity($user_id) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
 		$result = $this->db->delete(
@@ -362,14 +362,14 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Update PDS URL for an identity
 	 */
-	public function update_pds_url($user_id, $pds_url) {
+	public function updatePdsUrl($user_id, $pds_url) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
 		$result = $this->db->update(
 			'member_identities',
 			array(
 				'pds_url' => VT_Sanitize::url($pds_url),
-				'updated_at' => VT_Time::current_time('mysql'),
+				'updated_at' => VT_Time::currentTime('mysql'),
 			),
 			array('user_id' => $user_id)
 		);
@@ -380,10 +380,10 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Get identities that need verification
 	 */
-	public function get_unverified_identities($limit = 50) {
+	public function getUnverifiedIdentities($limit = 50) {
 		$identities_table = $this->db->prefix . 'member_identities';
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT * FROM $identities_table
 				WHERE is_verified = 0
@@ -397,11 +397,11 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Search identities by handle or display name
 	 */
-	public function search_identities($search_term, $limit = 20) {
+	public function searchIdentities($search_term, $limit = 20) {
 		$identities_table = $this->db->prefix . 'member_identities';
-		$search_term = '%' . $this->db->esc_like($search_term) . '%';
+		$search_term = '%' . $this->db->escLike($search_term) . '%';
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT * FROM $identities_table
 				WHERE (at_protocol_handle LIKE %s OR display_name LIKE %s)
@@ -416,26 +416,26 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Record sync error for identity
 	 */
-	public function record_sync_error($user_id, $error_message) {
+	public function recordSyncError($user_id, $error_message) {
 		// Get current profile data
-		$identity = $this->get_member_identity($user_id);
+		$identity = $this->getmember_identity($user_id);
 		if (!$identity) {
 			return false;
 		}
 
 		$profile_data = $identity->at_protocol_data;
 		$profile_data['sync_status']['last_error'] = VT_Sanitize::textField($error_message);
-		$profile_data['sync_status']['last_error_at'] = VT_Time::current_time('mysql');
+		$profile_data['sync_status']['last_error_at'] = VT_Time::currentTime('mysql');
 
-		return $this->update_at_protocol_data($user_id, $profile_data);
+		return $this->updateat_protocol_data($user_id, $profile_data);
 	}
 
 	/**
 	 * Clear sync error for identity
 	 */
-	public function clear_sync_error($user_id) {
+	public function clearSyncError($user_id) {
 		// Get current profile data
-		$identity = $this->get_member_identity($user_id);
+		$identity = $this->getmember_identity($user_id);
 		if (!$identity) {
 			return false;
 		}
@@ -444,14 +444,14 @@ class VT_Member_Identity_Manager {
 		$profile_data['sync_status']['last_error'] = null;
 		unset($profile_data['sync_status']['last_error_at']);
 
-		return $this->update_at_protocol_data($user_id, $profile_data);
+		return $this->updateat_protocol_data($user_id, $profile_data);
 	}
 
 	/**
 	 * Get identity sync status
 	 */
-	public function get_sync_status($user_id) {
-		$identity = $this->get_member_identity($user_id);
+	public function getSyncStatus($user_id) {
+		$identity = $this->getmember_identity($user_id);
 		if (!$identity) {
 			return null;
 		}
@@ -466,32 +466,32 @@ class VT_Member_Identity_Manager {
 	/**
 	 * Mark profile as synced
 	 */
-	public function mark_profile_synced($user_id) {
-		$identity = $this->get_member_identity($user_id);
+	public function markProfileSynced($user_id) {
+		$identity = $this->getmember_identity($user_id);
 		if (!$identity) {
 			return false;
 		}
 
 		$profile_data = $identity->at_protocol_data;
 		$profile_data['sync_status']['profile_synced'] = true;
-		$profile_data['sync_status']['last_sync_at'] = VT_Time::current_time('mysql');
+		$profile_data['sync_status']['last_sync_at'] = VT_Time::currentTime('mysql');
 
-		return $this->update_at_protocol_data($user_id, $profile_data);
+		return $this->updateat_protocol_data($user_id, $profile_data);
 	}
 
 	/**
 	 * Mark connections as synced
 	 */
-	public function mark_connections_synced($user_id) {
-		$identity = $this->get_member_identity($user_id);
+	public function markConnectionsSynced($user_id) {
+		$identity = $this->getmember_identity($user_id);
 		if (!$identity) {
 			return false;
 		}
 
 		$profile_data = $identity->at_protocol_data;
 		$profile_data['sync_status']['connections_synced'] = true;
-		$profile_data['sync_status']['last_connections_sync_at'] = VT_Time::current_time('mysql');
+		$profile_data['sync_status']['last_connections_sync_at'] = VT_Time::currentTime('mysql');
 
-		return $this->update_at_protocol_data($user_id, $profile_data);
+		return $this->updateat_protocol_data($user_id, $profile_data);
 	}
 }

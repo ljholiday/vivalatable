@@ -17,7 +17,7 @@ if (!$invitation_token || !$event_id) {
 
 // Verify invitation token and get event data
 $guest_manager = new VT_Guest_Manager();
-$guest = $guest_manager->get_guest_by_token($invitation_token);
+$guest = $guest_manager->getGuestByToken($invitation_token);
 
 if (!$guest || $guest->event_id != $event_id) {
 	$page_title = 'Invitation Not Found';
@@ -35,7 +35,7 @@ if (!$guest || $guest->event_id != $event_id) {
 
 // Get event data
 $event_manager = new VT_Event_Manager();
-$event = $event_manager->get_event($event_id);
+$event = $event_manager->getEvent($event_id);
 
 if (!$event) {
 	header('Location: /events');
@@ -44,7 +44,7 @@ if (!$event) {
 
 // Handle quick RSVP from email button click
 if ($quick_rsvp && in_array($quick_rsvp, array('confirmed', 'maybe', 'declined'))) {
-	$result = $guest_manager->process_anonymous_rsvp($invitation_token, $quick_rsvp, [
+	$result = $guest_manager->processAnonymousRsvp($invitation_token, $quick_rsvp, [
 		'name' => $guest->name ?: 'Guest'
 	]);
 
@@ -70,12 +70,12 @@ $quick_response = $_GET['quick_response'] ?? '';
 $rsvp_submitted = false;
 $rsvp_status = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rsvp_response']) && VT_Security::verifyNonce($_POST['rsvp_nonce'], 'vt_guest_rsvp')) {
-	$rsvp_response = VT_Sanitizer::sanitize_text_field($_POST['rsvp_response']);
-	$guest_name = VT_Sanitizer::sanitize_text_field($_POST['guest_name']);
-	$dietary_restrictions = VT_Sanitizer::sanitize_textarea($_POST['dietary_restrictions']);
+	$rsvp_response = VT_Sanitizer::sanitizeTextField($_POST['rsvp_response']);
+	$guest_name = VT_Sanitizer::sanitizeTextField($_POST['guest_name']);
+	$dietary_restrictions = VT_Sanitizer::sanitizeTextarea($_POST['dietary_restrictions']);
 	$plus_one = isset($_POST['plus_one']) ? 1 : 0;
-	$plus_one_name = $plus_one ? VT_Sanitizer::sanitize_text_field($_POST['plus_one_name']) : '';
-	$guest_notes = VT_Sanitizer::sanitize_textarea($_POST['guest_notes']);
+	$plus_one_name = $plus_one ? VT_Sanitizer::sanitizeTextField($_POST['plus_one_name']) : '';
+	$guest_notes = VT_Sanitizer::sanitizeTextarea($_POST['guest_notes']);
 
 	$guest_data = [
 		'name' => $guest_name,
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rsvp_response']) && V
 		'notes' => $guest_notes
 	];
 
-	$result = $guest_manager->process_anonymous_rsvp($invitation_token, $rsvp_response, $guest_data);
+	$result = $guest_manager->processAnonymousRsvp($invitation_token, $rsvp_response, $guest_data);
 
 	if ($result['success']) {
 		$rsvp_submitted = true;
@@ -195,7 +195,7 @@ $event_time_formatted = date('g:i A', strtotime($event->event_date));
 		</div>
 
 		<form method="post" class="vt-form">
-			<?php echo VT_Security::nonce_field('vt_guest_rsvp', 'rsvp_nonce'); ?>
+			<?php echo VT_Security::nonceField('vt_guest_rsvp', 'rsvp_nonce'); ?>
 
 			<div class="vt-form-group">
 				<label class="vt-form-label">Your Name *</label>

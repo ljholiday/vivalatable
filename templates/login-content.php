@@ -19,26 +19,26 @@ $messages = array();
 // Handle registration
 if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_register_nonce'])) {
 	if (VT_Security::verifyNonce($_POST['vt_register_nonce'], 'vt_register')) {
-		$username = VT_Sanitizer::sanitize_username($_POST['username']);
-		$email = VT_Sanitizer::sanitize_email($_POST['email']);
+		$username = VT_Sanitizer::sanitizeUsername($_POST['username']);
+		$email = VT_Sanitizer::sanitizeEmail($_POST['email']);
 		$password = $_POST['password'];
 		$confirm_password = $_POST['confirm_password'];
-		$display_name = VT_Sanitizer::sanitize_text_field($_POST['display_name']);
+		$display_name = VT_Sanitizer::sanitizeTextField($_POST['display_name']);
 
 		// Validation
 		if (empty($username) || empty($email) || empty($password) || empty($display_name)) {
 			$errors[] = 'All fields are required.';
 		}
 
-		if (!VT_Validator::is_email($email)) {
+		if (!VT_Validator::isEmail($email)) {
 			$errors[] = 'Please enter a valid email address.';
 		}
 
-		if (VT_Auth::username_exists($username)) {
+		if (VT_Auth::usernameExists($username)) {
 			$errors[] = 'Username already exists.';
 		}
 
-		if (VT_Auth::email_exists($email)) {
+		if (VT_Auth::emailExists($email)) {
 			$errors[] = 'Email address is already registered.';
 		}
 
@@ -52,14 +52,14 @@ if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_P
 
 		// Create user if no errors
 		if (empty($errors)) {
-			$user_id = VT_Auth::create_user($username, $password, $email, $display_name);
+			$user_id = VT_Auth::createUser($username, $password, $email, $display_name);
 
 			if ($user_id) {
 				// Create profile
-				VT_Profile_Manager::create_default_profile($user_id);
+				VT_Profile_Manager::createDefaultProfile($user_id);
 
 				// Auto-login the user
-				VT_Auth::login_user($user_id);
+				VT_Auth::loginUser($user_id);
 
 				// Redirect to profile setup
 				header('Location: /profile?setup=1');
@@ -134,7 +134,7 @@ $breadcrumbs = array(
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Create Account</h2>
 
 	<form method="post" class="vt-form">
-		<?php echo VT_Security::nonce_field('vt_register', 'vt_register_nonce'); ?>
+		<?php echo VT_Security::nonceField('vt_register', 'vt_register_nonce'); ?>
 
 		<div class="vt-form-group">
 			<label for="display_name" class="vt-form-label">Your Name</label>

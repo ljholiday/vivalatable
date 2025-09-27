@@ -72,7 +72,7 @@ $rsvp_no_url = $invitation_url . '&rsvp=no';
 				<?php if (!empty($event_description)) : ?>
 				<div style="margin-top: 15px;">
 					<strong>About:</strong><br>
-					<?php echo htmlspecialchars(VT_Text::truncate_words($event_description, 25)); ?>
+					<?php echo htmlspecialchars(VT_Text::truncateWords($event_description, 25)); ?>
 				</div>
 				<?php endif; ?>
 			</div>

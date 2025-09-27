@@ -11,7 +11,7 @@ class VT_Pages {
 	 * Dashboard page
 	 */
 	public static function dashboard() {
-		self::render_page('dashboard', 'Dashboard', 'Your social event hub', 'two-column');
+		self::renderPage('dashboard', 'Dashboard', 'Your social event hub', 'two-column');
 	}
 
 	/**
@@ -21,7 +21,7 @@ class VT_Pages {
 		if (VT_Auth::isLoggedIn()) {
 			VT_Router::redirect('/');
 		}
-		self::render_page('login', 'Login', 'Sign in to your account', 'form');
+		self::renderPage('login', 'Login', 'Sign in to your account', 'form');
 	}
 
 	/**
@@ -31,128 +31,128 @@ class VT_Pages {
 		if (VT_Auth::isLoggedIn()) {
 			VT_Router::redirect('/');
 		}
-		self::render_page('register', 'Create Account', 'Join VivalaTable', 'form');
+		self::renderPage('register', 'Create Account', 'Join VivalaTable', 'form');
 	}
 
 	/**
 	 * Events list page
 	 */
-	public static function events_list() {
-		self::render_page('events', 'Events', 'Discover and join events', 'two-column');
+	public static function eventsList() {
+		self::renderPage('events', 'Events', 'Discover and join events', 'two-column');
 	}
 
 	/**
 	 * Create event page
 	 */
-	public static function create_event() {
-		self::require_auth();
-		self::render_page('create-event', 'Create Event', 'Plan your perfect event', 'form');
+	public static function createEvent() {
+		self::requireAuth();
+		self::renderPage('create-event', 'Create Event', 'Plan your perfect event', 'form');
 	}
 
 	/**
 	 * Single event page
 	 */
-	public static function single_event($params) {
+	public static function singleEvent($params) {
 		$event_id = $params['id'];
-		self::render_page('single-event', 'Event Details', null, 'two-column', compact('event_id'));
+		self::renderPage('single-event', 'Event Details', null, 'two-column', compact('event_id'));
 	}
 
 	/**
 	 * Edit event page
 	 */
-	public static function edit_event($params) {
-		self::require_auth();
+	public static function editEvent($params) {
+		self::requireAuth();
 		$event_id = $params['id'];
-		self::render_page('edit-event', 'Edit Event', null, 'form', compact('event_id'));
+		self::renderPage('edit-event', 'Edit Event', null, 'form', compact('event_id'));
 	}
 
 	/**
 	 * Manage event page
 	 */
-	public static function manage_event($params) {
-		self::require_auth();
+	public static function manageEvent($params) {
+		self::requireAuth();
 		$event_id = $params['id'];
-		self::render_page('manage-event', 'Manage Event', null, 'two-column', compact('event_id'));
+		self::renderPage('manage-event', 'Manage Event', null, 'two-column', compact('event_id'));
 	}
 
 	/**
 	 * Communities list page
 	 */
-	public static function communities_list() {
-		self::render_page('communities', 'Communities', 'Connect with like-minded people', 'two-column');
+	public static function communitiesList() {
+		self::renderPage('communities', 'Communities', 'Connect with like-minded people', 'two-column');
 	}
 
 	/**
 	 * Create community page
 	 */
-	public static function create_community() {
-		self::require_auth();
-		self::render_page('create-community', 'Create Community', 'Build your community', 'form');
+	public static function createCommunity() {
+		self::requireAuth();
+		self::renderPage('create-community', 'Create Community', 'Build your community', 'form');
 	}
 
 	/**
 	 * Single community page
 	 */
-	public static function single_community($params) {
+	public static function singleCommunity($params) {
 		$community_id = $params['id'];
-		self::render_page('single-community', 'Community', null, 'two-column', compact('community_id'));
+		self::renderPage('single-community', 'Community', null, 'two-column', compact('community_id'));
 	}
 
 	/**
 	 * Community conversations page
 	 */
-	public static function community_conversations($params) {
+	public static function communityConversations($params) {
 		$community_id = $params['id'];
-		self::render_page('community-conversations', 'Community Conversations', null, 'two-column', compact('community_id'));
+		self::renderPage('community-conversations', 'Community Conversations', null, 'two-column', compact('community_id'));
 	}
 
 	/**
 	 * Community events page
 	 */
-	public static function community_events($params) {
+	public static function communityEvents($params) {
 		$community_id = $params['id'];
-		self::render_page('community-events', 'Community Events', null, 'two-column', compact('community_id'));
+		self::renderPage('community-events', 'Community Events', null, 'two-column', compact('community_id'));
 	}
 
 	/**
 	 * Manage community page
 	 */
-	public static function manage_community($params) {
-		self::require_auth();
+	public static function manageCommunity($params) {
+		self::requireAuth();
 		$community_id = $params['id'];
-		self::render_page('manage-community', 'Manage Community', null, 'two-column', compact('community_id'));
+		self::renderPage('manage-community', 'Manage Community', null, 'two-column', compact('community_id'));
 	}
 
 	/**
 	 * Conversations list page
 	 */
-	public static function conversations_list() {
-		self::render_page('conversations', 'Conversations', 'Join the discussion', 'two-column');
+	public static function conversationsList() {
+		self::renderPage('conversations', 'Conversations', 'Join the discussion', 'two-column');
 	}
 
 	/**
 	 * Create conversation page
 	 */
-	public static function create_conversation() {
-		self::require_auth();
-		self::render_page('create-conversation', 'Start Conversation', 'Share your thoughts', 'form');
+	public static function createConversation() {
+		self::requireAuth();
+		self::renderPage('create-conversation', 'Start Conversation', 'Share your thoughts', 'form');
 	}
 
 	/**
 	 * Single conversation page
 	 */
-	public static function single_conversation($params) {
+	public static function singleConversation($params) {
 		$conversation_id = $params['id'];
-		self::render_page('single-conversation', 'Conversation', null, 'two-column', compact('conversation_id'));
+		self::renderPage('single-conversation', 'Conversation', null, 'two-column', compact('conversation_id'));
 	}
 
 	/**
 	 * Edit conversation page
 	 */
-	public static function edit_conversation($params) {
-		self::require_auth();
+	public static function editConversation($params) {
+		self::requireAuth();
 		$conversation_id = $params['id'];
-		self::render_page('edit-conversation', 'Edit Conversation', null, 'form', compact('conversation_id'));
+		self::renderPage('edit-conversation', 'Edit Conversation', null, 'form', compact('conversation_id'));
 	}
 
 	/**
@@ -162,56 +162,56 @@ class VT_Pages {
 		$user_id = isset($params['id']) ? $params['id'] : VT_Auth::getCurrentUserId();
 
 		if (!$user_id && !isset($params['id'])) {
-			self::require_auth();
+			self::requireAuth();
 			$user_id = VT_Auth::getCurrentUserId();
 		}
 
-		self::render_page('profile', 'Profile', null, 'two-column', compact('user_id'));
+		self::renderPage('profile', 'Profile', null, 'two-column', compact('user_id'));
 	}
 
 	/**
 	 * User profile page (when accessing someone else's profile)
 	 */
-	public static function user_profile($params) {
+	public static function userProfile($params) {
 		$user_id = $params['id'];
-		self::render_page('user-profile', 'User Profile', null, 'two-column', compact('user_id'));
+		self::renderPage('user-profile', 'User Profile', null, 'two-column', compact('user_id'));
 	}
 
 	/**
 	 * Guest RSVP page
 	 */
-	public static function guest_rsvp($params) {
+	public static function guestRsvp($params) {
 		$token = $params['token'];
-		self::render_page('guest-rsvp', 'RSVP to Event', 'Respond to your invitation', 'form', compact('token'));
+		self::renderPage('guest-rsvp', 'RSVP to Event', 'Respond to your invitation', 'form', compact('token'));
 	}
 
 	/**
 	 * 404 Not Found page
 	 */
-	public static function not_found() {
+	public static function notFound() {
 		http_response_code(404);
-		self::render_page('404', 'Page Not Found', 'The page you requested was not found', 'page');
+		self::renderPage('404', 'Page Not Found', 'The page you requested was not found', 'page');
 	}
 
 	/**
 	 * 500 Server Error page
 	 */
-	public static function server_error($message = 'An unexpected error occurred') {
+	public static function serverError($message = 'An unexpected error occurred') {
 		http_response_code(500);
-		self::render_page('500', 'Server Error', $message, 'page');
+		self::renderPage('500', 'Server Error', $message, 'page');
 	}
 
 	/**
 	 * Render a page using the VivalaTable template system
 	 */
-	private static function render_page($template, $page_title, $page_description = null, $base_template = 'page', $data = array()) {
+	private static function renderPage($template, $page_title, $page_description = null, $base_template = 'page', $data = array()) {
 		// Set up template variables
 		global $vt_page_title, $vt_page_description, $vt_breadcrumbs, $vt_nav_items;
 
 		$vt_page_title = $page_title;
 		$vt_page_description = $page_description;
-		$vt_breadcrumbs = self::get_breadcrumbs();
-		$vt_nav_items = self::get_nav_items();
+		$vt_breadcrumbs = self::getBreadcrumbs();
+		$vt_nav_items = self::getNavItems();
 
 		// Make data available to templates
 		if (!empty($data)) {
@@ -224,7 +224,7 @@ class VT_Pages {
 
 		if (!file_exists($content_template)) {
 			error_log('Template not found: ' . $content_template);
-			self::render_fallback_page($page_title, 'Template not found: ' . $template);
+			self::renderFallbackPage($page_title, 'Template not found: ' . $template);
 			return;
 		}
 
@@ -250,7 +250,7 @@ class VT_Pages {
 
 		if (!file_exists($base_template_path)) {
 			error_log('Base template not found: ' . $base_template_path);
-			self::render_fallback_page($page_title, 'Base template not found: ' . $base_template);
+			self::renderFallbackPage($page_title, 'Base template not found: ' . $base_template);
 			return;
 		}
 
@@ -263,7 +263,7 @@ class VT_Pages {
 	/**
 	 * Render fallback page when templates are missing
 	 */
-	private static function render_fallback_page($title, $message) {
+	private static function renderFallbackPage($title, $message) {
 		echo '<!DOCTYPE html>';
 		echo '<html><head><title>' . htmlspecialchars($title) . ' - VivalaTable</title></head>';
 		echo '<body><h1>' . htmlspecialchars($title) . '</h1>';
@@ -274,8 +274,8 @@ class VT_Pages {
 	/**
 	 * Get breadcrumbs for current page
 	 */
-	private static function get_breadcrumbs() {
-		$route = VT_Router::get_current_route();
+	private static function getBreadcrumbs() {
+		$route = VT_Router::getCurrentRoute();
 		if (!$route) {
 			return array();
 		}
@@ -307,8 +307,8 @@ class VT_Pages {
 	/**
 	 * Get navigation items
 	 */
-	private static function get_nav_items() {
-		$current_path = VT_Router::get_current_route()['route']['path'] ?? '';
+	private static function getNavItems() {
+		$current_path = VT_Router::getCurrentRoute()['route']['path'] ?? '';
 
 		return array(
 			array(
@@ -332,7 +332,7 @@ class VT_Pages {
 	/**
 	 * Require user authentication
 	 */
-	private static function require_auth() {
+	private static function requireAuth() {
 		if (!VT_Auth::isLoggedIn()) {
 			VT_Router::redirect('/login');
 		}

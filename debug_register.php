@@ -18,7 +18,7 @@ if ($user_id) {
 
     // Check if user was actually created
     $db = VT_Database::getInstance();
-    $user = $db->get_row("SELECT * FROM vt_users WHERE id = $user_id");
+    $user = $db->getRow("SELECT * FROM vt_users WHERE id = $user_id");
     echo "User data: " . json_encode($user) . "\n";
 
 } else {
@@ -26,7 +26,7 @@ if ($user_id) {
 
     // Check if user already exists
     $db = VT_Database::getInstance();
-    $existing = $db->get_var("SELECT id FROM vt_users WHERE email = '$email' OR login = '$username'");
+    $existing = $db->getVar("SELECT id FROM vt_users WHERE email = '$email' OR login = '$username'");
     echo "Existing user check returned: " . ($existing ?: 'none') . "\n";
 }
 ?>

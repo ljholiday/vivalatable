@@ -68,10 +68,6 @@ class VT_Security {
         return false;
     }
 
-    public static function nonce_field($action = -1, $name = "_wpnonce", $referer = true, $echo = true) {
-        return self::nonceField($action, $name, $referer, $echo);
-    }
-
     public static function nonceField($action = -1, $name = "_wpnonce", $referer = true, $echo = true) {
         $nonce = self::createNonce($action);
         $field = '<input type="hidden" name="' . $name . '" value="' . $nonce . '" />';
@@ -155,11 +151,11 @@ class VT_Security {
         return $_SESSION['csrf_token'];
     }
 
-    public static function kses_post($data) {
+    public static function ksesPost($data) {
         return VT_Sanitize::post($data);
     }
 
-    public static function sanitize_textarea($data) {
+    public static function sanitizeTextarea($data) {
         return VT_Sanitize::post($data);
     }
 }

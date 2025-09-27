@@ -19,26 +19,26 @@ class VT_Image_Manager {
 	/**
 	 * Handle image upload
 	 */
-	public static function handle_image_upload($file, $image_type, $entity_id, $entity_type = 'user', $event_id = null) {
+	public static function handleImageUpload($file, $image_type, $entity_id, $entity_type = 'user', $event_id = null) {
 		// Validate file
-		$validation = self::validate_image_file($file, $image_type);
+		$validation = self::validateImageFile($file, $image_type);
 		if (!$validation['success']) {
 			return $validation;
 		}
 
 		// Set up upload directory
-		$upload_info = self::get_upload_directory($entity_type, $event_id);
+		$upload_info = self::getUploadDirectory($entity_type, $event_id);
 		if (!$upload_info['success']) {
 			return $upload_info;
 		}
 
 		// Generate unique filename
-		$filename = self::generate_filename($file, $image_type, $entity_id, $entity_type);
+		$filename = self::generateFilename($file, $image_type, $entity_id, $entity_type);
 		$file_path = $upload_info['dir'] . $filename;
 		$file_url = $upload_info['url'] . $filename;
 
 		// Process and save image
-		$result = self::process_and_save_image($file, $file_path, $image_type);
+		$result = self::processAndSaveImage($file, $file_path, $image_type);
 		if (!$result['success']) {
 			return $result;
 		}
@@ -54,7 +54,7 @@ class VT_Image_Manager {
 	/**
 	 * Validate uploaded image file
 	 */
-	private static function validate_image_file($file, $image_type) {
+	private static function validateImageFile($file, $image_type) {
 		// Check if file was uploaded
 		if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
 			return array(
@@ -90,7 +90,7 @@ class VT_Image_Manager {
 	/**
 	 * Get upload directory for entity type
 	 */
-	private static function get_upload_directory($entity_type, $event_id = null) {
+	private static function getUploadDirectory($entity_type, $event_id = null) {
 		$upload_base = VT_Config::get('upload_path', '/uploads');
 		$upload_url_base = VT_Http::getBaseUrl() . $upload_base;
 
@@ -126,7 +126,7 @@ class VT_Image_Manager {
 	/**
 	 * Generate unique filename
 	 */
-	private static function generate_filename($file, $image_type, $entity_id, $entity_type) {
+	private static function generateFilename($file, $image_type, $entity_id, $entity_type) {
 		$extension = pathinfo($file['name'], PATHINFO_EXTENSION);
 		$timestamp = time();
 		$random = substr(md5(uniqid(rand(), true)), 0, 8);
@@ -144,12 +144,12 @@ class VT_Image_Manager {
 	/**
 	 * Process and save image with resizing
 	 */
-	private static function process_and_save_image($file, $file_path, $image_type) {
+	private static function processAndSaveImage($file, $file_path, $image_type) {
 		// Get dimensions for image type
-		$dimensions = self::get_image_dimensions($image_type);
+		$dimensions = self::getImageDimensions($image_type);
 
 		// Load image
-		$image = self::load_image($file['tmp_name']);
+		$image = self::loadImage($file['tmp_name']);
 		if (!$image) {
 			return array(
 				'success' => false,
@@ -158,10 +158,10 @@ class VT_Image_Manager {
 		}
 
 		// Resize if needed
-		$resized_image = self::resize_image($image, $dimensions['width'], $dimensions['height']);
+		$resized_image = self::resizeImage($image, $dimensions['width'], $dimensions['height']);
 
 		// Save image
-		$saved = self::save_image($resized_image, $file_path);
+		$saved = self::saveImage($resized_image, $file_path);
 
 		// Clean up
 		imagedestroy($image);
@@ -182,7 +182,7 @@ class VT_Image_Manager {
 	/**
 	 * Get dimensions for image type
 	 */
-	private static function get_image_dimensions($image_type) {
+	private static function getImageDimensions($image_type) {
 		switch ($image_type) {
 			case 'profile':
 				return array(
@@ -210,7 +210,7 @@ class VT_Image_Manager {
 	/**
 	 * Load image from file
 	 */
-	private static function load_image($file_path) {
+	private static function loadImage($file_path) {
 		$image_info = getimagesize($file_path);
 		if (!$image_info) {
 			return false;
@@ -233,7 +233,7 @@ class VT_Image_Manager {
 	/**
 	 * Resize image maintaining aspect ratio
 	 */
-	private static function resize_image($source, $max_width, $max_height) {
+	private static function resizeImage($source, $max_width, $max_height) {
 		$orig_width = imagesx($source);
 		$orig_height = imagesy($source);
 
@@ -266,7 +266,7 @@ class VT_Image_Manager {
 	/**
 	 * Save image to file
 	 */
-	private static function save_image($image, $file_path) {
+	private static function saveImage($image, $file_path) {
 		$extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
 
 		switch ($extension) {
@@ -287,7 +287,7 @@ class VT_Image_Manager {
 	/**
 	 * Delete image file
 	 */
-	public static function delete_image($image_url) {
+	public static function deleteImage($image_url) {
 		if (!$image_url) {
 			return false;
 		}
@@ -312,7 +312,7 @@ class VT_Image_Manager {
 	/**
 	 * Get image URL for display
 	 */
-	public static function get_image_url($image_path, $size = 'full') {
+	public static function getImageUrl($image_path, $size = 'full') {
 		if (!$image_path) {
 			return '';
 		}

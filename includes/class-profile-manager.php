@@ -9,11 +9,11 @@ class VT_Profile_Manager {
 	/**
 	 * Get user profile data
 	 */
-	public static function get_user_profile($user_id) {
+	public static function getUserProfile($user_id) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 
-		$profile = $db->get_row(
+		$profile = $db->getRow(
 			$db->prepare(
 				"SELECT * FROM $table_name WHERE user_id = %d",
 				$user_id
@@ -23,7 +23,7 @@ class VT_Profile_Manager {
 
 		if (!$profile) {
 			// Create default profile if it doesn't exist
-			return self::create_default_profile($user_id);
+			return self::createDefaultProfile($user_id);
 		}
 
 		return $profile;
@@ -32,7 +32,7 @@ class VT_Profile_Manager {
 	/**
 	 * Create default profile for new user
 	 */
-	public static function create_default_profile($user_id) {
+	public static function createDefaultProfile($user_id) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 		$user_data = VT_Auth::getUserById($user_id);
@@ -60,8 +60,8 @@ class VT_Profile_Manager {
 			'events_attended' => 0,
 			'host_rating' => 0.00,
 			'host_reviews_count' => 0,
-			'created_at' => VT_Time::current_time('mysql'),
-			'updated_at' => VT_Time::current_time('mysql'),
+			'created_at' => VT_Time::currentTime('mysql'),
+			'updated_at' => VT_Time::currentTime('mysql'),
 		);
 
 		$result = $db->insert('user_profiles', $default_data);
@@ -77,13 +77,13 @@ class VT_Profile_Manager {
 	/**
 	 * Update user profile
 	 */
-	public static function update_profile($user_id, $data) {
+	public static function updateProfile($user_id, $data) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 		$errors = array();
 
 		// Get current profile data for image deletion
-		$current_profile = self::get_user_profile($user_id);
+		$current_profile = self::getUserProfile($user_id);
 
 		// Validate input data
 		$update_data = array();
@@ -192,10 +192,10 @@ class VT_Profile_Manager {
 		if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
 			// Delete old profile image if exists
 			if (!empty($current_profile['profile_image'])) {
-				VT_Image_Manager::delete_image($current_profile['profile_image']);
+				VT_Image_Manager::deleteImage($current_profile['profile_image']);
 			}
 
-			$upload_result = VT_Image_Manager::handle_image_upload($_FILES['profile_image'], 'profile', $user_id, 'user');
+			$upload_result = VT_Image_Manager::handleImageUpload($_FILES['profile_image'], 'profile', $user_id, 'user');
 			if ($upload_result['success']) {
 				$update_data['profile_image'] = $upload_result['url'];
 			} else {
@@ -207,10 +207,10 @@ class VT_Profile_Manager {
 		if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
 			// Delete old cover image if exists
 			if (!empty($current_profile['cover_image'])) {
-				VT_Image_Manager::delete_image($current_profile['cover_image']);
+				VT_Image_Manager::deleteImage($current_profile['cover_image']);
 			}
 
-			$upload_result = VT_Image_Manager::handle_image_upload($_FILES['cover_image'], 'cover', $user_id, 'user');
+			$upload_result = VT_Image_Manager::handleImageUpload($_FILES['cover_image'], 'cover', $user_id, 'user');
 			if ($upload_result['success']) {
 				$update_data['cover_image'] = $upload_result['url'];
 			} else {
@@ -236,10 +236,10 @@ class VT_Profile_Manager {
 		}
 
 		// Add updated timestamp
-		$update_data['updated_at'] = VT_Time::current_time('mysql');
+		$update_data['updated_at'] = VT_Time::currentTime('mysql');
 
 		// Check if profile exists
-		$existing = $db->get_var(
+		$existing = $db->getVar(
 			$db->prepare(
 				"SELECT id FROM $table_name WHERE user_id = %d",
 				$user_id
@@ -256,13 +256,13 @@ class VT_Profile_Manager {
 		} else {
 			// Create new profile
 			$update_data['user_id'] = $user_id;
-			$update_data['created_at'] = VT_Time::current_time('mysql');
+			$update_data['created_at'] = VT_Time::currentTime('mysql');
 			$result = $db->insert('user_profiles', $update_data);
 		}
 
 		if ($result !== false) {
 			// Update last active time
-			self::update_last_active($user_id);
+			self::updateLastActive($user_id);
 
 			return array('success' => true);
 		} else {
@@ -276,13 +276,13 @@ class VT_Profile_Manager {
 	/**
 	 * Update last active time
 	 */
-	public static function update_last_active($user_id) {
+	public static function updateLastActive($user_id) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 
 		$db->update(
 			'user_profiles',
-			array('last_active' => VT_Time::current_time('mysql')),
+			array('last_active' => VT_Time::currentTime('mysql')),
 			array('user_id' => $user_id)
 		);
 	}
@@ -290,16 +290,16 @@ class VT_Profile_Manager {
 	/**
 	 * Increment events hosted count
 	 */
-	public static function increment_events_hosted($user_id) {
+	public static function incrementEventsHosted($user_id) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 
 		// Ensure profile exists
-		self::get_user_profile($user_id);
+		self::getUserProfile($user_id);
 
 		$db->prepare(
 			"UPDATE $table_name SET events_hosted = events_hosted + 1, updated_at = %s WHERE user_id = %d",
-			VT_Time::current_time('mysql'),
+			VT_Time::currentTime('mysql'),
 			$user_id
 		);
 	}
@@ -307,17 +307,17 @@ class VT_Profile_Manager {
 	/**
 	 * Increment events attended count
 	 */
-	public static function increment_events_attended($user_id) {
+	public static function incrementEventsAttended($user_id) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 
 		// Ensure profile exists
-		self::get_user_profile($user_id);
+		self::getUserProfile($user_id);
 
 		$db->query(
 			$db->prepare(
 				"UPDATE $table_name SET events_attended = events_attended + 1, updated_at = %s WHERE user_id = %d",
-				VT_Time::current_time('mysql'),
+				VT_Time::currentTime('mysql'),
 				$user_id
 			)
 		);
@@ -326,16 +326,16 @@ class VT_Profile_Manager {
 	/**
 	 * Update host rating
 	 */
-	public static function update_host_rating($user_id, $rating, $review_count = null) {
+	public static function updateHostRating($user_id, $rating, $review_count = null) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 
 		// Ensure profile exists
-		self::get_user_profile($user_id);
+		self::getUserProfile($user_id);
 
 		$update_data = array(
 			'host_rating' => floatval($rating),
-			'updated_at' => VT_Time::current_time('mysql'),
+			'updated_at' => VT_Time::currentTime('mysql'),
 		);
 
 		if ($review_count !== null) {
@@ -352,12 +352,12 @@ class VT_Profile_Manager {
 	/**
 	 * Get profiles by visibility setting
 	 */
-	public static function get_public_profiles($limit = 10, $offset = 0) {
+	public static function getPublicProfiles($limit = 10, $offset = 0) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 		$users_table = $db->prefix . 'users';
 
-		$profiles = $db->get_results(
+		$profiles = $db->getResults(
 			$db->prepare(
 				"SELECT p.*, u.username, u.email
              FROM $table_name p
@@ -378,13 +378,13 @@ class VT_Profile_Manager {
 	/**
 	 * Search profiles
 	 */
-	public static function search_profiles($search_term, $limit = 10) {
+	public static function searchProfiles($search_term, $limit = 10) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
 		$users_table = $db->prefix . 'users';
-		$search_term = '%' . $db->esc_like($search_term) . '%';
+		$search_term = '%' . $db->escLike($search_term) . '%';
 
-		$profiles = $db->get_results(
+		$profiles = $db->getResults(
 			$db->prepare(
 				"SELECT p.*, u.username, u.email
              FROM $table_name p
@@ -408,7 +408,7 @@ class VT_Profile_Manager {
 	/**
 	 * Check if user can view profile
 	 */
-	public static function can_view_profile($profile_user_id, $viewing_user_id = null) {
+	public static function canViewProfile($profile_user_id, $viewing_user_id = null) {
 		if (!$viewing_user_id) {
 			$viewing_user_id = VT_Auth::getCurrentUserId();
 		}
@@ -418,7 +418,7 @@ class VT_Profile_Manager {
 			return true;
 		}
 
-		$profile = self::get_user_profile($profile_user_id);
+		$profile = self::getUserProfile($profile_user_id);
 		$privacy_settings = json_decode($profile['privacy_settings'] ?: '{}', true);
 		$visibility = $privacy_settings['profile_visibility'] ?? 'public';
 
@@ -429,7 +429,7 @@ class VT_Profile_Manager {
 			case 'community':
 				// Check if users share any communities
 				if (class_exists('VT_Community_Manager')) {
-					return VT_Community_Manager::users_share_community($profile_user_id, $viewing_user_id);
+					return VT_Community_Manager::usersShareCommunity($profile_user_id, $viewing_user_id);
 				}
 				return false;
 
@@ -444,7 +444,7 @@ class VT_Profile_Manager {
 	/**
 	 * Get profile URL for user
 	 */
-	public static function get_profile_url($user_id) {
+	public static function getProfileUrl($user_id) {
 		if ($user_id == VT_Auth::getCurrentUserId()) {
 			return VT_Http::getBaseUrl() . '/profile';
 		} else {
@@ -455,8 +455,8 @@ class VT_Profile_Manager {
 	/**
 	 * Get user display name with fallback
 	 */
-	public static function get_display_name($user_id) {
-		$profile = self::get_user_profile($user_id);
+	public static function getDisplayName($user_id) {
+		$profile = self::getUserProfile($user_id);
 		if ($profile['display_name']) {
 			return $profile['display_name'];
 		}

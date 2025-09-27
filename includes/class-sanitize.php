@@ -149,7 +149,7 @@ class VT_Sanitize {
     }
 
     // Helper functions for textField
-    private static function wp_check_invalid_utf8($string, $strip = false) {
+    private static function wpCheckInvalidUtf8($string, $strip = false) {
         $string = (string) $string;
 
         if (0 === strlen($string)) {
@@ -167,18 +167,18 @@ class VT_Sanitize {
         return $string;
     }
 
-    private static function wp_pre_kses_less_than($text) {
+    private static function wpPreKsesLessThan($text) {
         return preg_replace_callback('%<[^>]*?((?=<)|>|$)%', ['self', 'wp_pre_kses_less_than_callback'], $text);
     }
 
-    private static function wp_pre_kses_less_than_callback($matches) {
+    private static function wpPreKsesLessThanCallback($matches) {
         if (false === strpos($matches[0], '>')) {
             return htmlspecialchars($matches[0]);
         }
         return $matches[0];
     }
 
-    private static function wp_normalize_whitespace($str) {
+    private static function wpNormalizeWhitespace($str) {
         return trim(preg_replace('/[\r\n\t ]+/', ' ', $str));
     }
 }

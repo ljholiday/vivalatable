@@ -63,7 +63,7 @@ class VT_Auth {
         self::$current_user_id = 0;
     }
 
-    public static function logout_and_redirect($params = array()) {
+    public static function logoutAndRedirect($params = array()) {
         self::logout();
         // Redirect to home page after logout
         header('Location: /');
@@ -74,7 +74,7 @@ class VT_Auth {
         $db = VT_Database::getInstance();
 
         // Check if user exists
-        $existing = $db->get_var("SELECT id FROM vt_users WHERE email = '$email' OR login = '$username'");
+        $existing = $db->getVar("SELECT id FROM vt_users WHERE email = '$email' OR login = '$username'");
         if ($existing) {
             return false;
         }
@@ -99,7 +99,7 @@ class VT_Auth {
             // Create member identity (if class exists)
             if (class_exists('VT_Member_Identity_Manager')) {
                 $identity_manager = new VT_Member_Identity_Manager();
-                $identity_manager->ensure_identity_exists($user_id, $email, $display_name ?: $username);
+                $identity_manager->ensureIdentityExists($user_id, $email, $display_name ?: $username);
             }
 
             return $user_id;
@@ -151,7 +151,7 @@ class VT_Auth {
 
         // Check if user has admin role in any community or is site admin
         $db = VT_Database::getInstance();
-        $admin_count = $db->get_var(
+        $admin_count = $db->getVar(
             "SELECT COUNT(*) FROM vt_community_members
              WHERE user_id = " . self::$current_user_id . "
              AND role = 'admin'"
@@ -168,12 +168,12 @@ class VT_Auth {
 
     public static function getUserById($user_id) {
         $db = VT_Database::getInstance();
-        return $db->get_row("SELECT * FROM vt_users WHERE id = $user_id AND status = 'active'");
+        return $db->getRow("SELECT * FROM vt_users WHERE id = $user_id AND status = 'active'");
     }
 
     private static function getGuestByToken($token) {
         $db = VT_Database::getInstance();
-        return $db->get_row("SELECT * FROM vt_guests WHERE rsvp_token = '$token' OR temporary_guest_id = '$token'");
+        return $db->getRow("SELECT * FROM vt_guests WHERE rsvp_token = '$token' OR temporary_guest_id = '$token'");
     }
 
     public static function generateGuestToken() {

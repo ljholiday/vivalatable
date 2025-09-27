@@ -10,35 +10,35 @@ class VT_Feature_Flags {
 	 * Check if communities feature is enabled
 	 * Communities are core functionality for a social network - always enabled
 	 */
-	public static function is_communities_enabled() {
+	public static function isCommunitiesEnabled() {
 		return true;
 	}
 
 	/**
 	 * Check if AT Protocol feature is enabled
 	 */
-	public static function is_at_protocol_enabled() {
+	public static function isAtProtocolEnabled() {
 		return VT_Config::get('at_protocol_enabled', true);
 	}
 
 	/**
 	 * Check if communities require approval
 	 */
-	public static function communities_require_approval() {
+	public static function communitiesRequireApproval() {
 		return (bool) VT_Config::get('communities_require_approval', true);
 	}
 
 	/**
 	 * Get max communities per user
 	 */
-	public static function get_max_communities_per_user() {
+	public static function getMaxCommunitiesPerUser() {
 		return (int) VT_Config::get('max_communities_per_user', 10);
 	}
 
 	/**
 	 * Check if user can create communities
 	 */
-	public static function can_user_create_community($user_id = null) {
+	public static function canUserCreateCommunity($user_id = null) {
 		if (!$user_id) {
 			$user_id = VT_Auth::getCurrentUserId();
 		}
@@ -50,20 +50,20 @@ class VT_Feature_Flags {
 		// Check if user has reached their limit
 		$db = VT_Database::getInstance();
 		$communities_table = $db->prefix . 'communities';
-		$user_community_count = $db->get_var(
+		$user_community_count = $db->getVar(
 			$db->prepare(
 				"SELECT COUNT(*) FROM $communities_table WHERE creator_id = %d AND is_active = 1",
 				$user_id
 			)
 		);
 
-		return $user_community_count < self::get_max_communities_per_user();
+		return $user_community_count < self::getMaxCommunitiesPerUser();
 	}
 
 	/**
 	 * Check if user can join communities
 	 */
-	public static function can_user_join_community($user_id = null) {
+	public static function canUserJoinCommunity($user_id = null) {
 		if (!$user_id) {
 			$user_id = VT_Auth::getCurrentUserId();
 		}
@@ -74,34 +74,34 @@ class VT_Feature_Flags {
 	/**
 	 * Check if communities feature should show in admin
 	 */
-	public static function show_communities_in_admin() {
+	public static function showCommunitiesInAdmin() {
 		return VT_Auth::currentUserCan('manage_options');
 	}
 
 	/**
 	 * Check if AT Protocol features should show in admin
 	 */
-	public static function show_at_protocol_in_admin() {
-		return VT_Auth::currentUserCan('manage_options') && self::is_at_protocol_enabled();
+	public static function showAtProtocolInAdmin() {
+		return VT_Auth::currentUserCan('manage_options') && self::isAtProtocolEnabled();
 	}
 
 	/**
 	 * Get feature status for JavaScript
 	 */
-	public static function get_feature_status_for_js() {
+	public static function getFeatureStatusForJs() {
 		return array(
-			'communities_enabled' => self::is_communities_enabled(),
-			'at_protocol_enabled' => self::is_at_protocol_enabled(),
-			'can_create_community' => self::can_user_create_community(),
-			'can_join_community' => self::can_user_join_community(),
-			'max_communities_per_user' => self::get_max_communities_per_user(),
+			'communities_enabled' => self::isCommunitiesEnabled(),
+			'at_protocol_enabled' => self::isAtProtocolEnabled(),
+			'can_create_community' => self::canUserCreateCommunity(),
+			'can_join_community' => self::canUserJoinCommunity(),
+			'max_communities_per_user' => self::getMaxCommunitiesPerUser(),
 		);
 	}
 
 	/**
 	 * Enable communities feature (admin only)
 	 */
-	public static function enable_communities() {
+	public static function enableCommunities() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -117,7 +117,7 @@ class VT_Feature_Flags {
 	/**
 	 * Disable communities feature (admin only)
 	 */
-	public static function disable_communities() {
+	public static function disableCommunities() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -133,7 +133,7 @@ class VT_Feature_Flags {
 	/**
 	 * Enable AT Protocol feature (admin only)
 	 */
-	public static function enable_at_protocol() {
+	public static function enableAtProtocol() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -149,7 +149,7 @@ class VT_Feature_Flags {
 	/**
 	 * Disable AT Protocol feature (admin only)
 	 */
-	public static function disable_at_protocol() {
+	public static function disableAtProtocol() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -180,63 +180,63 @@ class VT_Feature_Flags {
 	/**
 	 * Step 1: Database schema changes
 	 */
-	public static function is_circles_schema_enabled() {
+	public static function isCirclesSchemaEnabled() {
 		return (bool) VT_Config::get('circles_schema', false);
 	}
 
 	/**
 	 * Step 2: Personal communities for new users
 	 */
-	public static function is_personal_community_new_users_enabled() {
+	public static function isPersonalCommunityNewUsersEnabled() {
 		return (bool) VT_Config::get('personal_community_new_users', false);
 	}
 
 	/**
 	 * Step 3: Personal communities backfill for existing users
 	 */
-	public static function is_personal_community_backfill_enabled() {
+	public static function isPersonalCommunityBackfillEnabled() {
 		return (bool) VT_Config::get('personal_community_backfill', false);
 	}
 
 	/**
 	 * Step 4: General conversations default to personal communities
 	 */
-	public static function is_general_convo_default_to_personal_enabled() {
+	public static function isGeneralConvoDefaultToPersonalEnabled() {
 		return true;
 	}
 
 	/**
 	 * Step 5: Reply join flow for personal communities
 	 */
-	public static function is_reply_join_flow_enabled() {
+	public static function isReplyJoinFlowEnabled() {
 		return (bool) VT_Config::get('reply_join_flow', false);
 	}
 
 	/**
 	 * Step 6: Circles resolver (inner/trusted/extended logic)
 	 */
-	public static function is_circles_resolver_enabled() {
+	public static function isCirclesResolverEnabled() {
 		return true;
 	}
 
 	/**
 	 * Step 7: Conversation feeds filtered by circle
 	 */
-	public static function is_convo_feed_by_circle_enabled() {
+	public static function isConvoFeedByCircleEnabled() {
 		return (bool) VT_Config::get('convo_feed_by_circle', false);
 	}
 
 	/**
 	 * Step 8: Circles navigation UI (3-button secondary nav)
 	 */
-	public static function is_circles_nav_ui_enabled() {
+	public static function isCirclesNavUiEnabled() {
 		return (bool) VT_Config::get('circles_nav_ui', false);
 	}
 
 	/**
 	 * Admin methods to enable/disable circles flags
 	 */
-	public static function enable_circles_schema() {
+	public static function enableCirclesSchema() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -245,7 +245,7 @@ class VT_Feature_Flags {
 		return true;
 	}
 
-	public static function enable_personal_community_new_users() {
+	public static function enablePersonalCommunityNewUsers() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -254,7 +254,7 @@ class VT_Feature_Flags {
 		return true;
 	}
 
-	public static function enable_personal_community_backfill() {
+	public static function enablePersonalCommunityBackfill() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -263,7 +263,7 @@ class VT_Feature_Flags {
 		return true;
 	}
 
-	public static function enable_general_convo_default_to_personal() {
+	public static function enableGeneralConvoDefaultToPersonal() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -272,7 +272,7 @@ class VT_Feature_Flags {
 		return true;
 	}
 
-	public static function enable_reply_join_flow() {
+	public static function enableReplyJoinFlow() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -281,7 +281,7 @@ class VT_Feature_Flags {
 		return true;
 	}
 
-	public static function enable_circles_resolver() {
+	public static function enableCirclesResolver() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -290,7 +290,7 @@ class VT_Feature_Flags {
 		return true;
 	}
 
-	public static function enable_convo_feed_by_circle() {
+	public static function enableConvoFeedByCircle() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -299,7 +299,7 @@ class VT_Feature_Flags {
 		return true;
 	}
 
-	public static function enable_circles_nav_ui() {
+	public static function enableCirclesNavUi() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return false;
 		}
@@ -311,24 +311,24 @@ class VT_Feature_Flags {
 	/**
 	 * Get all feature flags for debugging
 	 */
-	public static function get_all_flags() {
+	public static function getAllFlags() {
 		if (!VT_Auth::currentUserCan('manage_options')) {
 			return array();
 		}
 
 		return array(
-			'communities_enabled' => self::is_communities_enabled(),
-			'at_protocol_enabled' => self::is_at_protocol_enabled(),
-			'communities_require_approval' => self::communities_require_approval(),
-			'max_communities_per_user' => self::get_max_communities_per_user(),
-			'circles_schema' => self::is_circles_schema_enabled(),
-			'personal_community_new_users' => self::is_personal_community_new_users_enabled(),
-			'personal_community_backfill' => self::is_personal_community_backfill_enabled(),
-			'general_convo_default_to_personal' => self::is_general_convo_default_to_personal_enabled(),
-			'reply_join_flow' => self::is_reply_join_flow_enabled(),
-			'circles_resolver' => self::is_circles_resolver_enabled(),
-			'convo_feed_by_circle' => self::is_convo_feed_by_circle_enabled(),
-			'circles_nav_ui' => self::is_circles_nav_ui_enabled(),
+			'communities_enabled' => self::isCommunitiesEnabled(),
+			'at_protocol_enabled' => self::isAtProtocolEnabled(),
+			'communities_require_approval' => self::communitiesRequireApproval(),
+			'max_communities_per_user' => self::getMaxCommunitiesPerUser(),
+			'circles_schema' => self::isCirclesSchemaEnabled(),
+			'personal_community_new_users' => self::isPersonalCommunityNewUsersEnabled(),
+			'personal_community_backfill' => self::isPersonalCommunityBackfillEnabled(),
+			'general_convo_default_to_personal' => self::isGeneralConvoDefaultToPersonalEnabled(),
+			'reply_join_flow' => self::isReplyJoinFlowEnabled(),
+			'circles_resolver' => self::isCirclesResolverEnabled(),
+			'convo_feed_by_circle' => self::isConvoFeedByCircleEnabled(),
+			'circles_nav_ui' => self::isCirclesNavUiEnabled(),
 		);
 	}
 }

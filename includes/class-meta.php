@@ -48,7 +48,7 @@ class VT_Meta {
 
         if (empty($metaKey)) {
             // Get all meta for this object
-            $results = $db->get_results(
+            $results = $db->getResults(
                 $db->prepare(
                     "SELECT meta_key, meta_value FROM $table WHERE object_type = %s AND object_id = %d",
                     $objectType, $objectId
@@ -64,7 +64,7 @@ class VT_Meta {
         } else {
             // Get specific meta key
             if ($single) {
-                $result = $db->get_var(
+                $result = $db->getVar(
                     $db->prepare(
                         "SELECT meta_value FROM $table WHERE object_type = %s AND object_id = %d AND meta_key = %s LIMIT 1",
                         $objectType, $objectId, $metaKey
@@ -72,7 +72,7 @@ class VT_Meta {
                 );
                 return maybe_unserialize($result);
             } else {
-                $results = $db->get_col(
+                $results = $db->getCol(
                     $db->prepare(
                         "SELECT meta_value FROM $table WHERE object_type = %s AND object_id = %d AND meta_key = %s",
                         $objectType, $objectId, $metaKey

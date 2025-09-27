@@ -20,7 +20,7 @@ $event_manager = new VT_Event_Manager();
 
 if ($user_logged_in) {
 	// Get user's created events
-	$user_events = $event_manager->get_user_events($current_user->id, 20);
+	$user_events = $event_manager->getUserEvents($current_user->id, 20);
 
 	// Get user's RSVP events
 	$db = VT_Database::getInstance();
@@ -33,27 +33,27 @@ if ($user_logged_in) {
 			  AND e.event_status = 'active'
 			  ORDER BY e.event_date ASC";
 
-	$rsvp_events = $db->get_results($db->prepare($query, $user_email));
+	$rsvp_events = $db->getResults($db->prepare($query, $user_email));
 
 	// Add guest stats to each RSVP event
 	foreach ($rsvp_events as $event) {
-		$event->guest_stats = $event_manager->get_guest_stats($event->id);
+		$event->guest_stats = $event_manager->getGuestStats($event->id);
 	}
 
 	// Get ALL events the user has permission to view
-	$all_events = $event_manager->get_upcoming_events(50);
+	$all_events = $event_manager->getUpcomingEvents(50);
 
 	// Add guest stats to each event in all_events
 	if ($all_events && is_array($all_events)) {
 		foreach ($all_events as $event) {
 			if (!isset($event->guest_stats)) {
-				$event->guest_stats = $event_manager->get_guest_stats($event->id);
+				$event->guest_stats = $event_manager->getGuestStats($event->id);
 			}
 		}
 	}
 } else {
 	// Not logged in - only show public events
-	$all_events = $event_manager->get_upcoming_events(20);
+	$all_events = $event_manager->getUpcomingEvents(20);
 }
 
 // Set up template variables

@@ -10,7 +10,7 @@ class VT_Activity_Tracker {
 	/**
 	 * Track when user last saw an item
 	 */
-	public static function track_user_activity($user_id, $activity_type, $item_id) {
+	public static function trackUserActivity($user_id, $activity_type, $item_id) {
 		if (!$user_id || !$activity_type || !$item_id) {
 			return false;
 		}
@@ -24,7 +24,7 @@ class VT_Activity_Tracker {
 				'user_id' => $user_id,
 				'activity_type' => $activity_type,
 				'item_id' => $item_id,
-				'last_seen_at' => VT_Time::current_time('mysql')
+				'last_seen_at' => VT_Time::currentTime('mysql')
 			)
 		);
 	}
@@ -32,7 +32,7 @@ class VT_Activity_Tracker {
 	/**
 	 * Get user's last seen time for an item
 	 */
-	public static function get_last_seen($user_id, $activity_type, $item_id) {
+	public static function getLastSeen($user_id, $activity_type, $item_id) {
 		if (!$user_id || !$activity_type || !$item_id) {
 			return null;
 		}
@@ -40,7 +40,7 @@ class VT_Activity_Tracker {
 		$db = VT_Database::getInstance();
 		$table = $db->prefix . 'user_activity_tracking';
 
-		return $db->get_var(
+		return $db->getVar(
 			$db->prepare(
 				"SELECT last_seen_at FROM $table
 				 WHERE user_id = %d AND activity_type = %s AND item_id = %d",
@@ -52,8 +52,8 @@ class VT_Activity_Tracker {
 	/**
 	 * Check if item has new activity since user last saw it
 	 */
-	public static function has_new_activity($user_id, $activity_type, $item_id, $item_updated_at) {
-		$last_seen = self::get_last_seen($user_id, $activity_type, $item_id);
+	public static function hasNewActivity($user_id, $activity_type, $item_id, $item_updated_at) {
+		$last_seen = self::getLastSeen($user_id, $activity_type, $item_id);
 
 		if (!$last_seen) {
 			return true; // Never seen = new
@@ -65,7 +65,7 @@ class VT_Activity_Tracker {
 	/**
 	 * Get count of new items for activity type
 	 */
-	public static function get_new_count($user_id, $activity_type, $items) {
+	public static function getNewCount($user_id, $activity_type, $items) {
 		if (!$user_id || !$activity_type || empty($items)) {
 			return 0;
 		}
@@ -73,7 +73,7 @@ class VT_Activity_Tracker {
 		$new_count = 0;
 		foreach ($items as $item) {
 			$updated_at = isset($item->updated_at) ? $item->updated_at : $item->created_at;
-			if (self::has_new_activity($user_id, $activity_type, $item->id, $updated_at)) {
+			if (self::hasNewActivity($user_id, $activity_type, $item->id, $updated_at)) {
 				$new_count++;
 			}
 		}

@@ -10,13 +10,13 @@ class VT_Event_Ajax_Handler {
 	private $event_manager;
 
 	public function __construct() {
-		$this->init_routes();
+		$this->initRoutes();
 	}
 
 	/**
 	 * Initialize AJAX routes for VivalaTable
 	 */
-	private function init_routes() {
+	private function initRoutes() {
 		// Register AJAX endpoints with VT_Ajax system
 		VT_Ajax::register('create_event', array($this, 'ajax_create_event'));
 		VT_Ajax::register('create_community_event', array($this, 'ajax_create_community_event'));
@@ -31,14 +31,14 @@ class VT_Event_Ajax_Handler {
 		VT_Ajax::register('admin_delete_event', array($this, 'ajax_admin_delete_event'));
 	}
 
-	private function get_event_manager() {
+	private function getEventManager() {
 		if (!$this->event_manager) {
 			$this->event_manager = new VT_Event_Manager();
 		}
 		return $this->event_manager;
 	}
 
-	public function ajax_create_event() {
+	public function ajaxCreateEvent() {
 		VT_Security::verifyNonce('create_vt_event', 'vt_event_nonce');
 
 		$form_errors = array();
@@ -46,13 +46,13 @@ class VT_Event_Ajax_Handler {
 		// Load form handler if it exists
 		if (class_exists('VT_Event_Form_Handler')) {
 			// Validate form data
-			$form_errors = VT_Event_Form_Handler::validate_event_form($_POST);
+			$form_errors = VT_Event_Form_Handler::validateEventForm($_POST);
 
 			if (!empty($form_errors)) {
-				VT_Ajax::send_error(implode(' ', $form_errors));
+				VT_Ajax::sendError(implode(' ', $form_errors));
 			}
 
-			$event_data = VT_Event_Form_Handler::process_event_form_data($_POST);
+			$event_data = VT_Event_Form_Handler::processEventFormData($_POST);
 		} else {
 			// Basic validation
 			if (empty($_POST['event_title'])) {
@@ -66,36 +66,36 @@ class VT_Event_Ajax_Handler {
 			}
 
 			if (!empty($form_errors)) {
-				VT_Ajax::send_error(implode(' ', $form_errors));
+				VT_Ajax::sendError(implode(' ', $form_errors));
 			}
 
 			$event_data = array(
 				'title' => VT_Sanitize::textField($_POST['event_title']),
-				'description' => VT_Security::kses_post($_POST['event_description'] ?? ''),
+				'description' => VT_Security::ksesPost($_POST['event_description'] ?? ''),
 				'event_date' => VT_Sanitize::textField($_POST['event_date']),
 				'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
 				'host_email' => VT_Sanitize::email($_POST['host_email']),
-				'host_notes' => VT_Security::kses_post($_POST['host_notes'] ?? ''),
+				'host_notes' => VT_Security::ksesPost($_POST['host_notes'] ?? ''),
 				'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
 				'community_id' => intval($_POST['community_id'] ?? 0),
 			);
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event_id = $event_manager->create_event($event_data);
+		$event_manager = $this->getEventManager();
+		$event_id = $event_manager->createEvent($event_data);
 
 		if (!is_vt_error($event_id)) {
 			// Handle cover image upload
 			if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
-				$upload_result = $this->handle_cover_image_upload($_FILES['cover_image'], $event_id);
+				$upload_result = $this->handleCoverImageUpload($_FILES['cover_image'], $event_id);
 				if (is_vt_error($upload_result)) {
 					// Log error but don't fail the event creation
-					error_log('Cover image upload failed: ' . $upload_result->get_error_message());
+					error_log('Cover image upload failed: ' . $upload_result->getErrorMessage());
 				}
 			}
 
-			$created_event = $event_manager->get_event($event_id);
+			$created_event = $event_manager->getEvent($event_id);
 
 			$creation_data = array(
 				'event_id' => $event_id,
@@ -105,28 +105,28 @@ class VT_Event_Ajax_Handler {
 
 			VT_Transient::set('vt_event_created_' . VT_Auth::getCurrentUserId(), $creation_data, 300);
 
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'event_id' => $event_id,
 				'message' => 'Event created successfully!',
 				'event_url' => VT_Config::get('site_url') . '/events/' . $created_event->slug,
 			));
 		} else {
-			VT_Ajax::send_error($event_id->get_error_message());
+			VT_Ajax::sendError($event_id->getErrorMessage());
 		}
 	}
 
-	public function ajax_update_event() {
+	public function ajaxUpdateEvent() {
 		VT_Security::verifyNonce('edit_vt_event', 'vt_edit_event_nonce');
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
-			VT_Ajax::send_error('Event ID is required.');
+			VT_Ajax::sendError('Event ID is required.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event = $event_manager->get_event($event_id);
+		$event_manager = $this->getEventManager();
+		$event = $event_manager->getEvent($event_id);
 		if (!$event) {
-			VT_Ajax::send_error('Event not found.');
+			VT_Ajax::sendError('Event not found.');
 		}
 
 		$current_user = VT_Auth::getCurrentUser();
@@ -140,15 +140,15 @@ class VT_Event_Ajax_Handler {
 		}
 
 		if (!$can_edit) {
-			VT_Ajax::send_error('You do not have permission to edit this event.');
+			VT_Ajax::sendError('You do not have permission to edit this event.');
 		}
 
 		$form_errors = array();
 
 		// Load form handler if it exists
 		if (class_exists('VT_Event_Form_Handler')) {
-			$form_errors = VT_Event_Form_Handler::validate_event_form($_POST);
-			$event_data = VT_Event_Form_Handler::process_event_form_data($_POST);
+			$form_errors = VT_Event_Form_Handler::validateEventForm($_POST);
+			$event_data = VT_Event_Form_Handler::processEventFormData($_POST);
 		} else {
 			// Basic validation and processing
 			if (empty($_POST['event_title'])) {
@@ -163,52 +163,52 @@ class VT_Event_Ajax_Handler {
 
 			$event_data = array(
 				'title' => VT_Sanitize::textField($_POST['event_title']),
-				'description' => VT_Security::kses_post($_POST['event_description'] ?? ''),
+				'description' => VT_Security::ksesPost($_POST['event_description'] ?? ''),
 				'event_date' => VT_Sanitize::textField($_POST['event_date']),
 				'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
 				'host_email' => VT_Sanitize::email($_POST['host_email']),
-				'host_notes' => VT_Security::kses_post($_POST['host_notes'] ?? ''),
+				'host_notes' => VT_Security::ksesPost($_POST['host_notes'] ?? ''),
 				'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
 			);
 		}
 
 		if (!empty($form_errors)) {
-			VT_Ajax::send_error(implode(' ', $form_errors));
+			VT_Ajax::sendError(implode(' ', $form_errors));
 		}
 
-		$result = $event_manager->update_event($event_id, $event_data);
+		$result = $event_manager->updateEvent($event_id, $event_data);
 
 		if ($result !== false) {
 			// Handle cover image upload
 			if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
-				$upload_result = $this->handle_cover_image_upload($_FILES['cover_image'], $event_id);
+				$upload_result = $this->handleCoverImageUpload($_FILES['cover_image'], $event_id);
 				if (is_vt_error($upload_result)) {
-					error_log('Cover image upload failed: ' . $upload_result->get_error_message());
+					error_log('Cover image upload failed: ' . $upload_result->getErrorMessage());
 				}
 			}
 
 			// Handle cover image removal
 			if (isset($_POST['remove_cover_image']) && $_POST['remove_cover_image'] === '1') {
-				$event_manager->update_event($event_id, array('featured_image' => ''));
+				$event_manager->updateEvent($event_id, array('featured_image' => ''));
 			}
 
-			$updated_event = $event_manager->get_event($event_id);
-			VT_Ajax::send_success(array(
+			$updated_event = $event_manager->getEvent($event_id);
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Event updated successfully!',
 				'event_url' => VT_Config::get('site_url') . '/events/' . $updated_event->slug,
 			));
 		} else {
-			VT_Ajax::send_error('Failed to update event. Please try again.');
+			VT_Ajax::sendError('Failed to update event. Please try again.');
 		}
 	}
 
-	public function ajax_get_event_conversations() {
+	public function ajaxGetEventConversations() {
 		VT_Security::verifyNonce('vt_nonce', 'nonce');
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
-			VT_Ajax::send_error('Event ID is required.');
+			VT_Ajax::sendError('Event ID is required.');
 		}
 
 		$current_user = VT_Auth::getCurrentUser();
@@ -223,14 +223,14 @@ class VT_Event_Ajax_Handler {
 			$user_name = VT_Sanitize::textField($_POST['guest_name'] ?? '');
 
 			if (empty($user_email) || empty($user_name)) {
-				VT_Ajax::send_error('Email and name are required for guest access.');
+				VT_Ajax::sendError('Email and name are required for guest access.');
 			}
 		}
 
 		$conversation_manager = new VT_Conversation_Manager();
-		$conversations = $conversation_manager->get_event_conversations($event_id);
+		$conversations = $conversation_manager->getEventConversations($event_id);
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'conversations' => $conversations,
 			'user_email' => $user_email,
 			'user_name' => $user_name,
@@ -238,40 +238,40 @@ class VT_Event_Ajax_Handler {
 		));
 	}
 
-	public function ajax_send_event_invitation() {
+	public function ajaxSendEventInvitation() {
 		VT_Security::verifyNonce('vt_event_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$event_id = intval($_POST['event_id']);
 		$email = VT_Sanitize::email($_POST['email']);
-		$message = VT_Security::sanitize_textarea($_POST['message'] ?? '');
+		$message = VT_Security::sanitizeTextarea($_POST['message'] ?? '');
 
 		if (!$event_id || !$email) {
-			VT_Ajax::send_error('Event ID and email are required.');
+			VT_Ajax::sendError('Event ID and email are required.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event = $event_manager->get_event($event_id);
+		$event_manager = $this->getEventManager();
+		$event = $event_manager->getEvent($event_id);
 
 		if (!$event) {
-			VT_Ajax::send_error('Event not found.');
+			VT_Ajax::sendError('Event not found.');
 		}
 
 		$current_user = VT_Auth::getCurrentUser();
 		$current_user_id = VT_Auth::getCurrentUserId();
 
 		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
-			VT_Ajax::send_error('Only the event host can send invitations.');
+			VT_Ajax::sendError('Only the event host can send invitations.');
 		}
 
 		// Check if guest already exists
 		$guest_manager = new VT_Guest_Manager();
 		$db = VT_Database::getInstance();
 
-		$existing_guest = $db->get_row(
+		$existing_guest = $db->getRow(
 			$db->prepare(
 				"SELECT * FROM {$db->prefix}guests WHERE event_id = %d AND email = %s",
 				$event_id, $email
@@ -279,11 +279,11 @@ class VT_Event_Ajax_Handler {
 		);
 
 		if ($existing_guest && $existing_guest->status !== 'declined') {
-			VT_Ajax::send_error('This email has already been invited.');
+			VT_Ajax::sendError('This email has already been invited.');
 		}
 
 		// Send RSVP invitation using Guest Manager
-		$result = $guest_manager->send_rsvp_invitation(
+		$result = $guest_manager->sendRsvpInvitation(
 			$event_id,
 			$email,
 			$current_user->display_name,
@@ -296,37 +296,37 @@ class VT_Event_Ajax_Handler {
 				$response_message .= ' Note: Email delivery may have failed.';
 			}
 
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => $response_message,
 				'invitation_url' => $result['url']
 			));
 		} else {
-			VT_Ajax::send_error('Failed to create invitation.');
+			VT_Ajax::sendError('Failed to create invitation.');
 		}
 	}
 
-	public function ajax_get_event_invitations() {
+	public function ajaxGetEventInvitations() {
 		VT_Security::verifyNonce('vt_event_action', 'nonce');
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
-			VT_Ajax::send_error('Event ID is required.');
+			VT_Ajax::sendError('Event ID is required.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event = $event_manager->get_event($event_id);
+		$event_manager = $this->getEventManager();
+		$event = $event_manager->getEvent($event_id);
 
 		if (!$event) {
-			VT_Ajax::send_error('Event not found.');
+			VT_Ajax::sendError('Event not found.');
 		}
 
 		$current_user_id = VT_Auth::getCurrentUserId();
 		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
-			VT_Ajax::send_error('Only the event host can view invitations.');
+			VT_Ajax::sendError('Only the event host can view invitations.');
 		}
 
 		$db = VT_Database::getInstance();
-		$guests = $db->get_results(
+		$guests = $db->getResults(
 			$db->prepare(
 				"SELECT * FROM {$db->prefix}guests
 				WHERE event_id = %d
@@ -412,26 +412,26 @@ class VT_Event_Ajax_Handler {
 			}
 		}
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'invitations' => $guests,
 			'html' => $html,
 		));
 	}
 
-	public function ajax_cancel_event_invitation() {
+	public function ajaxCancelEventInvitation() {
 		VT_Security::verifyNonce('vt_event_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$guest_id = intval($_POST['invitation_id']);
 		if (!$guest_id) {
-			VT_Ajax::send_error('Guest ID is required.');
+			VT_Ajax::sendError('Guest ID is required.');
 		}
 
 		$db = VT_Database::getInstance();
-		$guest = $db->get_row(
+		$guest = $db->getRow(
 			$db->prepare(
 				"SELECT * FROM {$db->prefix}guests WHERE id = %d",
 				$guest_id
@@ -439,84 +439,84 @@ class VT_Event_Ajax_Handler {
 		);
 
 		if (!$guest) {
-			VT_Ajax::send_error('Guest invitation not found.');
+			VT_Ajax::sendError('Guest invitation not found.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event = $event_manager->get_event($guest->event_id);
+		$event_manager = $this->getEventManager();
+		$event = $event_manager->getEvent($guest->event_id);
 
 		if (!$event) {
-			VT_Ajax::send_error('Event not found.');
+			VT_Ajax::sendError('Event not found.');
 		}
 
 		$current_user_id = VT_Auth::getCurrentUserId();
 		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
-			VT_Ajax::send_error('Only the event host can remove guests.');
+			VT_Ajax::sendError('Only the event host can remove guests.');
 		}
 
 		$result = $db->delete('guests', array('id' => $guest_id));
 
 		if ($result !== false) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Guest removed successfully.',
 			));
 		} else {
-			VT_Ajax::send_error('Failed to remove guest.');
+			VT_Ajax::sendError('Failed to remove guest.');
 		}
 	}
 
-	public function ajax_get_event_stats() {
+	public function ajaxGetEventStats() {
 		VT_Security::verifyNonce('vt_event_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
-			VT_Ajax::send_error('Event ID is required.');
+			VT_Ajax::sendError('Event ID is required.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event = $event_manager->get_event($event_id);
+		$event_manager = $this->getEventManager();
+		$event = $event_manager->getEvent($event_id);
 
 		if (!$event) {
-			VT_Ajax::send_error('Event not found.');
+			VT_Ajax::sendError('Event not found.');
 		}
 
 		$current_user_id = VT_Auth::getCurrentUserId();
 		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
-			VT_Ajax::send_error('Only the event host can view statistics.');
+			VT_Ajax::sendError('Only the event host can view statistics.');
 		}
 
 		$db = VT_Database::getInstance();
 
 		$stats = array(
-			'total_rsvps' => $db->get_var(
+			'total_rsvps' => $db->getVar(
 				$db->prepare(
 					"SELECT COUNT(*) FROM {$db->prefix}guests WHERE event_id = %d",
 					$event_id
 				)
 			),
-			'attending' => $db->get_var(
+			'attending' => $db->getVar(
 				$db->prepare(
 					"SELECT COUNT(*) FROM {$db->prefix}guests WHERE event_id = %d AND status = 'confirmed'",
 					$event_id
 				)
 			),
-			'not_attending' => $db->get_var(
+			'not_attending' => $db->getVar(
 				$db->prepare(
 					"SELECT COUNT(*) FROM {$db->prefix}guests WHERE event_id = %d AND status = 'declined'",
 					$event_id
 				)
 			),
-			'maybe' => $db->get_var(
+			'maybe' => $db->getVar(
 				$db->prepare(
 					"SELECT COUNT(*) FROM {$db->prefix}guests WHERE event_id = %d AND status = 'maybe'",
 					$event_id
 				)
 			),
-			'invitations_sent' => $db->get_var(
+			'invitations_sent' => $db->getVar(
 				$db->prepare(
 					"SELECT COUNT(*) FROM {$db->prefix}guests WHERE event_id = %d",
 					$event_id
@@ -524,107 +524,107 @@ class VT_Event_Ajax_Handler {
 			),
 		);
 
-		VT_Ajax::send_success($stats);
+		VT_Ajax::sendSuccess($stats);
 	}
 
-	public function ajax_get_event_guests() {
+	public function ajaxGetEventGuests() {
 		VT_Security::verifyNonce('vt_event_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
-			VT_Ajax::send_error('Event ID is required.');
+			VT_Ajax::sendError('Event ID is required.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event = $event_manager->get_event($event_id);
+		$event_manager = $this->getEventManager();
+		$event = $event_manager->getEvent($event_id);
 
 		if (!$event) {
-			VT_Ajax::send_error('Event not found.');
+			VT_Ajax::sendError('Event not found.');
 		}
 
 		$current_user_id = VT_Auth::getCurrentUserId();
 		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
-			VT_Ajax::send_error('Only the event host can view the guest list.');
+			VT_Ajax::sendError('Only the event host can view the guest list.');
 		}
 
 		$db = VT_Database::getInstance();
-		$guests = $db->get_results(
+		$guests = $db->getResults(
 			$db->prepare(
 				"SELECT * FROM {$db->prefix}guests WHERE event_id = %d ORDER BY rsvp_date DESC",
 				$event_id
 			)
 		);
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'guests' => $guests,
 		));
 	}
 
-	public function ajax_delete_event() {
+	public function ajaxDeleteEvent() {
 		VT_Security::verifyNonce('vt_event_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
-			VT_Ajax::send_error('Event ID is required.');
+			VT_Ajax::sendError('Event ID is required.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$event = $event_manager->get_event($event_id);
+		$event_manager = $this->getEventManager();
+		$event = $event_manager->getEvent($event_id);
 
 		if (!$event) {
-			VT_Ajax::send_error('Event not found.');
+			VT_Ajax::sendError('Event not found.');
 		}
 
 		$current_user_id = VT_Auth::getCurrentUserId();
 		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
-			VT_Ajax::send_error('You do not have permission to delete this event.');
+			VT_Ajax::sendError('You do not have permission to delete this event.');
 		}
 
-		$result = $event_manager->delete_event($event_id);
+		$result = $event_manager->deleteEvent($event_id);
 
 		if ($result) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Event deleted successfully.',
 				'redirect_url' => VT_Config::get('site_url') . '/my-events',
 			));
 		} else {
-			VT_Ajax::send_error('Failed to delete event.');
+			VT_Ajax::sendError('Failed to delete event.');
 		}
 	}
 
-	public function ajax_admin_delete_event() {
+	public function ajaxAdminDeleteEvent() {
 		VT_Security::verifyNonce('vt_event_action', 'nonce');
 
 		if (!VT_Auth::currentUserCan('delete_others_posts')) {
-			VT_Ajax::send_error('You do not have permission to delete events.');
+			VT_Ajax::sendError('You do not have permission to delete events.');
 		}
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
-			VT_Ajax::send_error('Event ID is required.');
+			VT_Ajax::sendError('Event ID is required.');
 		}
 
-		$event_manager = $this->get_event_manager();
-		$result = $event_manager->delete_event($event_id);
+		$event_manager = $this->getEventManager();
+		$result = $event_manager->deleteEvent($event_id);
 
 		if ($result) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Event deleted successfully.',
 			));
 		} else {
-			VT_Ajax::send_error('Failed to delete event.');
+			VT_Ajax::sendError('Failed to delete event.');
 		}
 	}
 
-	public function ajax_create_community_event() {
+	public function ajaxCreateCommunityEvent() {
 		VT_Security::verifyNonce('create_vt_community_event', 'vt_community_event_nonce');
 
 		$form_errors = array();
@@ -642,34 +642,34 @@ class VT_Event_Ajax_Handler {
 		}
 
 		if (!empty($form_errors)) {
-			VT_Ajax::send_error(implode(' ', $form_errors));
+			VT_Ajax::sendError(implode(' ', $form_errors));
 		}
 
 		// Verify user is a member of the community
 		$community_manager = new VT_Community_Manager();
 		$community_id = intval($_POST['community_id']);
 
-		if (!$community_manager->is_member($community_id, VT_Auth::getCurrentUserId())) {
-			VT_Ajax::send_error('You must be a member of the community to create events.');
+		if (!$community_manager->isMember($community_id, VT_Auth::getCurrentUserId())) {
+			VT_Ajax::sendError('You must be a member of the community to create events.');
 		}
 
 		$event_data = array(
 			'title' => VT_Sanitize::textField($_POST['event_title']),
-			'description' => VT_Security::kses_post($_POST['event_description'] ?? ''),
+			'description' => VT_Security::ksesPost($_POST['event_description'] ?? ''),
 			'event_date' => VT_Sanitize::textField($_POST['event_date']),
 			'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
 			'guest_limit' => intval($_POST['guest_limit'] ?? 0),
 			'host_email' => VT_Sanitize::email($_POST['host_email']),
-			'host_notes' => VT_Security::kses_post($_POST['host_notes'] ?? ''),
+			'host_notes' => VT_Security::ksesPost($_POST['host_notes'] ?? ''),
 			'community_id' => $community_id,
 			// Privacy will be inherited from community - no need to pass it
 		);
 
-		$event_manager = $this->get_event_manager();
-		$event_id = $event_manager->create_event($event_data);
+		$event_manager = $this->getEventManager();
+		$event_id = $event_manager->createEvent($event_data);
 
 		if (!is_vt_error($event_id)) {
-			$created_event = $event_manager->get_event($event_id);
+			$created_event = $event_manager->getEvent($event_id);
 
 			$creation_data = array(
 				'event_id' => $event_id,
@@ -679,30 +679,30 @@ class VT_Event_Ajax_Handler {
 
 			VT_Transient::set('vt_community_event_created_' . VT_Auth::getCurrentUserId(), $creation_data, 300);
 
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'event_id' => $event_id,
 				'message' => 'Community event created successfully!',
 				'event_url' => VT_Config::get('site_url') . '/events/' . $created_event->slug,
 			));
 		} else {
-			VT_Ajax::send_error($event_id->get_error_message());
+			VT_Ajax::sendError($event_id->getErrorMessage());
 		}
 	}
 
-	private function handle_cover_image_upload($file, $event_id) {
+	private function handleCoverImageUpload($file, $event_id) {
 		// Validate file
 		if (class_exists('VT_Upload')) {
-			$validation_result = VT_Upload::validate_file($file);
+			$validation_result = VT_Upload::validateFile($file);
 			if (is_vt_error($validation_result)) {
 				return $validation_result;
 			}
 
-			$uploaded_file = VT_Upload::handle_upload($file);
+			$uploaded_file = VT_Upload::handleUpload($file);
 
 			if ($uploaded_file && !isset($uploaded_file['error'])) {
 				// Update event with the image URL
-				$event_manager = $this->get_event_manager();
-				$event_manager->update_event($event_id, array('featured_image' => $uploaded_file['url']));
+				$event_manager = $this->getEventManager();
+				$event_manager->updateEvent($event_id, array('featured_image' => $uploaded_file['url']));
 				return $uploaded_file;
 			} else {
 				return new VT_Error('upload_failed', 'File upload failed.');
@@ -715,8 +715,8 @@ class VT_Event_Ajax_Handler {
 
 			if (move_uploaded_file($file['tmp_name'], $target_path)) {
 				$file_url = VT_Config::get('site_url') . $upload_dir . $filename;
-				$event_manager = $this->get_event_manager();
-				$event_manager->update_event($event_id, array('featured_image' => $file_url));
+				$event_manager = $this->getEventManager();
+				$event_manager->updateEvent($event_id, array('featured_image' => $file_url));
 				return array('url' => $file_url);
 			} else {
 				return new VT_Error('upload_failed', 'File upload failed.');
@@ -727,7 +727,7 @@ class VT_Event_Ajax_Handler {
 	/**
 	 * Generate HTML email template for event invitations
 	 */
-	private static function generate_invitation_email_html($data) {
+	private static function generateInvitationEmailHtml($data) {
 		$event = $data['event'];
 		$invitation_url = $data['invitation_url'];
 		$rsvp_yes_url = $data['rsvp_yes_url'];

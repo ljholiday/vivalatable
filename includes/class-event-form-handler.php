@@ -13,7 +13,7 @@ class VT_Event_Form_Handler {
 	 * @param array $post_data The $_POST data
 	 * @return array Array of validation errors (empty if valid)
 	 */
-	public static function validate_event_form($post_data) {
+	public static function validateEventForm($post_data) {
 		$form_errors = array();
 
 		// Validate required fields
@@ -58,7 +58,7 @@ class VT_Event_Form_Handler {
 	 * @param array $post_data The $_POST data
 	 * @return array Processed event data array
 	 */
-	public static function process_event_form_data($post_data) {
+	public static function processEventFormData($post_data) {
 		// Build event datetime from separate fields
 		$event_datetime = $post_data['start_date'];
 		if (!empty($post_data['start_time']) && empty($post_data['all_day'])) {

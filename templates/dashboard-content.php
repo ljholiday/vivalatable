@@ -27,7 +27,7 @@ $user_logged_in = VT_Auth::isLoggedIn();
 // Get user profile data if logged in
 $profile_data = null;
 if ($user_logged_in) {
-    $profile_data = VT_Profile_Manager::get_user_profile($current_user->id);
+    $profile_data = VT_Profile_Manager::getUserProfile($current_user->id);
 }
 
 // Get user's recent activity
@@ -37,7 +37,7 @@ if ($user_logged_in) {
     $events_table = $db->prefix . 'events';
 
     // Get user's 3 most recent events (created or RSVP'd)
-    $recent_events = $db->get_results(
+    $recent_events = $db->getResults(
         $db->prepare(
             "SELECT DISTINCT e.*, 'created' as relationship_type FROM $events_table e
          WHERE e.author_id = %d AND e.event_status = 'active'
@@ -56,7 +56,7 @@ if ($user_logged_in) {
 // Get recent conversations from user's close circle for dashboard
 $recent_conversations = array();
 if ($user_logged_in) {
-    $recent_conversations = $conversation_manager->get_recent_conversations(5);
+    $recent_conversations = $conversation_manager->getRecentConversations(5);
 }
 
 // Set up template variables

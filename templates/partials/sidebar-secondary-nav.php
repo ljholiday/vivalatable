@@ -34,7 +34,7 @@ $is_logged_in = VT_Auth::isLoggedIn();
                 Create Conversation
             </a>
 
-            <?php if (VT_Feature_Flags::can_user_create_community()) : ?>
+            <?php if (VT_Feature_Flags::canUserCreateCommunity()) : ?>
                 <a href="/communities/create" class="vt-btn vt-btn-secondary">
                     Create Community
                 </a>
@@ -73,7 +73,7 @@ $is_logged_in = VT_Auth::isLoggedIn();
         <div class="vt-flex vt-gap vt-mb">
             <?php
             // Get user profile data for location
-            $profile_data = VT_Profile_Manager::get_user_profile($current_user->id);
+            $profile_data = VT_Profile_Manager::getUserProfile($current_user->id);
 
             // Include member display with larger avatar
             $user_id = $current_user->id;

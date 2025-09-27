@@ -28,7 +28,7 @@ $recent_conversations = array();
 // Get user's conversations for sidebar
 $user_conversations = array();
 if ($user_logged_in) {
-	$user_conversations = $conversation_manager->get_user_conversations($current_user->id, 6);
+	$user_conversations = $conversation_manager->getUserConversations($current_user->id, 6);
 }
 
 // Check for filter parameter from URL
@@ -79,13 +79,13 @@ $breadcrumbs = array();
 		<?php else : ?>
 			<?php
 			// For non-logged in users, show recent public conversations
-			$public_conversations = $conversation_manager->get_recent_conversations(20);
+			$public_conversations = $conversation_manager->getRecentConversations(20);
 			if (!empty($public_conversations)) :
 				foreach ($public_conversations as $conversation) : ?>
 					<div class="vt-section">
 						<div class="vt-flex vt-flex-between vt-mb-4">
 							<h3 class="vt-heading vt-heading-sm">
-								<a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>" class="vt-text-primary"><?php echo htmlspecialchars($conversation_manager->get_display_title($conversation)); ?></a>
+								<a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>" class="vt-text-primary"><?php echo htmlspecialchars($conversation_manager->getDisplayTitle($conversation)); ?></a>
 							</h3>
 						</div>
 
@@ -107,7 +107,7 @@ $breadcrumbs = array();
 
 						<?php if ($conversation->content) : ?>
 						<div class="vt-mb-4">
-							<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncate_words($conversation->excerpt ?: $conversation->content, 15)); ?></p>
+							<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncateWords($conversation->excerpt ?: $conversation->content, 15)); ?></p>
 						</div>
 						<?php endif; ?>
 

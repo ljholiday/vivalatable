@@ -16,12 +16,12 @@ echo "===================\n";
 
 // Test 1: Basic connection
 echo "1. Testing connection: ";
-$result = $db->get_var("SELECT 1");
+$result = $db->getVar("SELECT 1");
 echo ($result == 1) ? "✅ PASS\n" : "❌ FAIL\n";
 
 // Test 2: Table exists
 echo "2. Testing table existence: ";
-$exists = $db->get_var("SHOW TABLES LIKE 'vt_config'");
+$exists = $db->getVar("SHOW TABLES LIKE 'vt_config'");
 echo $exists ? "✅ PASS (table: $exists)\n" : "❌ FAIL\n";
 
 // Test 3: Direct SQL insert
@@ -36,7 +36,7 @@ try {
         echo "✅ PASS\n";
 
         // Verify
-        $retrieved = $db->get_var("SELECT option_value FROM vt_config WHERE option_name = '$test_option'");
+        $retrieved = $db->getVar("SELECT option_value FROM vt_config WHERE option_name = '$test_option'");
         echo "   Retrieved: $retrieved\n";
 
         // Cleanup
@@ -63,7 +63,7 @@ try {
         echo "✅ PASS (ID: $insert_id)\n";
 
         // Verify
-        $retrieved = $db->get_var("SELECT option_value FROM vt_config WHERE id = $insert_id");
+        $retrieved = $db->getVar("SELECT option_value FROM vt_config WHERE id = $insert_id");
         echo "   Retrieved: $retrieved\n";
 
         // Cleanup
@@ -72,7 +72,7 @@ try {
         echo "❌ FAIL (insert method returned false/0)\n";
 
         // Check if it was actually inserted
-        $check = $db->get_var("SELECT COUNT(*) FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
+        $check = $db->getVar("SELECT COUNT(*) FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
         echo "   Rows with this option_name: $check\n";
     }
 } catch (Exception $e) {

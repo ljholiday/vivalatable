@@ -15,7 +15,7 @@ class VT_Config {
         }
 
         $db = VT_Database::getInstance();
-        $value = $db->get_var("SELECT option_value FROM vt_config WHERE option_name = '$option_name'");
+        $value = $db->getVar("SELECT option_value FROM vt_config WHERE option_name = '$option_name'");
 
         if ($value !== null) {
             // Try to unserialize if it's serialized data
@@ -42,7 +42,7 @@ class VT_Config {
         $autoload = $autoload ?: 'yes';
 
         // Check if option exists
-        $exists = $db->get_var("SELECT COUNT(*) FROM vt_config WHERE option_name = '$option_name'");
+        $exists = $db->getVar("SELECT COUNT(*) FROM vt_config WHERE option_name = '$option_name'");
 
         if ($exists) {
             $result = $db->update('config',
@@ -107,7 +107,7 @@ class VT_Config {
     // Load all autoload options into cache
     public static function loadAutoloadOptions() {
         $db = VT_Database::getInstance();
-        $options = $db->get_results("SELECT option_name, option_value FROM vt_config WHERE autoload = 'yes'");
+        $options = $db->getResults("SELECT option_name, option_value FROM vt_config WHERE autoload = 'yes'");
 
         if ($options) {
             foreach ($options as $option) {
@@ -120,7 +120,7 @@ class VT_Config {
     // Get all configuration as array
     public static function getAll() {
         $db = VT_Database::getInstance();
-        $options = $db->get_results("SELECT option_name, option_value FROM vt_config");
+        $options = $db->getResults("SELECT option_name, option_value FROM vt_config");
 
         $config = [];
         foreach ($options as $option) {

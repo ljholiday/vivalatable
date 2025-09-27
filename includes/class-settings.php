@@ -11,7 +11,7 @@ class VT_Settings {
 	 *
 	 * @return int File size limit in bytes
 	 */
-	public static function get_max_file_size() {
+	public static function getMaxFileSize() {
 		$size_mb = VT_Config::get('max_file_size_mb', 5);
 		return $size_mb * 1024 * 1024;
 	}
@@ -21,7 +21,7 @@ class VT_Settings {
 	 *
 	 * @return int File size limit in MB
 	 */
-	public static function get_max_file_size_mb() {
+	public static function getMaxFileSizeMb() {
 		return VT_Config::get('max_file_size_mb', 5);
 	}
 
@@ -30,8 +30,8 @@ class VT_Settings {
 	 *
 	 * @return string Description text
 	 */
-	public static function get_file_size_description() {
-		$size_mb = self::get_max_file_size_mb();
+	public static function getFileSizeDescription() {
+		$size_mb = self::getMaxFileSizeMb();
 		return sprintf('JPG, PNG, GIF, WebP up to %dMB each', $size_mb);
 	}
 
@@ -40,8 +40,8 @@ class VT_Settings {
 	 *
 	 * @return string Error message
 	 */
-	public static function get_file_size_error_message() {
-		$size_mb = self::get_max_file_size_mb();
+	public static function getFileSizeErrorMessage() {
+		$size_mb = self::getMaxFileSizeMb();
 		return sprintf('File size must be less than %dMB.', $size_mb);
 	}
 
@@ -51,7 +51,7 @@ class VT_Settings {
 	 * @param array $file File array from $_FILES
 	 * @return array Array with 'success' and 'error' keys
 	 */
-	public static function validate_uploaded_file($file) {
+	public static function validateUploadedFile($file) {
 		// Check for upload errors
 		if ($file['error'] !== UPLOAD_ERR_OK) {
 			return array(
@@ -61,10 +61,10 @@ class VT_Settings {
 		}
 
 		// Check file size
-		if ($file['size'] > self::get_max_file_size()) {
+		if ($file['size'] > self::getMaxFileSize()) {
 			return array(
 				'success' => false,
-				'error' => self::get_file_size_error_message()
+				'error' => self::getFileSizeErrorMessage()
 			);
 		}
 
@@ -92,23 +92,23 @@ class VT_Settings {
 	/**
 	 * Get application setting with fallback
 	 */
-	public static function get_setting($key, $default = null) {
+	public static function getSetting($key, $default = null) {
 		return VT_Config::get($key, $default);
 	}
 
 	/**
 	 * Set application setting
 	 */
-	public static function set_setting($key, $value) {
+	public static function setSetting($key, $value) {
 		return VT_Config::set($key, $value);
 	}
 
 	/**
 	 * Get all VivalaTable settings
 	 */
-	public static function get_all_settings() {
+	public static function getAllSettings() {
 		return array(
-			'max_file_size_mb' => self::get_max_file_size_mb(),
+			'max_file_size_mb' => self::getMaxFileSizeMb(),
 			'site_name' => VT_Config::get('site_name', 'VivalaTable'),
 			'admin_email' => VT_Config::get('admin_email', 'admin@vivalatable.com'),
 			'enable_guest_rsvp' => VT_Config::get('enable_guest_rsvp', true),

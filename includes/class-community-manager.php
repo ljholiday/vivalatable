@@ -16,7 +16,7 @@ class VT_Community_Manager {
 	/**
 	 * Create a new community
 	 */
-	public function create_community($community_data) {
+	public function createCommunity($community_data) {
 		// Validate required fields
 		if (empty($community_data['name'])) {
 			return ['error' => 'Community name is required'];
@@ -36,7 +36,7 @@ class VT_Community_Manager {
 		// Sanitize input data
 		$name = VT_Sanitize::textField($community_data['name']);
 		$description = VT_Sanitize::post($community_data['description'] ?? '');
-		$visibility = $this->validate_privacy_setting($community_data['visibility'] ?? 'public');
+		$visibility = $this->validateprivacy_setting($community_data['visibility'] ?? 'public');
 		$creator_email = VT_Sanitize::email($community_data['creator_email']);
 
 		// Generate unique slug
@@ -59,8 +59,8 @@ class VT_Community_Manager {
 			'creator_email' => $creator_email,
 			'is_active' => 1,
 			'member_count' => 1,
-			'created_at' => VT_Time::current_time('mysql'),
-			'updated_at' => VT_Time::current_time('mysql'),
+			'created_at' => VT_Time::currentTime('mysql'),
+			'updated_at' => VT_Time::currentTime('mysql'),
 			'settings' => json_encode(array(
 				'allow_auto_join_on_reply' => ($visibility === 'public')
 			))
@@ -98,7 +98,7 @@ class VT_Community_Manager {
 	/**
 	 * Get a community by ID
 	 */
-	public function get_community($community_id) {
+	public function getCommunity($community_id) {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return null;
@@ -109,7 +109,7 @@ class VT_Community_Manager {
 		$community = VT_Cache::get($cache_key);
 
 		if ($community === false) {
-			$community = $this->db->get_row(
+			$community = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT * FROM {$this->db->prefix}communities WHERE id = %d AND is_active = 1",
 					$community_id
@@ -130,13 +130,13 @@ class VT_Community_Manager {
 	/**
 	 * Get community by slug
 	 */
-	public function get_community_by_slug($slug) {
+	public function getCommunityBySlug($slug) {
 		$slug = VT_Sanitize::slug($slug);
 		if (!$slug) {
 			return null;
 		}
 
-		return $this->db->get_row(
+		return $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM {$this->db->prefix}communities WHERE slug = %s AND is_active = 1",
 				$slug
@@ -147,14 +147,14 @@ class VT_Community_Manager {
 	/**
 	 * Update community data
 	 */
-	public function update_community($community_id, $update_data) {
+	public function updateCommunity($community_id, $update_data) {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return new VT_Error('invalid_community', 'Invalid community ID');
 		}
 
 		// Check if community exists
-		$community = $this->get_community($community_id);
+		$community = $this->getCommunity($community_id);
 		if (!$community) {
 			return new VT_Error('community_not_found', 'Community not found');
 		}
@@ -178,7 +178,7 @@ class VT_Community_Manager {
 						$sanitized_data[$field] = VT_Sanitize::post($value);
 						break;
 					case 'visibility':
-						$sanitized_data[$field] = $this->validate_privacy_setting($value);
+						$sanitized_data[$field] = $this->validateprivacy_setting($value);
 						break;
 					case 'settings':
 						$sanitized_data[$field] = is_array($value) ? json_encode($value) : $value;
@@ -191,7 +191,7 @@ class VT_Community_Manager {
 			return new VT_Error('no_valid_data', 'No valid data to update');
 		}
 
-		$sanitized_data['updated_at'] = VT_Time::current_time('mysql');
+		$sanitized_data['updated_at'] = VT_Time::currentTime('mysql');
 
 		$result = $this->db->update('communities', $sanitized_data, array('id' => $community_id));
 
@@ -208,7 +208,7 @@ class VT_Community_Manager {
 	/**
 	 * Add a member to a community
 	 */
-	public function add_member($community_id, $member_data, $skip_invitation = false) {
+	public function addMember($community_id, $member_data, $skip_invitation = false) {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return new VT_Error('invalid_community', 'Invalid community ID');
@@ -220,13 +220,13 @@ class VT_Community_Manager {
 		}
 
 		// Check if community exists
-		$community = $this->get_community($community_id);
+		$community = $this->getCommunity($community_id);
 		if (!$community) {
 			return new VT_Error('community_not_found', 'Community not found');
 		}
 
 		// Check if user is already a member
-		if ($this->is_member($community_id, null, $member_data['email'])) {
+		if ($this->isMember($community_id, null, $member_data['email'])) {
 			return new VT_Error('already_member', 'User is already a member of this community');
 		}
 
@@ -249,7 +249,7 @@ class VT_Community_Manager {
 			'display_name' => VT_Sanitize::textField($member_data['display_name'] ?? ''),
 			'role' => in_array($member_data['role'] ?? 'member', array('admin', 'member')) ? $member_data['role'] : 'member',
 			'status' => in_array($member_data['status'] ?? 'active', array('active', 'inactive')) ? $member_data['status'] : 'active',
-			'joined_at' => VT_Time::current_time('mysql')
+			'joined_at' => VT_Time::currentTime('mysql')
 		);
 
 		$member_id = $this->db->insert('community_members', $sanitized_data);
@@ -259,7 +259,7 @@ class VT_Community_Manager {
 		}
 
 		// Update community member count
-		$this->update_member_count($community_id);
+		$this->updatemember_count($community_id);
 
 		// Clear cache
 		VT_Cache::delete('community_' . $community_id);
@@ -271,7 +271,7 @@ class VT_Community_Manager {
 	/**
 	 * Check if user is a member of a community
 	 */
-	public function is_member($community_id, $user_id = null, $email = null) {
+	public function isMember($community_id, $user_id = null, $email = null) {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return false;
@@ -287,14 +287,14 @@ class VT_Community_Manager {
 		}
 
 		if ($user_id) {
-			$member = $this->db->get_row(
+			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND user_id = %d AND status = %s",
 					$community_id, intval($user_id), 'active'
 				)
 			);
 		} else if ($email) {
-			$member = $this->db->get_row(
+			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
 					$community_id, VT_Sanitize::email($email), 'active'
@@ -310,7 +310,7 @@ class VT_Community_Manager {
 	/**
 	 * Get member role in a community
 	 */
-	public function get_member_role($community_id, $user_id = null, $email = null) {
+	public function getMemberRole($community_id, $user_id = null, $email = null) {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return null;
@@ -326,14 +326,14 @@ class VT_Community_Manager {
 		}
 
 		if ($user_id) {
-			$member = $this->db->get_row(
+			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT role FROM {$this->db->prefix}community_members WHERE community_id = %d AND user_id = %d AND status = %s",
 					$community_id, intval($user_id), 'active'
 				)
 			);
 		} else if ($email) {
-			$member = $this->db->get_row(
+			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT role FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
 					$community_id, VT_Sanitize::email($email), 'active'
@@ -349,7 +349,7 @@ class VT_Community_Manager {
 	/**
 	 * Check if current user can manage a community
 	 */
-	public function can_manage_community($community_id, $user_id = null) {
+	public function canManageCommunity($community_id, $user_id = null) {
 		if (!$user_id) {
 			$user_id = VT_Auth::getCurrentUserId();
 		}
@@ -364,14 +364,14 @@ class VT_Community_Manager {
 		}
 
 		// Community admins can manage their community
-		$role = $this->get_member_role($community_id, $user_id);
+		$role = $this->getMemberRole($community_id, $user_id);
 		return $role === 'admin';
 	}
 
 	/**
 	 * Send community invitation
 	 */
-	public function send_invitation($community_id, $invitation_data) {
+	public function sendInvitation($community_id, $invitation_data) {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return new VT_Error('invalid_community', 'Invalid community ID');
@@ -383,7 +383,7 @@ class VT_Community_Manager {
 		}
 
 		// Check if community exists
-		$community = $this->get_community($community_id);
+		$community = $this->getCommunity($community_id);
 		if (!$community) {
 			return new VT_Error('community_not_found', 'Community not found');
 		}
@@ -394,7 +394,7 @@ class VT_Community_Manager {
 		}
 
 		$current_user = VT_Auth::getCurrentUser();
-		$inviter_member = $this->db->get_row(
+		$inviter_member = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND user_id = %d",
 				$community_id, VT_Auth::getCurrentUserId()
@@ -402,7 +402,7 @@ class VT_Community_Manager {
 		);
 
 		// Check if user is already invited or member
-		$existing_invitation = $this->db->get_row(
+		$existing_invitation = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT id FROM {$this->db->prefix}community_invitations
 				 WHERE community_id = %d AND invited_email = %s AND status = 'pending'",
@@ -414,7 +414,7 @@ class VT_Community_Manager {
 			return new VT_Error('already_invited', 'User has already been invited to this community');
 		}
 
-		if ($this->is_member($community_id, null, $invitation_data['invited_email'])) {
+		if ($this->isMember($community_id, null, $invitation_data['invited_email'])) {
 			return new VT_Error('already_member', 'User is already a member of this community');
 		}
 
@@ -431,7 +431,7 @@ class VT_Community_Manager {
 			'personal_message' => VT_Sanitize::post($invitation_data['personal_message'] ?? ''),
 			'status' => 'pending',
 			'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
-			'created_at' => VT_Time::current_time('mysql')
+			'created_at' => VT_Time::currentTime('mysql')
 		);
 
 		$invitation_id = $this->db->insert('community_invitations', $insert_data);
@@ -441,7 +441,7 @@ class VT_Community_Manager {
 		}
 
 		// Send invitation email
-		$this->send_invitation_email($invitation_id);
+		$this->sendinvitation_email($invitation_id);
 
 		return $invitation_id;
 	}
@@ -449,8 +449,8 @@ class VT_Community_Manager {
 	/**
 	 * Send invitation email
 	 */
-	private function send_invitation_email($invitation_id) {
-		$invitation = $this->db->get_row(
+	private function sendInvitationEmail($invitation_id) {
+		$invitation = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT i.*, c.name as community_name, c.description as community_description,
 				        m.display_name as inviter_name
@@ -470,7 +470,7 @@ class VT_Community_Manager {
 
 		$subject = sprintf('%s invited you to join %s', $invitation->inviter_name, $invitation->community_name);
 
-		$message = $this->get_invitation_email_template($invitation, $invitation_url);
+		$message = $this->getinvitation_email_template($invitation, $invitation_url);
 
 		return VT_Mail::send($invitation->invited_email, $subject, $message);
 	}
@@ -478,7 +478,7 @@ class VT_Community_Manager {
 	/**
 	 * Get invitation email template
 	 */
-	private function get_invitation_email_template($invitation, $invitation_url) {
+	private function getInvitationEmailTemplate($invitation, $invitation_url) {
 		ob_start();
 		?>
 		<html>
@@ -531,7 +531,7 @@ class VT_Community_Manager {
 	/**
 	 * Get communities for a user
 	 */
-	public function get_user_communities($user_id = null, $include_inactive = false) {
+	public function getUserCommunities($user_id = null, $include_inactive = false) {
 		if (!$user_id) {
 			$user_id = VT_Auth::getCurrentUserId();
 		}
@@ -542,7 +542,7 @@ class VT_Community_Manager {
 
 		$status_condition = $include_inactive ? '' : " AND m.status = 'active'";
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT c.*, m.role, m.status as member_status, m.joined_at
 				 FROM {$this->db->prefix}communities c
@@ -557,7 +557,7 @@ class VT_Community_Manager {
 	/**
 	 * Get community members
 	 */
-	public function get_community_members($community_id, $role = null, $status = 'active') {
+	public function getCommunityMembers($community_id, $role = null, $status = 'active') {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return array();
@@ -571,7 +571,7 @@ class VT_Community_Manager {
 			$where_values[] = $role;
 		}
 
-		return $this->db->get_results(
+		return $this->db->getResults(
 			$this->db->prepare(
 				"SELECT m.*, u.login as username
 				 FROM {$this->db->prefix}community_members m
@@ -586,8 +586,8 @@ class VT_Community_Manager {
 	/**
 	 * Update member count for a community
 	 */
-	private function update_member_count($community_id) {
-		$count = $this->db->get_var(
+	private function updateMemberCount($community_id) {
+		$count = $this->db->getVar(
 			$this->db->prepare(
 				"SELECT COUNT(*) FROM {$this->db->prefix}community_members
 				 WHERE community_id = %d AND status = 'active'",
@@ -605,8 +605,8 @@ class VT_Community_Manager {
 	/**
 	 * Check if community slug exists
 	 */
-	private function community_slug_exists($slug) {
-		return $this->db->get_var(
+	private function communitySlugExists($slug) {
+		return $this->db->getVar(
 			$this->db->prepare(
 				"SELECT id FROM {$this->db->prefix}communities WHERE slug = %s",
 				$slug
@@ -617,7 +617,7 @@ class VT_Community_Manager {
 	/**
 	 * Validate privacy setting for communities
 	 */
-	private function validate_privacy_setting($privacy) {
+	private function validatePrivacySetting($privacy) {
 		$allowed_privacy_settings = array('public', 'private');
 
 		$privacy = VT_Sanitize::textField($privacy);
@@ -632,14 +632,14 @@ class VT_Community_Manager {
 	/**
 	 * Delete a community and all associated data
 	 */
-	public function delete_community($community_id) {
+	public function deleteCommunity($community_id) {
 		$community_id = intval($community_id);
 		if (!$community_id) {
 			return new VT_Error('invalid_community', 'Invalid community ID');
 		}
 
 		// Check if community exists
-		$community = $this->get_community($community_id);
+		$community = $this->getCommunity($community_id);
 		if (!$community) {
 			return new VT_Error('community_not_found', 'Community not found');
 		}
@@ -650,7 +650,7 @@ class VT_Community_Manager {
 			return new VT_Error('user_required', 'You must be logged in');
 		}
 
-		$user_role = $this->get_member_role($community_id, $current_user_id);
+		$user_role = $this->getMemberRole($community_id, $current_user_id);
 		if ($user_role !== 'admin') {
 			return new VT_Error('permission_denied', 'You must be a community admin to delete this community');
 		}
@@ -704,8 +704,8 @@ class VT_Community_Manager {
 	/**
 	 * Get community setting value
 	 */
-	public function get_community_setting($community_id, $setting_key, $default = null) {
-		$community = $this->get_community($community_id);
+	public function getCommunitySetting($community_id, $setting_key, $default = null) {
+		$community = $this->getCommunity($community_id);
 		if (!$community) {
 			return $default;
 		}
@@ -717,8 +717,8 @@ class VT_Community_Manager {
 	/**
 	 * Set community setting value
 	 */
-	public function set_community_setting($community_id, $setting_key, $value) {
-		$community = $this->get_community($community_id);
+	public function setCommunitySetting($community_id, $setting_key, $value) {
+		$community = $this->getCommunity($community_id);
 		if (!$community) {
 			return false;
 		}
@@ -726,14 +726,14 @@ class VT_Community_Manager {
 		$settings = is_array($community->settings) ? $community->settings : array();
 		$settings[$setting_key] = $value;
 
-		return $this->update_community($community_id, array('settings' => $settings));
+		return $this->updateCommunity($community_id, array('settings' => $settings));
 	}
 
 	/**
 	 * Check if a community allows auto-join on reply
 	 */
-	public function allows_auto_join_on_reply($community_id) {
-		$community = $this->get_community($community_id);
+	public function allowsAutoJoinOnReply($community_id) {
+		$community = $this->getCommunity($community_id);
 		if (!$community) {
 			return false;
 		}
@@ -741,21 +741,21 @@ class VT_Community_Manager {
 		// Default to true for all public communities
 		$default = ($community->visibility === 'public');
 
-		return $this->get_community_setting($community_id, 'allow_auto_join_on_reply', $default);
+		return $this->getcommunity_setting($community_id, 'allow_auto_join_on_reply', $default);
 	}
 
 	/**
 	 * Auto-join a user to a community
 	 */
-	public function join_community($community_id, $user_id) {
+	public function joinCommunity($community_id, $user_id) {
 		// Check if user is already a member
-		$existing_role = $this->get_member_role($community_id, $user_id);
+		$existing_role = $this->getMemberRole($community_id, $user_id);
 		if ($existing_role) {
 			return true; // Already a member
 		}
 
 		// Get user info
-		$user = $this->db->get_row(
+		$user = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM {$this->db->prefix}users WHERE id = %d",
 				$user_id
@@ -781,8 +781,8 @@ class VT_Community_Manager {
 	/**
 	 * Get community invitation by token
 	 */
-	public function get_invitation_by_token($token) {
-		return $this->db->get_row(
+	public function getInvitationByToken($token) {
+		return $this->db->getRow(
 			$this->db->prepare(
 				"SELECT i.*, c.name as community_name, c.slug as community_slug,
 				        c.description as community_description, c.visibility, c.member_count,
@@ -799,9 +799,9 @@ class VT_Community_Manager {
 	/**
 	 * Accept community invitation
 	 */
-	public function accept_community_invitation($token, $user_id, $member_data = array()) {
+	public function acceptCommunityInvitation($token, $user_id, $member_data = array()) {
 		// Get invitation
-		$invitation = $this->get_invitation_by_token($token);
+		$invitation = $this->getinvitation_by_token($token);
 		if (!$invitation) {
 			return new VT_Error('invitation_not_found', 'Invitation not found');
 		}
@@ -816,12 +816,12 @@ class VT_Community_Manager {
 		}
 
 		// Check if already a member
-		if ($this->is_member($invitation->community_id, $user_id)) {
+		if ($this->isMember($invitation->community_id, $user_id)) {
 			return new VT_Error('already_member', 'You are already a member of this community');
 		}
 
 		// Get user info
-		$user = $this->db->get_row(
+		$user = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM {$this->db->prefix}users WHERE id = %d",
 				$user_id
@@ -856,7 +856,7 @@ class VT_Community_Manager {
 			'community_invitations',
 			array(
 				'status' => 'accepted',
-				'responded_at' => VT_Time::current_time('mysql'),
+				'responded_at' => VT_Time::currentTime('mysql'),
 			),
 			array('id' => $invitation->id)
 		);

@@ -40,7 +40,7 @@ class VT_Permission_Test {
 
             if ($user_id) {
                 // Verify user was created
-                $user = $this->db->get_row("SELECT * FROM vt_users WHERE id = $user_id");
+                $user = $this->db->getRow("SELECT * FROM vt_users WHERE id = $user_id");
 
                 if ($user && $user->email === $email && password_verify($password, $user->password_hash)) {
                     $this->pass("User registration successful");
@@ -127,7 +127,7 @@ class VT_Permission_Test {
 
         try {
             // Create regular user
-            $user_id = $this->create_test_user();
+            $user_id = $this->createtest_user();
 
             // Simulate login
             $_SESSION['user_id'] = $user_id;
@@ -159,8 +159,8 @@ class VT_Permission_Test {
 
         try {
             // Create admin user by adding to community as admin
-            $user_id = $this->create_test_user();
-            $community_id = $this->create_test_community($user_id);
+            $user_id = $this->createtest_user();
+            $community_id = $this->createtest_community($user_id);
 
             // Add user as community admin
             $this->db->insert('community_members', [

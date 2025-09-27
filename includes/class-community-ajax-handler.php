@@ -10,13 +10,13 @@ class VT_Community_Ajax_Handler {
 	private $community_manager;
 
 	public function __construct() {
-		$this->init_routes();
+		$this->initRoutes();
 	}
 
 	/**
 	 * Initialize AJAX routes for VivalaTable
 	 */
-	private function init_routes() {
+	private function initRoutes() {
 		// Register AJAX endpoints with VT_Ajax system
 		VT_Ajax::register('join_community', array($this, 'ajax_join_community'));
 		VT_Ajax::register('leave_community', array($this, 'ajax_leave_community'));
@@ -34,18 +34,18 @@ class VT_Community_Ajax_Handler {
 		VT_Ajax::register('load_community_join_form', array($this, 'ajax_load_community_join_form'));
 	}
 
-	private function get_community_manager() {
+	private function getCommunityManager() {
 		if (!$this->community_manager) {
 			$this->community_manager = new VT_Community_Manager();
 		}
 		return $this->community_manager;
 	}
 
-	public function ajax_join_community() {
+	public function ajaxJoinCommunity() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in to join a community.');
+			VT_Ajax::sendError('You must be logged in to join a community.');
 		}
 
 		$community_id = intval($_POST['community_id']);
@@ -53,17 +53,17 @@ class VT_Community_Ajax_Handler {
 		$current_user_id = VT_Auth::getCurrentUserId();
 
 		if (!$community_id) {
-			VT_Ajax::send_error('Invalid community.');
+			VT_Ajax::sendError('Invalid community.');
 		}
 
-		$community_manager = $this->get_community_manager();
-		$community = $community_manager->get_community($community_id);
+		$community_manager = $this->getCommunityManager();
+		$community = $community_manager->getCommunity($community_id);
 		if (!$community) {
-			VT_Ajax::send_error('Community not found.');
+			VT_Ajax::sendError('Community not found.');
 		}
 
-		if ($community_manager->is_member($community_id, $current_user_id)) {
-			VT_Ajax::send_error('You are already a member of this community.');
+		if ($community_manager->isMember($community_id, $current_user_id)) {
+			VT_Ajax::sendError('You are already a member of this community.');
 		}
 
 		$member_data = array(
@@ -76,56 +76,56 @@ class VT_Community_Ajax_Handler {
 		$result = $community_manager->add_member($community_id, $member_data);
 
 		if ($result) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => sprintf('Welcome to %s!', $community->name),
 				'redirect_url' => VT_Config::get('site_url') . '/communities/' . $community->slug,
 			));
 		} else {
-			VT_Ajax::send_error('Failed to join community. Please try again.');
+			VT_Ajax::sendError('Failed to join community. Please try again.');
 		}
 	}
 
-	public function ajax_leave_community() {
+	public function ajaxLeaveCommunity() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$community_id = intval($_POST['community_id']);
 		$current_user_id = VT_Auth::getCurrentUserId();
 
 		if (!$community_id) {
-			VT_Ajax::send_error('Invalid community.');
+			VT_Ajax::sendError('Invalid community.');
 		}
 
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 
-		if (!$community_manager->is_member($community_id, $current_user_id)) {
-			VT_Ajax::send_error('You are not a member of this community.');
+		if (!$community_manager->isMember($community_id, $current_user_id)) {
+			VT_Ajax::sendError('You are not a member of this community.');
 		}
 
-		$user_role = $community_manager->get_member_role($community_id, $current_user_id);
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
 		if ($user_role === 'admin') {
-			$admin_count = $community_manager->get_admin_count($community_id);
+			$admin_count = $community_manager->getadmin_count($community_id);
 			if ($admin_count <= 1) {
-				VT_Ajax::send_error('You cannot leave as you are the only admin. Please promote another member first.');
+				VT_Ajax::sendError('You cannot leave as you are the only admin. Please promote another member first.');
 			}
 		}
 
 		$result = $community_manager->remove_member($community_id, $current_user_id);
 
 		if ($result) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'You have left the community.',
 				'redirect_url' => VT_Config::get('site_url') . '/communities',
 			));
 		} else {
-			VT_Ajax::send_error('Failed to leave community. Please try again.');
+			VT_Ajax::sendError('Failed to leave community. Please try again.');
 		}
 	}
 
-	public function ajax_create_community() {
+	public function ajaxCreateCommunity() {
 		VT_Security::verifyNonce('create_vt_community', 'vt_community_nonce');
 
 		$form_errors = array();
@@ -134,28 +134,28 @@ class VT_Community_Ajax_Handler {
 		}
 
 		if (!empty($form_errors)) {
-			VT_Ajax::send_error(implode(' ', $form_errors));
+			VT_Ajax::sendError(implode(' ', $form_errors));
 		}
 
 		$community_data = array(
 			'name' => VT_Sanitize::textField($_POST['name']),
-			'description' => VT_Security::kses_post($_POST['description'] ?? ''),
+			'description' => VT_Security::ksesPost($_POST['description'] ?? ''),
 			'visibility' => VT_Sanitize::textField($_POST['visibility'] ?? 'public'),
 		);
 
-		$community_manager = $this->get_community_manager();
-		$community_id = $community_manager->create_community($community_data);
+		$community_manager = $this->getCommunityManager();
+		$community_id = $community_manager->createCommunity($community_data);
 
 		if (!is_vt_error($community_id)) {
 			// Handle cover image upload
 			if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
-				$upload_result = $this->handle_cover_image_upload($_FILES['cover_image'], $community_id);
+				$upload_result = $this->handleCoverImageUpload($_FILES['cover_image'], $community_id);
 				if (is_vt_error($upload_result)) {
-					error_log('Cover image upload failed: ' . $upload_result->get_error_message());
+					error_log('Cover image upload failed: ' . $upload_result->getErrorMessage());
 				}
 			}
 
-			$created_community = $community_manager->get_community($community_id);
+			$created_community = $community_manager->getCommunity($community_id);
 
 			$creation_data = array(
 				'community_id' => $community_id,
@@ -165,39 +165,39 @@ class VT_Community_Ajax_Handler {
 
 			VT_Transient::set('vt_community_created_' . VT_Auth::getCurrentUserId(), $creation_data, 300);
 
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'community_id' => $community_id,
 				'message' => 'Community created successfully!',
 				'community_url' => VT_Config::get('site_url') . '/communities/' . $created_community->slug,
 			));
 		} else {
-			VT_Ajax::send_error($community_id->get_error_message());
+			VT_Ajax::sendError($community_id->getErrorMessage());
 		}
 	}
 
-	public function ajax_update_community() {
+	public function ajaxUpdateCommunity() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$community_id = intval($_POST['community_id']);
 		if (!$community_id) {
-			VT_Ajax::send_error('Community ID is required.');
+			VT_Ajax::sendError('Community ID is required.');
 		}
 
-		$community_manager = $this->get_community_manager();
-		$community = $community_manager->get_community($community_id);
+		$community_manager = $this->getCommunityManager();
+		$community = $community_manager->getCommunity($community_id);
 		if (!$community) {
-			VT_Ajax::send_error('Community not found.');
+			VT_Ajax::sendError('Community not found.');
 		}
 
 		$current_user_id = VT_Auth::getCurrentUserId();
-		$user_role = $community_manager->get_member_role($community_id, $current_user_id);
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
 
 		if ($user_role !== 'admin' && !VT_Auth::currentUserCan('manage_options')) {
-			VT_Ajax::send_error('You do not have permission to update this community.');
+			VT_Ajax::sendError('You do not have permission to update this community.');
 		}
 
 		$form_errors = array();
@@ -206,49 +206,49 @@ class VT_Community_Ajax_Handler {
 		}
 
 		if (!empty($form_errors)) {
-			VT_Ajax::send_error(implode(' ', $form_errors));
+			VT_Ajax::sendError(implode(' ', $form_errors));
 		}
 
 		$community_data = array(
 			'name' => VT_Sanitize::textField($_POST['name']),
-			'description' => VT_Security::kses_post($_POST['description'] ?? ''),
+			'description' => VT_Security::ksesPost($_POST['description'] ?? ''),
 			'visibility' => VT_Sanitize::textField($_POST['visibility'] ?? 'public'),
 		);
 
-		$result = $community_manager->update_community($community_id, $community_data);
+		$result = $community_manager->updateCommunity($community_id, $community_data);
 
 		if ($result !== false) {
-			$updated_community = $community_manager->get_community($community_id);
-			VT_Ajax::send_success(array(
+			$updated_community = $community_manager->getCommunity($community_id);
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Community updated successfully!',
 				'community_url' => VT_Config::get('site_url') . '/communities/' . $updated_community->slug,
 			));
 		} else {
-			VT_Ajax::send_error('Failed to update community. Please try again.');
+			VT_Ajax::sendError('Failed to update community. Please try again.');
 		}
 	}
 
-	public function ajax_get_community_members() {
+	public function ajaxGetCommunityMembers() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$community_id = intval($_POST['community_id']);
 		if (!$community_id) {
-			VT_Ajax::send_error('Community ID is required.');
+			VT_Ajax::sendError('Community ID is required.');
 		}
 
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 		$current_user_id = VT_Auth::getCurrentUserId();
 
-		if (!$community_manager->is_member($community_id, $current_user_id)) {
-			VT_Ajax::send_error('You must be a member to view the member list.');
+		if (!$community_manager->isMember($community_id, $current_user_id)) {
+			VT_Ajax::sendError('You must be a member to view the member list.');
 		}
 
-		$members = $community_manager->get_community_members($community_id);
-		$user_role = $community_manager->get_member_role($community_id, $current_user_id);
+		$members = $community_manager->getCommunityMembers($community_id);
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
 
 		// Generate HTML for each member
 		$members_html = '';
@@ -265,7 +265,7 @@ class VT_Community_Ajax_Handler {
 
 				// Member display (simplified version)
 				if (class_exists('VT_Member_Display')) {
-					$members_html .= VT_Member_Display::get_member_display($member->user_id, array('avatar_size' => 40));
+					$members_html .= VT_Member_Display::getMemberDisplay($member->user_id, array('avatar_size' => 40));
 				} else {
 					$members_html .= '<div class="vt-flex vt-gap-2"><div class="vt-avatar"></div>';
 					$members_html .= '<div><strong>' . VT_Sanitize::escHtml($member->display_name ?: $member->email) . '</strong></div></div>';
@@ -283,7 +283,7 @@ class VT_Community_Ajax_Handler {
 			$members_html .= '</div>';
 		}
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'members' => $members,
 			'members_html' => $members_html,
 			'user_role' => $user_role,
@@ -291,11 +291,11 @@ class VT_Community_Ajax_Handler {
 		));
 	}
 
-	public function ajax_update_member_role() {
+	public function ajaxUpdateMemberRole() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$community_id = intval($_POST['community_id']);
@@ -303,103 +303,103 @@ class VT_Community_Ajax_Handler {
 		$new_role = VT_Sanitize::textField($_POST['role']);
 
 		if (!$community_id || !$member_id || !$new_role) {
-			VT_Ajax::send_error('All fields are required.');
+			VT_Ajax::sendError('All fields are required.');
 		}
 
 		if (!in_array($new_role, array('member', 'moderator', 'admin'))) {
-			VT_Ajax::send_error('Invalid role.');
+			VT_Ajax::sendError('Invalid role.');
 		}
 
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 		$current_user_id = VT_Auth::getCurrentUserId();
-		$user_role = $community_manager->get_member_role($community_id, $current_user_id);
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
 
 		if ($user_role !== 'admin' && !VT_Auth::currentUserCan('manage_options')) {
-			VT_Ajax::send_error('You do not have permission to change member roles.');
+			VT_Ajax::sendError('You do not have permission to change member roles.');
 		}
 
-		$result = $community_manager->update_member_role($community_id, $member_id, $new_role);
+		$result = $community_manager->updatemember_role($community_id, $member_id, $new_role);
 
 		if ($result) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Member role updated successfully.',
 			));
 		} else {
-			VT_Ajax::send_error('Failed to update member role.');
+			VT_Ajax::sendError('Failed to update member role.');
 		}
 	}
 
-	public function ajax_remove_member() {
+	public function ajaxRemoveMember() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$community_id = intval($_POST['community_id']);
 		$member_id = intval($_POST['member_id']);
 
 		if (!$community_id || !$member_id) {
-			VT_Ajax::send_error('Community ID and member ID are required.');
+			VT_Ajax::sendError('Community ID and member ID are required.');
 		}
 
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 		$current_user_id = VT_Auth::getCurrentUserId();
-		$user_role = $community_manager->get_member_role($community_id, $current_user_id);
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
 
 		if ($user_role !== 'admin' && !VT_Auth::currentUserCan('manage_options')) {
-			VT_Ajax::send_error('You do not have permission to remove members.');
+			VT_Ajax::sendError('You do not have permission to remove members.');
 		}
 
-		$member_role = $community_manager->get_member_role($community_id, $member_id);
+		$member_role = $community_manager->getMemberRole($community_id, $member_id);
 		if ($member_role === 'admin') {
-			$admin_count = $community_manager->get_admin_count($community_id);
+			$admin_count = $community_manager->getadmin_count($community_id);
 			if ($admin_count <= 1) {
-				VT_Ajax::send_error('Cannot remove the only admin. Please promote another member first.');
+				VT_Ajax::sendError('Cannot remove the only admin. Please promote another member first.');
 			}
 		}
 
 		$result = $community_manager->remove_member($community_id, $member_id);
 
 		if ($result) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Member removed successfully.',
 			));
 		} else {
-			VT_Ajax::send_error('Failed to remove member.');
+			VT_Ajax::sendError('Failed to remove member.');
 		}
 	}
 
-	public function ajax_send_invitation() {
+	public function ajaxSendInvitation() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$community_id = intval($_POST['community_id']);
 		$email = VT_Sanitize::email($_POST['email']);
 
 		if (!$community_id || !$email) {
-			VT_Ajax::send_error('Community ID and email are required.');
+			VT_Ajax::sendError('Community ID and email are required.');
 		}
 
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 		$current_user_id = VT_Auth::getCurrentUserId();
-		$user_role = $community_manager->get_member_role($community_id, $current_user_id);
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
 
 		if (!in_array($user_role, array('admin', 'moderator')) && !VT_Auth::currentUserCan('manage_options')) {
-			VT_Ajax::send_error('You do not have permission to send invitations.');
+			VT_Ajax::sendError('You do not have permission to send invitations.');
 		}
 
-		$community = $community_manager->get_community($community_id);
+		$community = $community_manager->getCommunity($community_id);
 		if (!$community) {
-			VT_Ajax::send_error('Community not found.');
+			VT_Ajax::sendError('Community not found.');
 		}
 
 		$db = VT_Database::getInstance();
 
-		$existing = $db->get_var(
+		$existing = $db->getVar(
 			$db->prepare(
 				"SELECT id FROM {$db->prefix}community_invitations WHERE community_id = %d AND invited_email = %s AND status = 'pending'",
 				$community_id, $email
@@ -407,52 +407,52 @@ class VT_Community_Ajax_Handler {
 		);
 
 		if ($existing) {
-			VT_Ajax::send_error('This email has already been invited.');
+			VT_Ajax::sendError('This email has already been invited.');
 		}
 
-		if ($community_manager->is_member($community_id, null, $email)) {
-			VT_Ajax::send_error('This email is already a member of the community.');
+		if ($community_manager->isMember($community_id, null, $email)) {
+			VT_Ajax::sendError('This email is already a member of the community.');
 		}
 
 		$invitation_data = array(
 			'invited_email' => $email,
-			'personal_message' => VT_Security::sanitize_textarea($_POST['personal_message'] ?? ''),
+			'personal_message' => VT_Security::sanitizeTextarea($_POST['personal_message'] ?? ''),
 		);
 
-		$result = $community_manager->send_invitation($community_id, $invitation_data);
+		$result = $community_manager->sendinvitation($community_id, $invitation_data);
 
 		if (!is_vt_error($result)) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Invitation sent successfully!',
 			));
 		} else {
-			VT_Ajax::send_error($result->get_error_message());
+			VT_Ajax::sendError($result->getErrorMessage());
 		}
 	}
 
-	public function ajax_get_community_invitations() {
+	public function ajaxGetCommunityInvitations() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$community_id = intval($_POST['community_id']);
 		if (!$community_id) {
-			VT_Ajax::send_error('Community ID is required.');
+			VT_Ajax::sendError('Community ID is required.');
 		}
 
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 		$current_user_id = VT_Auth::getCurrentUserId();
-		$user_role = $community_manager->get_member_role($community_id, $current_user_id);
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
 
 		if (!in_array($user_role, array('admin', 'moderator')) && !VT_Auth::currentUserCan('manage_options')) {
-			VT_Ajax::send_error('You do not have permission to view invitations.');
+			VT_Ajax::sendError('You do not have permission to view invitations.');
 		}
 
 		$db = VT_Database::getInstance();
 
-		$invitations = $db->get_results(
+		$invitations = $db->getResults(
 			$db->prepare(
 				"SELECT ci.*, u.display_name as invited_by_name
 				FROM {$db->prefix}community_invitations ci
@@ -463,26 +463,26 @@ class VT_Community_Ajax_Handler {
 			)
 		);
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'invitations' => $invitations,
 		));
 	}
 
-	public function ajax_cancel_invitation() {
+	public function ajaxCancelInvitation() {
 		VT_Security::verifyNonce('vt_community_action', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in.');
+			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$invitation_id = intval($_POST['invitation_id']);
 		if (!$invitation_id) {
-			VT_Ajax::send_error('Invitation ID is required.');
+			VT_Ajax::sendError('Invitation ID is required.');
 		}
 
 		$db = VT_Database::getInstance();
 
-		$invitation = $db->get_row(
+		$invitation = $db->getRow(
 			$db->prepare(
 				"SELECT * FROM {$db->prefix}community_invitations WHERE id = %d",
 				$invitation_id
@@ -490,48 +490,48 @@ class VT_Community_Ajax_Handler {
 		);
 
 		if (!$invitation) {
-			VT_Ajax::send_error('Invitation not found.');
+			VT_Ajax::sendError('Invitation not found.');
 		}
 
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 		$current_user_id = VT_Auth::getCurrentUserId();
-		$user_role = $community_manager->get_member_role($invitation->community_id, $current_user_id);
+		$user_role = $community_manager->getMemberRole($invitation->community_id, $current_user_id);
 
 		if (!in_array($user_role, array('admin', 'moderator')) && !VT_Auth::currentUserCan('manage_options')) {
-			VT_Ajax::send_error('You do not have permission to cancel invitations.');
+			VT_Ajax::sendError('You do not have permission to cancel invitations.');
 		}
 
 		$result = $db->delete('community_invitations', array('id' => $invitation_id));
 
 		if ($result !== false) {
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => 'Invitation cancelled successfully.',
 			));
 		} else {
-			VT_Ajax::send_error('Failed to cancel invitation.');
+			VT_Ajax::sendError('Failed to cancel invitation.');
 		}
 	}
 
-	public function ajax_accept_invitation() {
+	public function ajaxAcceptInvitation() {
 		VT_Security::verifyNonce('vt_accept_invitation', 'nonce');
 
 		$token = VT_Sanitize::textField($_POST['token'] ?? '');
 		$community_id = intval($_POST['community_id'] ?? 0);
 
 		if (!$token || !$community_id) {
-			VT_Ajax::send_error('Invalid invitation parameters.');
+			VT_Ajax::sendError('Invalid invitation parameters.');
 		}
 
-		$community_manager = $this->get_community_manager();
-		$invitation = $community_manager->get_invitation_by_token($token);
+		$community_manager = $this->getCommunityManager();
+		$invitation = $community_manager->getinvitation_by_token($token);
 
 		if (!$invitation) {
-			VT_Ajax::send_error('Invalid or expired invitation.');
+			VT_Ajax::sendError('Invalid or expired invitation.');
 		}
 
-		$community = $community_manager->get_community($community_id);
+		$community = $community_manager->getCommunity($community_id);
 		if (!$community) {
-			VT_Ajax::send_error('Community not found.');
+			VT_Ajax::sendError('Community not found.');
 		}
 
 		// Handle both logged-in and non-logged-in users
@@ -541,12 +541,12 @@ class VT_Community_Ajax_Handler {
 
 			// Check if the logged-in user's email matches the invitation
 			if ($current_user->email !== $invitation->invited_email) {
-				VT_Ajax::send_error(sprintf('This invitation is for %s. Please log in with that account.', $invitation->invited_email));
+				VT_Ajax::sendError(sprintf('This invitation is for %s. Please log in with that account.', $invitation->invited_email));
 			}
 
 			// Check if already a member
-			if ($community_manager->is_member($community_id, $current_user_id)) {
-				VT_Ajax::send_error('You are already a member of this community.');
+			if ($community_manager->isMember($community_id, $current_user_id)) {
+				VT_Ajax::sendError('You are already a member of this community.');
 			}
 
 			// Add user as member
@@ -559,7 +559,7 @@ class VT_Community_Ajax_Handler {
 
 			$result = $community_manager->add_member($community_id, $member_data);
 		} else {
-			VT_Ajax::send_error('Please log in to accept this invitation.');
+			VT_Ajax::sendError('Please log in to accept this invitation.');
 		}
 
 		if ($result) {
@@ -567,31 +567,31 @@ class VT_Community_Ajax_Handler {
 			$db = VT_Database::getInstance();
 			$db->update(
 				'community_invitations',
-				array('status' => 'accepted', 'responded_at' => VT_Time::current_time('mysql')),
+				array('status' => 'accepted', 'responded_at' => VT_Time::currentTime('mysql')),
 				array('id' => $invitation->id)
 			);
 
-			VT_Ajax::send_success(array(
+			VT_Ajax::sendSuccess(array(
 				'message' => sprintf('Welcome to %s!', $community->name),
 			));
 		} else {
-			VT_Ajax::send_error('Failed to join community. Please try again.');
+			VT_Ajax::sendError('Failed to join community. Please try again.');
 		}
 	}
 
-	public function ajax_load_community_invitation_form() {
+	public function ajaxLoadCommunityInvitationForm() {
 		VT_Security::verifyNonce('vt_community_invitation', 'nonce');
 
 		$token = VT_Sanitize::textField($_POST['token'] ?? '');
 		if (!$token) {
-			VT_Ajax::send_error('No invitation token provided.');
+			VT_Ajax::sendError('No invitation token provided.');
 		}
 
-		$community_manager = $this->get_community_manager();
-		$invitation = $community_manager->get_invitation_by_token($token);
+		$community_manager = $this->getCommunityManager();
+		$invitation = $community_manager->getinvitation_by_token($token);
 
 		if (!$invitation) {
-			VT_Ajax::send_error('Invalid invitation token.');
+			VT_Ajax::sendError('Invalid invitation token.');
 		}
 
 		// Generate form HTML (simplified version)
@@ -618,36 +618,36 @@ class VT_Community_Ajax_Handler {
 		<?php
 		$html = ob_get_clean();
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'html' => $html,
 			'invitation' => $invitation
 		));
 	}
 
-	public function ajax_accept_community_invitation() {
+	public function ajaxAcceptCommunityInvitation() {
 		VT_Security::verifyNonce('vt_nonce', 'nonce');
 
 		if (!VT_Auth::isLoggedIn()) {
-			VT_Ajax::send_error('You must be logged in to join communities. Please login or create an account first.');
+			VT_Ajax::sendError('You must be logged in to join communities. Please login or create an account first.');
 		}
 
 		$token = VT_Sanitize::textField($_POST['invitation_token'] ?? '');
 		$community_id = intval($_POST['community_id'] ?? 0);
 		$member_name = VT_Sanitize::textField($_POST['member_name'] ?? '');
 		$member_email = VT_Sanitize::email($_POST['member_email'] ?? '');
-		$member_bio = VT_Security::sanitize_textarea($_POST['member_bio'] ?? '');
+		$member_bio = VT_Security::sanitizeTextarea($_POST['member_bio'] ?? '');
 
 		// Validate required fields
 		if (empty(trim($member_name)) || empty(trim($member_email))) {
-			VT_Ajax::send_error('All required fields must be filled.');
+			VT_Ajax::sendError('All required fields must be filled.');
 		}
 
 		if (!$community_id) {
-			VT_Ajax::send_error('Community ID is required.');
+			VT_Ajax::sendError('Community ID is required.');
 		}
 
 		$current_user_id = VT_Auth::getCurrentUserId();
-		$community_manager = $this->get_community_manager();
+		$community_manager = $this->getCommunityManager();
 
 		if ($token) {
 			// Token-based invitation
@@ -659,21 +659,21 @@ class VT_Community_Ajax_Handler {
 			$result = $community_manager->accept_community_invitation($token, $current_user_id, $member_data);
 
 			if (is_vt_error($result)) {
-				VT_Ajax::send_error($result->get_error_message());
+				VT_Ajax::sendError($result->getErrorMessage());
 			}
 
-			$invitation = $community_manager->get_invitation_by_token($token);
-			$community = $community_manager->get_community($invitation->community_id);
+			$invitation = $community_manager->getinvitation_by_token($token);
+			$community = $community_manager->getCommunity($invitation->community_id);
 		} else {
 			// Generic community join (no token)
-			$community = $community_manager->get_community($community_id);
+			$community = $community_manager->getCommunity($community_id);
 			if (!$community) {
-				VT_Ajax::send_error('Community not found.');
+				VT_Ajax::sendError('Community not found.');
 			}
 
 			// Check if already a member
-			if ($community_manager->is_member($community_id, $current_user_id)) {
-				VT_Ajax::send_error('You are already a member of this community.');
+			if ($community_manager->isMember($community_id, $current_user_id)) {
+				VT_Ajax::sendError('You are already a member of this community.');
 			}
 
 			// Add user as member
@@ -688,29 +688,29 @@ class VT_Community_Ajax_Handler {
 			$result = $community_manager->add_member($community_id, $member_data);
 
 			if (!$result) {
-				VT_Ajax::send_error('Failed to join community. Please try again.');
+				VT_Ajax::sendError('Failed to join community. Please try again.');
 			}
 		}
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'message' => sprintf('Welcome to %s!', $community->name),
 			'redirect_url' => VT_Config::get('site_url') . '/communities/' . $community->slug
 		));
 	}
 
-	public function ajax_load_community_join_form() {
+	public function ajaxLoadCommunityJoinForm() {
 		VT_Security::verifyNonce('vt_community_invitation', 'nonce');
 
 		$community_id = intval($_POST['community_id'] ?? 0);
 		if (!$community_id) {
-			VT_Ajax::send_error('No community ID provided.');
+			VT_Ajax::sendError('No community ID provided.');
 		}
 
-		$community_manager = $this->get_community_manager();
-		$community = $community_manager->get_community($community_id);
+		$community_manager = $this->getCommunityManager();
+		$community = $community_manager->getCommunity($community_id);
 
 		if (!$community) {
-			VT_Ajax::send_error('Community not found.');
+			VT_Ajax::sendError('Community not found.');
 		}
 
 		// Generate generic join form HTML
@@ -737,25 +737,25 @@ class VT_Community_Ajax_Handler {
 		<?php
 		$html = ob_get_clean();
 
-		VT_Ajax::send_success(array(
+		VT_Ajax::sendSuccess(array(
 			'html' => $html,
 			'community' => $community
 		));
 	}
 
-	private function handle_cover_image_upload($file, $community_id) {
+	private function handleCoverImageUpload($file, $community_id) {
 		// Similar to event image upload handling
 		if (class_exists('VT_Upload')) {
-			$validation_result = VT_Upload::validate_file($file);
+			$validation_result = VT_Upload::validateFile($file);
 			if (is_vt_error($validation_result)) {
 				return $validation_result;
 			}
 
-			$uploaded_file = VT_Upload::handle_upload($file);
+			$uploaded_file = VT_Upload::handleUpload($file);
 
 			if ($uploaded_file && !isset($uploaded_file['error'])) {
-				$community_manager = $this->get_community_manager();
-				$community_manager->update_community($community_id, array('featured_image' => $uploaded_file['url']));
+				$community_manager = $this->getCommunityManager();
+				$community_manager->updateCommunity($community_id, array('featured_image' => $uploaded_file['url']));
 				return $uploaded_file;
 			} else {
 				return new VT_Error('upload_failed', 'File upload failed.');
@@ -768,8 +768,8 @@ class VT_Community_Ajax_Handler {
 
 			if (move_uploaded_file($file['tmp_name'], $target_path)) {
 				$file_url = VT_Config::get('site_url') . $upload_dir . $filename;
-				$community_manager = $this->get_community_manager();
-				$community_manager->update_community($community_id, array('featured_image' => $file_url));
+				$community_manager = $this->getCommunityManager();
+				$community_manager->updateCommunity($community_id, array('featured_image' => $file_url));
 				return array('url' => $file_url);
 			} else {
 				return new VT_Error('upload_failed', 'File upload failed.');

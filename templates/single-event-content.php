@@ -11,7 +11,7 @@ if (!isset($event_id)) {
 }
 
 $event_manager = new VT_Event_Manager();
-$event = $event_manager->get_event($event_id);
+$event = $event_manager->getEvent($event_id);
 
 if (!$event) {
     echo '<div class="vt-alert vt-alert-error">Event not found.</div>';
@@ -19,7 +19,7 @@ if (!$event) {
 }
 
 // Check if user can view this event
-if (!$event_manager->can_user_view_event($event)) {
+if (!$event_manager->canUserViewEvent($event)) {
     echo '<div class="vt-alert vt-alert-error">You do not have permission to view this event.</div>';
     return;
 }
