@@ -573,7 +573,7 @@ class VT_Community_Manager {
 
 		return $this->db->getResults(
 			$this->db->prepare(
-				"SELECT m.*, u.login as username
+				"SELECT m.*, u.username
 				 FROM {$this->db->prefix}community_members m
 				 LEFT JOIN {$this->db->prefix}users u ON m.user_id = u.id
 				 WHERE " . implode(' AND ', $where_conditions) . "

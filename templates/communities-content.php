@@ -40,22 +40,6 @@ $page_title = 'Communities';
 $page_description = 'Join communities of fellow hosts and guests to plan amazing events together';
 ?>
 
-<!-- Secondary Menu Bar -->
-<div class="vt-section vt-mb-4">
-    <div class="vt-flex vt-gap-4 vt-flex-wrap">
-        <?php if ($user_logged_in): ?>
-            <a href="/communities/create" class="vt-btn">
-                Create Community
-            </a>
-        <?php endif; ?>
-        <a href="/events" class="vt-btn vt-btn-secondary">
-            Browse Events
-        </a>
-        <a href="/conversations" class="vt-btn vt-btn-secondary">
-            Conversations
-        </a>
-    </div>
-</div>
 
 <!-- Success Message for Community Deletion -->
 <?php if (isset($_GET['deleted']) && $_GET['deleted'] == '1') : ?>

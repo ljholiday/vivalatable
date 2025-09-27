@@ -78,6 +78,55 @@
   - `created_at` ✅
   - `display_name` ✅
 
+## User Identity Convention
+
+### Username vs Display Name
+VivalaTable uses a clear distinction between usernames and display names:
+
+#### Username (`username` field)
+- **Purpose**: Used for login authentication and @mentions
+- **Format**: Unique identifier, alphanumeric, no spaces
+- **Database**: Stored in `vt_users.username` column
+- **Usage**: `$user->username`, `@username` mentions
+- **Examples**: `john_doe`, `sarah2024`, `admin`
+
+#### Display Name (`display_name` field)
+- **Purpose**: User's preferred name shown throughout the application
+- **Format**: Human-readable name, can contain spaces and special characters
+- **Database**: Stored in both `vt_users.display_name` and `vt_user_profiles.display_name`
+- **Usage**: All user-facing displays, member lists, author credits
+- **Examples**: `John Doe`, `Sarah Smith`, `Dr. Johnson`
+
+### Implementation Guidelines
+
+#### Priority Order
+When displaying user names, always use this priority order:
+1. `vt_user_profiles.display_name` (user's preferred display name)
+2. `vt_users.display_name` (fallback display name)
+3. `vt_users.username` (final fallback)
+
+```php
+// Correct implementation
+$display_name = $profile['display_name'] ?: $user->display_name ?: $user->username;
+```
+
+#### Database Fields
+- **`vt_users.username`**: Login identifier (unique, required)
+- **`vt_users.display_name`**: Basic display name (set during registration)
+- **`vt_user_profiles.display_name`**: User's preferred display name (editable in profile)
+
+#### UI Guidelines
+- **Profile editing**: Always show "Display Name" field for user customization
+- **Member displays**: Always use display name, never show username to users
+- **Login forms**: Accept "Username or Email" for authentication
+- **@Mentions**: Use @username format for consistency
+
+### Migration Notes
+The username convention was established to replace the original `login` field:
+- Database field renamed from `login` to `username` for clarity
+- All references updated to use the new naming convention
+- Maintains backward compatibility through proper fallback handling
+
 ## Method Conversion Examples
 
 ### Before (snake_case methods - INCORRECT)

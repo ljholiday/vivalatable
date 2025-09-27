@@ -296,7 +296,7 @@ CREATE TABLE IF NOT EXISTS vt_user_profiles (
 -- Users table (WordPress replacement)
 CREATE TABLE IF NOT EXISTS vt_users (
     id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    login varchar(60) NOT NULL DEFAULT '',
+    username varchar(60) NOT NULL DEFAULT '',
     email varchar(100) NOT NULL DEFAULT '',
     display_name varchar(250) NOT NULL DEFAULT '',
     password varchar(255) NOT NULL DEFAULT '',
@@ -304,7 +304,7 @@ CREATE TABLE IF NOT EXISTS vt_users (
     created_at datetime DEFAULT CURRENT_TIMESTAMP,
     updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY login (login),
+    UNIQUE KEY username (username),
     UNIQUE KEY email (email),
     KEY status (status),
     KEY display_name (display_name)

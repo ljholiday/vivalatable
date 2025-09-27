@@ -143,6 +143,7 @@ class VT_Config {
             'allow_registrations' => true,
             'require_email_verification' => false,
             'site_admins' => [],
+            'upload_path' => __DIR__ . '/../uploads',
             'upload_max_size' => 10 * 1024 * 1024, // 10MB
             'allowed_file_types' => ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx'],
             'smtp_host' => '',

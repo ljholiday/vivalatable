@@ -199,7 +199,7 @@ class VT_Permission_Test {
 
     private function create_test_user() {
         $user_data = [
-            'login' => 'testuser_' . time() . '_' . rand(100, 999),
+            'username' => 'testuser_' . time() . '_' . rand(100, 999),
             'email' => 'test' . time() . rand(100, 999) . '@example.com',
             'password_hash' => password_hash('testpass', PASSWORD_DEFAULT),
             'display_name' => 'Test User',

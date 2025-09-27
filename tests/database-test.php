@@ -269,7 +269,7 @@ class VT_Database_Test {
         try {
             // Test user creation
             $user_data = [
-                'login' => 'testuser' . time(),
+                'username' => 'testuser' . time(),
                 'email' => 'test' . time() . '@example.com',
                 'password_hash' => password_hash('testpass123', PASSWORD_DEFAULT),
                 'display_name' => 'Test User',
@@ -320,7 +320,7 @@ class VT_Database_Test {
 
     private function create_test_user() {
         $user_data = [
-            'login' => 'testuser' . time() . rand(100, 999),
+            'username' => 'testuser' . time() . rand(100, 999),
             'email' => 'test' . time() . rand(100, 999) . '@example.com',
             'password_hash' => password_hash('testpass', PASSWORD_DEFAULT),
             'display_name' => 'Test User',

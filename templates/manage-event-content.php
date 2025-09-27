@@ -1,0 +1,272 @@
+<?php
+/**
+ * VivalaTable Manage Event Content Template
+ * Event management interface with Settings - Guests - Invites - View Event navigation
+ * Ported from PartyMinder WordPress plugin
+ */
+
+// Get event ID from URL parameter
+$event_id = intval($_GET['event_id'] ?? 0);
+$active_tab = $_GET['tab'] ?? 'settings';
+
+if (!$event_id) {
+	?>
+	<div class="vt-section vt-text-center">
+		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Event Not Found</h3>
+		<p class="vt-text-muted vt-mb-4">Event ID is required to manage an event.</p>
+		<a href="/events" class="vt-btn">Back to Events</a>
+	</div>
+	<?php
+	return;
+}
+
+// Load managers and get event
+$event_manager = new VT_Event_Manager();
+$guest_manager = new VT_Guest_Manager();
+$event = $event_manager->getEvent($event_id);
+
+if (!$event) {
+	?>
+	<div class="vt-section vt-text-center">
+		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Event Not Found</h3>
+		<p class="vt-text-muted vt-mb-4">The event you're trying to manage could not be found.</p>
+		<a href="/events" class="vt-btn">Back to Events</a>
+	</div>
+	<?php
+	return;
+}
+
+// Check if current user can manage this event
+$current_user = VT_Auth::getCurrentUser();
+if (!$current_user || $event->author_id != $current_user->id) {
+	?>
+	<div class="vt-section vt-text-center">
+		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Access Denied</h3>
+		<p class="vt-text-muted vt-mb-4">You don't have permission to manage this event.</p>
+		<a href="/events" class="vt-btn">Back to Events</a>
+	</div>
+	<?php
+	return;
+}
+
+// Handle form submissions based on active tab
+$errors = array();
+$messages = array();
+
+// Get event data for display
+$guests = $guest_manager->getEventGuests($event_id);
+$guest_count = count($guests);
+$confirmed_count = count(array_filter($guests, function($guest) { return $guest->status === 'confirmed'; }));
+
+// Set up template variables
+$page_title = 'Manage: ' . htmlspecialchars($event->title);
+$page_description = 'Manage your event settings, guests, and invitations';
+?>
+
+<!-- Event Header -->
+<div class="vt-section vt-mb-4">
+	<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap">
+		<div>
+			<h2 class="vt-heading vt-heading-lg vt-text-primary vt-mb-2">
+				<?php echo htmlspecialchars($event->title); ?>
+			</h2>
+			<p class="vt-text-muted">
+				<?php echo date('F j, Y \a\t g:i A', strtotime($event->event_date)); ?>
+			</p>
+		</div>
+		<div class="vt-flex vt-gap">
+			<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn vt-btn-secondary">
+				View Event
+			</a>
+			<a href="/edit-event?event_id=<?php echo $event->id; ?>" class="vt-btn">
+				Edit Details
+			</a>
+		</div>
+	</div>
+</div>
+
+<!-- Management Tabs -->
+<div class="vt-section vt-mb-4">
+	<div class="vt-tabs">
+		<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=settings"
+		   class="vt-tab <?php echo ($active_tab === 'settings') ? 'active' : ''; ?>">
+			Settings
+		</a>
+		<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=guests"
+		   class="vt-tab <?php echo ($active_tab === 'guests') ? 'active' : ''; ?>">
+			Guests (<?php echo $confirmed_count; ?>)
+		</a>
+		<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=invites"
+		   class="vt-tab <?php echo ($active_tab === 'invites') ? 'active' : ''; ?>">
+			Invitations
+		</a>
+	</div>
+</div>
+
+<!-- Tab Content -->
+<?php if ($active_tab === 'settings') : ?>
+	<!-- Settings Tab -->
+	<div class="vt-section">
+		<h3 class="vt-heading vt-heading-md vt-mb-4">Event Settings</h3>
+
+		<div class="vt-grid vt-gap-4">
+			<div class="vt-card">
+				<div class="vt-card-body">
+					<h4 class="vt-heading vt-heading-sm vt-mb-2">Event Status</h4>
+					<p class="vt-text-muted vt-mb-4">Current status: <strong><?php echo ucfirst($event->event_status); ?></strong></p>
+
+					<div class="vt-flex vt-gap">
+						<?php if ($event->event_status === 'active') : ?>
+							<form method="post" style="display: inline;">
+								<?php echo VT_Security::nonceField('vt_update_event_status', 'status_nonce'); ?>
+								<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
+								<input type="hidden" name="status" value="cancelled">
+								<button type="submit" class="vt-btn vt-btn-danger">Cancel Event</button>
+							</form>
+						<?php elseif ($event->event_status === 'cancelled') : ?>
+							<form method="post" style="display: inline;">
+								<?php echo VT_Security::nonceField('vt_update_event_status', 'status_nonce'); ?>
+								<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
+								<input type="hidden" name="status" value="active">
+								<button type="submit" class="vt-btn vt-btn-success">Reactivate Event</button>
+							</form>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+
+			<div class="vt-card">
+				<div class="vt-card-body">
+					<h4 class="vt-heading vt-heading-sm vt-mb-2">Privacy Settings</h4>
+					<p class="vt-text-muted vt-mb-2">Privacy: <strong><?php echo ucfirst($event->privacy); ?></strong></p>
+					<p class="vt-text-muted vt-mb-4">
+						<?php if ($event->privacy === 'public') : ?>
+							Anyone can find and join this event
+						<?php else : ?>
+							Only invited people can see and join
+						<?php endif; ?>
+					</p>
+					<a href="/edit-event?event_id=<?php echo $event->id; ?>" class="vt-btn vt-btn-secondary">
+						Change Privacy
+					</a>
+				</div>
+			</div>
+
+			<div class="vt-card">
+				<div class="vt-card-body">
+					<h4 class="vt-heading vt-heading-sm vt-mb-2">Guest Management</h4>
+					<p class="vt-text-muted vt-mb-2"><?php echo $confirmed_count; ?> confirmed guests</p>
+					<?php if ($event->guest_limit > 0) : ?>
+						<p class="vt-text-muted vt-mb-4">Limit: <?php echo $event->guest_limit; ?> guests</p>
+					<?php else : ?>
+						<p class="vt-text-muted vt-mb-4">No guest limit</p>
+					<?php endif; ?>
+					<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=guests" class="vt-btn vt-btn-secondary">
+						Manage Guests
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+<?php elseif ($active_tab === 'guests') : ?>
+	<!-- Guests Tab -->
+	<div class="vt-section">
+		<div class="vt-flex vt-flex-between vt-mb-4">
+			<h3 class="vt-heading vt-heading-md">Event Guests</h3>
+			<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=invites" class="vt-btn">
+				Send Invitations
+			</a>
+		</div>
+
+		<?php if (!empty($guests)) : ?>
+			<div class="vt-table-responsive">
+				<table class="vt-table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Email</th>
+							<th>Status</th>
+							<th>RSVP Date</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ($guests as $guest) : ?>
+							<tr>
+								<td>
+									<strong><?php echo htmlspecialchars($guest->name); ?></strong>
+									<?php if ($guest->plus_one) : ?>
+										<br><small class="vt-text-muted">+1: <?php echo htmlspecialchars($guest->plus_one_name ?: 'Guest'); ?></small>
+									<?php endif; ?>
+								</td>
+								<td><?php echo htmlspecialchars($guest->email); ?></td>
+								<td>
+									<span class="vt-badge vt-badge-<?php
+										echo $guest->status === 'confirmed' ? 'success' :
+											($guest->status === 'declined' ? 'danger' : 'warning');
+									?>">
+										<?php echo ucfirst($guest->status); ?>
+									</span>
+								</td>
+								<td><?php echo date('M j, Y', strtotime($guest->rsvp_date)); ?></td>
+								<td>
+									<button class="vt-btn vt-btn-sm vt-btn-secondary" onclick="viewGuestDetails(<?php echo $guest->id; ?>)">
+										View
+									</button>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+		<?php else : ?>
+			<div class="vt-text-center vt-p-4">
+				<p class="vt-text-muted vt-mb-4">No guests have RSVP'd yet.</p>
+				<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=invites" class="vt-btn">
+					Send Your First Invitations
+				</a>
+			</div>
+		<?php endif; ?>
+	</div>
+
+<?php elseif ($active_tab === 'invites') : ?>
+	<!-- Invitations Tab -->
+	<div class="vt-section">
+		<h3 class="vt-heading vt-heading-md vt-mb-4">Send Invitations</h3>
+
+		<form method="post" class="vt-form">
+			<?php echo VT_Security::nonceField('vt_send_invitations', 'invite_nonce'); ?>
+			<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
+
+			<div class="vt-form-group">
+				<label for="invite_emails" class="vt-form-label">Email Addresses</label>
+				<textarea id="invite_emails" name="invite_emails" class="vt-form-input vt-form-textarea"
+						  rows="4" placeholder="Enter email addresses separated by commas or new lines"
+						  required></textarea>
+				<small class="vt-form-help">
+					You can enter multiple email addresses separated by commas or on separate lines.
+				</small>
+			</div>
+
+			<div class="vt-form-group">
+				<label for="invite_message" class="vt-form-label">Personal Message (Optional)</label>
+				<textarea id="invite_message" name="invite_message" class="vt-form-input vt-form-textarea"
+						  rows="3" placeholder="Add a personal message to your invitation"></textarea>
+			</div>
+
+			<div class="vt-form-actions">
+				<button type="submit" class="vt-btn vt-btn-primary">
+					Send Invitations
+				</button>
+			</div>
+		</form>
+	</div>
+<?php endif; ?>
+
+<script>
+function viewGuestDetails(guestId) {
+	// Implement guest details modal or redirect
+	alert('Guest details functionality coming soon!');
+}
+</script>

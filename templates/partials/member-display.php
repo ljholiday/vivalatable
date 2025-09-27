@@ -16,7 +16,7 @@
  *   - 'show_avatar' => true (bool): Whether to show avatar
  *   - 'show_name' => true (bool): Whether to show name
  *   - 'link_profile' => true (bool): Whether to make it clickable
- *   - 'class' => 'pm-member-display' (string): CSS classes
+ *   - 'class' => 'vt-member-display' (string): CSS classes
  */
 
 // Prevent direct access

@@ -26,7 +26,7 @@ if ($user_id) {
 
     // Check if user already exists
     $db = VT_Database::getInstance();
-    $existing = $db->getVar("SELECT id FROM vt_users WHERE email = '$email' OR login = '$username'");
+    $existing = $db->getVar("SELECT id FROM vt_users WHERE email = '$email' OR username = '$username'");
     echo "Existing user check returned: " . ($existing ?: 'none') . "\n";
 }
 ?>

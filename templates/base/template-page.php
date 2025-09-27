@@ -8,24 +8,20 @@
 </head>
 <body>
 
-<div class="vt-page">
-    <?php if (!empty($breadcrumbs)) : ?>
-    <!-- Breadcrumbs -->
-    <div class="vt-text-muted mb-4">
-        <?php
-        $breadcrumb_parts = array();
-        foreach ($breadcrumbs as $crumb) {
-            if (isset($crumb['url'])) {
-                $breadcrumb_parts[] = '<a href="' . htmlspecialchars($crumb['url']) . '" class="vt-text-primary">' . htmlspecialchars($crumb['title']) . '</a>';
-            } else {
-                $breadcrumb_parts[] = '<span>' . htmlspecialchars($crumb['title']) . '</span>';
-            }
-        }
-        echo implode(' › ', $breadcrumb_parts);
-        ?>
+<!-- Centered Page Layout -->
+<div class="vt-page-form-centered">
+    <!-- Persistent Main Navigation -->
+    <div class="vt-main-nav">
+        <a href="/events" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/events') !== false) ? 'active' : ''; ?>">
+            Events
+        </a>
+        <a href="/conversations" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/conversations') !== false) ? 'active' : ''; ?>">
+            Conversations
+        </a>
+        <a href="/communities" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/communities') !== false) ? 'active' : ''; ?>">
+            Communities
+        </a>
     </div>
-    <?php endif; ?>
-
     <!-- Page Header -->
     <div class="vt-header">
         <h1 class="vt-heading vt-heading-lg vt-text-primary"><?php echo htmlspecialchars($page_title); ?></h1>

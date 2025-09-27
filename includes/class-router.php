@@ -35,27 +35,33 @@ class VT_Router {
 		self::addRoute('GET', '/events', array('VT_Pages', 'eventsList'));
 		self::addRoute('GET', '/events/create', array('VT_Pages', 'createEvent'));
 		self::addRoute('POST', '/events/create', array('VT_Pages', 'createEvent'));
-		self::addRoute('GET', '/events/{id}', array('VT_Pages', 'singleEvent'));
-		self::addRoute('GET', '/events/{id}/edit', array('VT_Pages', 'editEvent'));
-		self::addRoute('POST', '/events/{id}/edit', array('VT_Pages', 'editEvent'));
-		self::addRoute('GET', '/events/{id}/manage', array('VT_Pages', 'manageEvent'));
+		self::addRoute('GET', '/events/{slug}', array('VT_Pages', 'singleEvent'));
+		self::addRoute('GET', '/create-event', array('VT_Pages', 'createEvent'));
+		self::addRoute('POST', '/create-event', array('VT_Pages', 'createEvent'));
+		self::addRoute('GET', '/edit-event', array('VT_Pages', 'editEvent'));
+		self::addRoute('POST', '/edit-event', array('VT_Pages', 'editEvent'));
+		self::addRoute('GET', '/manage-event', array('VT_Pages', 'manageEvent'));
+		self::addRoute('POST', '/manage-event', array('VT_Pages', 'manageEvent'));
 
 		// Community routes
 		self::addRoute('GET', '/communities', array('VT_Pages', 'communitiesList'));
 		self::addRoute('GET', '/communities/create', array('VT_Pages', 'createCommunity'));
 		self::addRoute('POST', '/communities/create', array('VT_Pages', 'createCommunity'));
-		self::addRoute('GET', '/communities/{id}', array('VT_Pages', 'singleCommunity'));
-		self::addRoute('GET', '/communities/{id}/conversations', array('VT_Pages', 'communityConversations'));
-		self::addRoute('GET', '/communities/{id}/events', array('VT_Pages', 'communityEvents'));
-		self::addRoute('GET', '/communities/{id}/manage', array('VT_Pages', 'manageCommunity'));
+		self::addRoute('GET', '/communities/{slug}', array('VT_Pages', 'singleCommunity'));
+		self::addRoute('POST', '/communities/{slug}', array('VT_Pages', 'singleCommunity'));
+		self::addRoute('GET', '/create-community', array('VT_Pages', 'createCommunity'));
+		self::addRoute('POST', '/create-community', array('VT_Pages', 'createCommunity'));
+		self::addRoute('GET', '/manage-community', array('VT_Pages', 'manageCommunity'));
+		self::addRoute('POST', '/manage-community', array('VT_Pages', 'manageCommunity'));
 
 		// Conversation routes
 		self::addRoute('GET', '/conversations', array('VT_Pages', 'conversationsList'));
 		self::addRoute('GET', '/conversations/create', array('VT_Pages', 'createConversation'));
 		self::addRoute('POST', '/conversations/create', array('VT_Pages', 'createConversation'));
-		self::addRoute('GET', '/conversations/{id}', array('VT_Pages', 'singleConversation'));
-		self::addRoute('GET', '/conversations/{id}/edit', array('VT_Pages', 'editConversation'));
-		self::addRoute('POST', '/conversations/{id}/edit', array('VT_Pages', 'editConversation'));
+		self::addRoute('GET', '/conversations/{slug}', array('VT_Pages', 'singleConversation'));
+		self::addRoute('POST', '/conversations/{slug}', array('VT_Pages', 'singleConversation'));
+		self::addRoute('GET', '/create-conversation', array('VT_Pages', 'createConversation'));
+		self::addRoute('POST', '/create-conversation', array('VT_Pages', 'createConversation'));
 
 		// Profile routes
 		self::addRoute('GET', '/profile', array('VT_Pages', 'profile'));

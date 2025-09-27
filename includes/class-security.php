@@ -39,7 +39,8 @@ class VT_Security {
 
     public static function createNonce($action = -1) {
         $user_id = VT_Auth::getCurrentUserId();
-        $token = $user_id . '|' . $action . '|' . time();
+        $time_bucket = floor(time() / (self::$nonce_life / 2)) * (self::$nonce_life / 2);
+        $token = $user_id . '|' . $action . '|' . $time_bucket;
         $hash = self::hash($token);
 
         return substr($hash, 0, 10);
@@ -53,10 +54,10 @@ class VT_Security {
         $user_id = VT_Auth::getCurrentUserId();
         $current_time = time();
 
-        // Check against multiple time windows to account for clock drift
+        // Check current and previous time buckets (12-hour buckets within 24-hour window)
         for ($i = 0; $i <= 2; $i++) {
-            $time = $current_time - ($i * (self::$nonce_life / 2));
-            $token = $user_id . '|' . $action . '|' . $time;
+            $time_bucket = floor(($current_time - ($i * (self::$nonce_life / 2))) / (self::$nonce_life / 2)) * (self::$nonce_life / 2);
+            $token = $user_id . '|' . $action . '|' . $time_bucket;
             $expected_hash = self::hash($token);
             $expected_nonce = substr($expected_hash, 0, 10);
 

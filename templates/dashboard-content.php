@@ -66,20 +66,20 @@ $page_description = 'Your social event hub';
 ?>
 
 <!-- Secondary Menu Bar -->
-<div class="pm-section pm-mb-4">
-    <div class="pm-flex pm-gap-4 pm-flex-wrap">
+<div class="vt-section vt-mb-4">
+    <div class="vt-flex vt-gap-4 vt-flex-wrap">
         <?php if ($user_logged_in): ?>
-            <a href="/conversations/create" class="pm-btn">
+            <a href="/conversations/create" class="vt-btn">
                 Start Conversation
             </a>
-            <a href="/events/create" class="pm-btn">
+            <a href="/events/create" class="vt-btn">
                 Create Event
             </a>
         <?php endif; ?>
-        <a href="/events" class="pm-btn pm-btn-secondary">
+        <a href="/events" class="vt-btn vt-btn-secondary">
             Browse Events
         </a>
-        <a href="/communities" class="pm-btn pm-btn-secondary">
+        <a href="/communities" class="vt-btn vt-btn-secondary">
             Communities
         </a>
     </div>
@@ -88,38 +88,38 @@ $page_description = 'Your social event hub';
 <!-- Main content starts here -->
 <?php if ($user_logged_in): ?>
     <!-- Welcome Section -->
-    <div class="pm-section pm-mb">
-        <div class="pm-card">
-            <div class="pm-card-header">
-                <h2 class="pm-heading">Welcome back, <?php echo VT_Sanitize::escHtml($profile_data['display_name'] ?: $current_user->display_name); ?>!</h2>
+    <div class="vt-section vt-mb">
+        <div class="vt-card">
+            <div class="vt-card-header">
+                <h2 class="vt-heading">Welcome back, <?php echo VT_Sanitize::escHtml($profile_data['display_name'] ?: $current_user->display_name); ?>!</h2>
             </div>
-            <div class="pm-card-body">
-                <p class="pm-text-muted">Here's what's happening in your social circle</p>
+            <div class="vt-card-body">
+                <p class="vt-text-muted">Here's what's happening in your social circle</p>
             </div>
         </div>
     </div>
 
     <!-- Recent Events Section -->
-    <div class="pm-section pm-mb">
-        <div class="pm-card">
-            <div class="pm-card-header">
-                <h3 class="pm-heading">Your Recent Events</h3>
+    <div class="vt-section vt-mb">
+        <div class="vt-card">
+            <div class="vt-card-header">
+                <h3 class="vt-heading">Your Recent Events</h3>
             </div>
-            <div class="pm-card-body">
+            <div class="vt-card-body">
                 <?php if (!empty($recent_events)): ?>
-                    <div class="pm-grid pm-gap-4">
+                    <div class="vt-grid vt-gap-4">
                         <?php foreach ($recent_events as $event): ?>
-                            <div class="pm-card">
-                                <div class="pm-card-body">
-                                    <h4 class="pm-heading">
-                                        <a href="/events/<?php echo $event->id; ?>" class="pm-link">
+                            <div class="vt-card">
+                                <div class="vt-card-body">
+                                    <h4 class="vt-heading">
+                                        <a href="/events/<?php echo $event->id; ?>" class="vt-link">
                                             <?php echo VT_Sanitize::escHtml($event->title); ?>
                                         </a>
                                     </h4>
-                                    <p class="pm-text-muted">
+                                    <p class="vt-text-muted">
                                         <?php echo date('M j, Y g:i A', strtotime($event->event_date)); ?>
                                     </p>
-                                    <div class="pm-badge pm-badge-secondary">
+                                    <div class="vt-badge vt-badge-secondary">
                                         <?php echo ucfirst($event->relationship_type); ?>
                                     </div>
                                 </div>
@@ -127,13 +127,13 @@ $page_description = 'Your social event hub';
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <div class="pm-text-center pm-p-4">
-                        <h4 class="pm-heading">No Recent Events</h4>
-                        <p class="pm-text-muted">Create an event or RSVP to events to see them here.</p>
+                    <div class="vt-text-center vt-p-4">
+                        <h4 class="vt-heading">No Recent Events</h4>
+                        <p class="vt-text-muted">Create an event or RSVP to events to see them here.</p>
                     </div>
                 <?php endif; ?>
-                <div class="pm-text-center pm-mt-4">
-                    <a href="/events" class="pm-btn">
+                <div class="vt-text-center vt-mt-4">
+                    <a href="/events" class="vt-btn">
                         Browse All Events
                     </a>
                 </div>
@@ -142,23 +142,23 @@ $page_description = 'Your social event hub';
     </div>
 
     <!-- Recent Conversations Section -->
-    <div class="pm-section pm-mb">
-        <div class="pm-card">
-            <div class="pm-card-header">
-                <h3 class="pm-heading">Recent Conversations</h3>
+    <div class="vt-section vt-mb">
+        <div class="vt-card">
+            <div class="vt-card-header">
+                <h3 class="vt-heading">Recent Conversations</h3>
             </div>
-            <div class="pm-card-body">
+            <div class="vt-card-body">
                 <?php if (!empty($recent_conversations)): ?>
-                    <div class="pm-grid pm-gap-4">
+                    <div class="vt-grid vt-gap-4">
                         <?php foreach ($recent_conversations as $conversation): ?>
-                            <div class="pm-card">
-                                <div class="pm-card-body">
-                                    <h4 class="pm-heading">
-                                        <a href="/conversations/<?php echo $conversation->id; ?>" class="pm-link">
+                            <div class="vt-card">
+                                <div class="vt-card-body">
+                                    <h4 class="vt-heading">
+                                        <a href="/conversations/<?php echo $conversation->id; ?>" class="vt-link">
                                             <?php echo VT_Sanitize::escHtml($conversation->title); ?>
                                         </a>
                                     </h4>
-                                    <p class="pm-text-muted">
+                                    <p class="vt-text-muted">
                                         <?php echo VT_Sanitize::escHtml(substr($conversation->content, 0, 100)) . '...'; ?>
                                     </p>
                                 </div>
@@ -166,13 +166,13 @@ $page_description = 'Your social event hub';
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <div class="pm-text-center pm-p-4">
-                        <h4 class="pm-heading">No Recent Conversations</h4>
-                        <p class="pm-text-muted">Start a conversation to connect with the community.</p>
+                    <div class="vt-text-center vt-p-4">
+                        <h4 class="vt-heading">No Recent Conversations</h4>
+                        <p class="vt-text-muted">Start a conversation to connect with the community.</p>
                     </div>
                 <?php endif; ?>
-                <div class="pm-text-center pm-mt-4">
-                    <a href="/conversations" class="pm-btn">
+                <div class="vt-text-center vt-mt-4">
+                    <a href="/conversations" class="vt-btn">
                         View All Conversations
                     </a>
                 </div>
@@ -182,21 +182,21 @@ $page_description = 'Your social event hub';
 
 <?php else: ?>
     <!-- Login Section for Non-Logged-In Users -->
-    <div class="pm-section pm-mb">
-        <div class="pm-card">
-            <div class="pm-card-header">
-                <h2 class="pm-heading">Sign In to Get Started</h2>
-                <p class="pm-text-muted">Log in to create events, join conversations, and connect with the community</p>
+    <div class="vt-section vt-mb">
+        <div class="vt-card">
+            <div class="vt-card-header">
+                <h2 class="vt-heading">Sign In to Get Started</h2>
+                <p class="vt-text-muted">Log in to create events, join conversations, and connect with the community</p>
             </div>
-            <div class="pm-card-body">
-                <div class="pm-text-center pm-p-4">
-                    <h3 class="pm-heading pm-mb">Welcome to VivalaTable!</h3>
-                    <p class="pm-text-muted pm-mb">Your social event hub for connecting, planning, and celebrating together.</p>
-                    <div class="pm-flex pm-gap-4 pm-justify-center">
-                        <a href="/login" class="pm-btn pm-btn-lg">
+            <div class="vt-card-body">
+                <div class="vt-text-center vt-p-4">
+                    <h3 class="vt-heading vt-mb">Welcome to VivalaTable!</h3>
+                    <p class="vt-text-muted vt-mb">Your social event hub for connecting, planning, and celebrating together.</p>
+                    <div class="vt-flex vt-gap-4 vt-justify-center">
+                        <a href="/login" class="vt-btn vt-btn-lg">
                             Sign In
                         </a>
-                        <a href="/register" class="pm-btn pm-btn-lg">
+                        <a href="/register" class="vt-btn vt-btn-lg">
                             Create Account
                         </a>
                     </div>
@@ -206,30 +206,30 @@ $page_description = 'Your social event hub';
     </div>
 
     <!-- Preview Section for Non-Logged-In Users -->
-    <div class="pm-section pm-mb">
-        <div class="pm-card">
-            <div class="pm-card-header">
-                <h2 class="pm-heading">What You Can Do</h2>
-                <p class="pm-text-muted">Discover all the features waiting for you</p>
+    <div class="vt-section vt-mb">
+        <div class="vt-card">
+            <div class="vt-card-header">
+                <h2 class="vt-heading">What You Can Do</h2>
+                <p class="vt-text-muted">Discover all the features waiting for you</p>
             </div>
-            <div class="pm-card-body">
-                <div class="pm-grid pm-gap-4">
-                    <div class="pm-flex pm-gap-4 pm-p-4">
-                        <div class="pm-flex-1">
-                            <h4 class="pm-heading">Create & Host Events</h4>
-                            <p class="pm-text-muted">Plan dinner parties, game nights, and social gatherings</p>
+            <div class="vt-card-body">
+                <div class="vt-grid vt-gap-4">
+                    <div class="vt-flex vt-gap-4 vt-p-4">
+                        <div class="vt-flex-1">
+                            <h4 class="vt-heading">Create & Host Events</h4>
+                            <p class="vt-text-muted">Plan dinner parties, game nights, and social gatherings</p>
                         </div>
                     </div>
-                    <div class="pm-flex pm-gap-4 pm-p-4">
-                        <div class="pm-flex-1">
-                            <h4 class="pm-heading">Join Communities</h4>
-                            <p class="pm-text-muted">Connect with like-minded people in your area</p>
+                    <div class="vt-flex vt-gap-4 vt-p-4">
+                        <div class="vt-flex-1">
+                            <h4 class="vt-heading">Join Communities</h4>
+                            <p class="vt-text-muted">Connect with like-minded people in your area</p>
                         </div>
                     </div>
-                    <div class="pm-flex pm-gap-4 pm-p-4">
-                        <div class="pm-flex-1">
-                            <h4 class="pm-heading">Start Conversations</h4>
-                            <p class="pm-text-muted">Share ideas and connect through meaningful discussions</p>
+                    <div class="vt-flex vt-gap-4 vt-p-4">
+                        <div class="vt-flex-1">
+                            <h4 class="vt-heading">Start Conversations</h4>
+                            <p class="vt-text-muted">Share ideas and connect through meaningful discussions</p>
                         </div>
                     </div>
                 </div>

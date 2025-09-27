@@ -11,6 +11,14 @@ if (VT_Auth::isLoggedIn()) {
 	exit;
 }
 
+// Handle guest token conversion
+$guest_token = $_GET['guest_token'] ?? '';
+$guest_data = null;
+if ($guest_token) {
+	$guest_manager = new VT_Guest_Manager();
+	$guest_data = $guest_manager->getGuestByToken($guest_token);
+}
+
 // Handle form submissions
 $errors = array();
 $messages = array();
@@ -22,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$password = $_POST['password'] ?? '';
 		$confirm_password = $_POST['confirm_password'] ?? '';
 		$display_name = $_POST['display_name'] ?? '';
+		$guest_token = $_POST['guest_token'] ?? $guest_token;
 
 		// Basic validation
 		if (empty($username) || empty($email) || empty($password) || empty($display_name)) {
@@ -45,6 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$user_id = VT_Auth::register($username, $email, $password, $display_name);
 
 			if ($user_id) {
+				// Handle guest token conversion if applicable
+				if ($guest_token && $guest_data) {
+					$guest_manager = new VT_Guest_Manager();
+					$conversion_result = $guest_manager->convertGuestToUser($guest_data->id, [
+						'user_id' => $user_id,
+						'username' => $username,
+						'password' => $password
+					]);
+				}
+
 				$messages[] = 'Account created successfully! You can now log in.';
 				// Redirect to login page after successful registration
 				header('Location: /login?registered=1');
@@ -79,11 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Create Account</h2>
 
 	<form method="post" class="vt-form">
+		<?php if ($guest_token) : ?>
+			<input type="hidden" name="guest_token" value="<?php echo htmlspecialchars($guest_token); ?>">
+		<?php endif; ?>
 
 		<div class="vt-form-group">
 			<label for="display_name" class="vt-form-label">Display Name</label>
 			<input type="text" id="display_name" name="display_name" class="vt-form-input"
-				   value="<?php echo isset($_POST['display_name']) ? htmlspecialchars($_POST['display_name']) : ''; ?>"
+				   value="<?php echo isset($_POST['display_name']) ? htmlspecialchars($_POST['display_name']) : ($guest_data ? htmlspecialchars($guest_data->name) : ''); ?>"
 				   placeholder="Your display name" required>
 		</div>
 
@@ -97,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<div class="vt-form-group">
 			<label for="email" class="vt-form-label">Email Address</label>
 			<input type="email" id="email" name="email" class="vt-form-input"
-				   value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
-				   placeholder="your@email.com" required>
+				   value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ($guest_data ? htmlspecialchars($guest_data->email) : ''); ?>"
+				   placeholder="your@email.com" required <?php echo $guest_data ? 'readonly' : ''; ?>>
 		</div>
 
 		<div class="vt-form-group">

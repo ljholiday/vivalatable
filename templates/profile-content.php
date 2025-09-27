@@ -30,9 +30,24 @@ if (!$user_data) {
 // Get VivalaTable profile data
 $profile_data = VT_Profile_Manager::getUserProfile($user_id);
 
+// Get avatar URL using existing logic from member display
+$avatar_url = '';
+if (!empty($profile_data['profile_image'])) {
+	$avatar_url = VT_Image_Manager::getImageUrl($profile_data['profile_image']);
+} elseif (!empty($user_data->email)) {
+	$hash = md5(strtolower(trim($user_data->email)));
+	$avatar_url = "https://www.gravatar.com/avatar/{$hash}?s=120&d=identicon";
+}
+if (!$avatar_url) {
+	// Fallback to Gravatar identicon with a default email
+	$fallback_hash = md5('default@vivalatable.com');
+	$avatar_url = "https://www.gravatar.com/avatar/{$fallback_hash}?s=120&d=identicon";
+}
+
 // Handle profile form submission
 $profile_updated = false;
 $form_errors = array();
+
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_profile_nonce'])) {
 	if (VT_Security::verifyNonce($_POST['vt_profile_nonce'], 'vt_profile_update')) {
 		$result = VT_Profile_Manager::updateProfile($user_id, $_POST);
@@ -43,6 +58,8 @@ if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt
 		} else {
 			$form_errors = $result['errors'];
 		}
+	} else {
+		$form_errors[] = 'Security verification failed. Please try again.';
 	}
 }
 
@@ -86,6 +103,7 @@ if ($is_editing) {
 		echo '</ul>';
 		echo '</div>';
 	}
+
 	?>
 
 	<form method="post" class="vt-form" enctype="multipart/form-data">
@@ -137,7 +155,7 @@ if ($is_editing) {
 							style="width: 100%; height: 100%; object-fit: cover;"
 							alt="Profile photo">
 						<?php else : ?>
-						<img src="<?php echo htmlspecialchars(VT_Avatar::getAvatarUrl($user_id, 120)); ?>"
+						<img src="<?php echo htmlspecialchars($avatar_url); ?>"
 							style="width: 100%; height: 100%; object-fit: cover;"
 							alt="Profile photo">
 						<?php endif; ?>
@@ -160,7 +178,7 @@ if ($is_editing) {
 				</div>
 
 				<div class="vt-avatar-upload">
-					<input type="file" id="avatar_upload" accept="image/*" style="display: none;">
+					<input type="file" id="avatar_upload" name="profile_image" accept="image/*" style="display: none;">
 					<button type="button" class="vt-btn" onclick="document.getElementById('avatar_upload').click()">
 						Upload Profile Photo
 					</button>
@@ -197,7 +215,7 @@ if ($is_editing) {
 				<p class="vt-form-help vt-text-muted vt-mb">Your cover photo appears at the top of your profile</p>
 
 				<div class="vt-cover-upload">
-					<input type="file" id="cover_upload" accept="image/*" style="display: none;">
+					<input type="file" id="cover_upload" name="cover_image" accept="image/*" style="display: none;">
 					<button type="button" class="vt-btn" onclick="document.getElementById('cover_upload').click()">
 						Upload Cover Photo
 					</button>
@@ -224,76 +242,6 @@ if ($is_editing) {
 
 	<script>
 	document.addEventListener('DOMContentLoaded', function() {
-		// Avatar upload
-		document.getElementById('avatar_upload').addEventListener('change', function() {
-			if (this.files.length > 0) {
-				uploadImage(this.files[0], 'avatar', '.vt-avatar-upload');
-			}
-		});
-
-		// Cover upload
-		document.getElementById('cover_upload').addEventListener('change', function() {
-			if (this.files.length > 0) {
-				uploadImage(this.files[0], 'cover', '.vt-cover-upload');
-			}
-		});
-
-		function uploadImage(file, type, containerSelector) {
-			const container = document.querySelector(containerSelector);
-			const progress = container.querySelector('.vt-upload-progress');
-			const progressFill = container.querySelector('.vt-progress-fill');
-			const progressText = container.querySelector('.vt-progress-text');
-			const message = container.querySelector('.vt-upload-message');
-
-			// Show progress
-			progress.style.display = 'block';
-			message.innerHTML = '';
-			progressFill.style.width = '0%';
-			progressText.textContent = '0%';
-
-			// Create form data
-			const formData = new FormData();
-			formData.append(type, file);
-			formData.append('action', 'vt_' + type + '_upload');
-			formData.append('nonce', window.vt_ajax_nonce);
-
-			// Upload
-			const xhr = new XMLHttpRequest();
-
-			xhr.upload.addEventListener('progress', function(e) {
-				if (e.lengthComputable) {
-					const percent = Math.round((e.loaded / e.total) * 100);
-					progressFill.style.width = percent + '%';
-					progressText.textContent = percent + '%';
-				}
-			});
-
-			xhr.addEventListener('load', function() {
-				progress.style.display = 'none';
-
-				try {
-					const response = JSON.parse(xhr.responseText);
-					if (response.success) {
-						message.innerHTML = response.message;
-						message.className = 'vt-upload-message success';
-						// Reload page to show new image
-						setTimeout(function() {
-							window.location.reload();
-						}, 1500);
-					} else {
-						message.innerHTML = response.error || 'Upload failed';
-						message.className = 'vt-upload-message error';
-					}
-				} catch (e) {
-					message.innerHTML = 'Upload failed';
-					message.className = 'vt-upload-message error';
-				}
-			});
-
-			xhr.open('POST', '/api/upload');
-			xhr.send(formData);
-		}
-
 		// Handle avatar source radio button changes
 		document.querySelectorAll('input[name="avatar_source"]').forEach(function(radio) {
 			radio.addEventListener('change', function() {
@@ -305,10 +253,61 @@ if ($is_editing) {
 					if (isCustom && hasCustomImage) {
 						img.src = '<?php echo addslashes($profile_data['profile_image'] ?? ''); ?>';
 					} else {
-						img.src = '<?php echo addslashes(VT_Avatar::getAvatarUrl($user_id, 120)); ?>';
+						img.src = '<?php echo addslashes($avatar_url); ?>';
 					}
 				});
 			});
+		});
+
+		// Show file names when selected and validate
+		document.getElementById('avatar_upload').addEventListener('change', function() {
+			if (this.files.length > 0) {
+				const file = this.files[0];
+				const message = document.querySelector('.vt-avatar-upload .vt-upload-message');
+
+				// Basic validation
+				if (file.size > 5 * 1024 * 1024) { // 5MB
+					message.innerHTML = 'File too large. Maximum size is 5MB.';
+					message.className = 'vt-upload-message error';
+					this.value = '';
+					return;
+				}
+
+				if (!file.type.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+					message.innerHTML = 'Invalid file type. Please select a JPEG, PNG, GIF, or WebP image.';
+					message.className = 'vt-upload-message error';
+					this.value = '';
+					return;
+				}
+
+				message.innerHTML = 'Selected: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB). Click "Save Profile Info" to upload.';
+				message.className = 'vt-upload-message success';
+			}
+		});
+
+		document.getElementById('cover_upload').addEventListener('change', function() {
+			if (this.files.length > 0) {
+				const file = this.files[0];
+				const message = document.querySelector('.vt-cover-upload .vt-upload-message');
+
+				// Basic validation
+				if (file.size > 5 * 1024 * 1024) { // 5MB
+					message.innerHTML = 'File too large. Maximum size is 5MB.';
+					message.className = 'vt-upload-message error';
+					this.value = '';
+					return;
+				}
+
+				if (!file.type.match(/^image\/(jpeg|jpg|png|gif|webp)$/)) {
+					message.innerHTML = 'Invalid file type. Please select a JPEG, PNG, GIF, or WebP image.';
+					message.className = 'vt-upload-message error';
+					this.value = '';
+					return;
+				}
+
+				message.innerHTML = 'Selected: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB). Click "Save Profile Info" to upload.';
+				message.className = 'vt-upload-message success';
+			}
 		});
 	});
 	</script>
@@ -319,7 +318,6 @@ if ($is_editing) {
 	// Profile Header Section
 	$cover_photo = $profile_data['cover_image'] ?? '';
 	$cover_photo_url = $cover_photo ? htmlspecialchars($cover_photo) : '';
-	$avatar_url = VT_Avatar::getAvatarUrl($user_id, 120);
 	?>
 
 	<!-- Modern Profile Header -->
@@ -363,7 +361,7 @@ if ($is_editing) {
 		<!-- Identity/text row -->
 		<div class="vt-profile-identity">
 			<h1 class="vt-heading vt-heading-xl vt-mb"><?php echo htmlspecialchars(VT_Profile_Manager::getDisplayName($user_id)); ?></h1>
-			<div class="vt-text-muted vt-mb">@<?php echo htmlspecialchars($user_data->username); ?></div>
+			<div class="vt-text-muted vt-mb">@<?php echo htmlspecialchars($user_data->username ?? $user_data->email ?? 'user'); ?></div>
 		</div>
 	</section>
 

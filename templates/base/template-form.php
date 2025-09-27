@@ -8,23 +8,41 @@
 </head>
 <body>
 
-<div class="vt-page-form">
-    <?php if (!empty($breadcrumbs)) : ?>
-    <!-- Breadcrumbs -->
-    <div class="vt-text-muted mb-4">
-        <?php
-        $breadcrumb_parts = array();
-        foreach ($breadcrumbs as $crumb) {
-            if (isset($crumb['url'])) {
-                $breadcrumb_parts[] = '<a href="' . htmlspecialchars($crumb['url']) . '" class="vt-text-primary">' . htmlspecialchars($crumb['title']) . '</a>';
-            } else {
-                $breadcrumb_parts[] = '<span>' . htmlspecialchars($crumb['title']) . '</span>';
-            }
-        }
-        echo implode(' › ', $breadcrumb_parts);
-        ?>
+<!-- Centered Form Layout - matches main column width -->
+<div class="vt-page-form-centered">
+    <!-- Persistent Main Navigation -->
+    <div class="vt-main-nav">
+        <a href="/events" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/events') !== false || strpos($_SERVER['REQUEST_URI'], '/create-event') !== false) ? 'active' : ''; ?>">
+            Events
+        </a>
+        <a href="/conversations" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/conversations') !== false || strpos($_SERVER['REQUEST_URI'], '/create-conversation') !== false) ? 'active' : ''; ?>">
+            Conversations
+        </a>
+        <a href="/communities" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/communities') !== false || strpos($_SERVER['REQUEST_URI'], '/create-community') !== false) ? 'active' : ''; ?>">
+            Communities
+        </a>
     </div>
-    <?php endif; ?>
+    <!-- Context Action Bar -->
+    <div class="vt-action-bar">
+        <?php
+        // Smart back button based on current page
+        $back_url = '/';
+        $back_text = 'Back';
+        if (strpos($_SERVER['REQUEST_URI'], '/create-event') !== false) {
+            $back_url = '/events';
+            $back_text = 'Back to Events';
+        } elseif (strpos($_SERVER['REQUEST_URI'], '/create-community') !== false) {
+            $back_url = '/communities';
+            $back_text = 'Back to Communities';
+        } elseif (strpos($_SERVER['REQUEST_URI'], '/create-conversation') !== false) {
+            $back_url = '/conversations';
+            $back_text = 'Back to Conversations';
+        }
+        ?>
+        <a href="<?php echo $back_url; ?>" class="vt-btn vt-btn-secondary">
+            ← <?php echo $back_text; ?>
+        </a>
+    </div>
 
     <!-- Page Header -->
     <div class="vt-header">

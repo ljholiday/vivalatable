@@ -260,11 +260,60 @@ body.admin-bar .vt-page-two-column {
     padding: 1.25rem;
 }
 
+/* Original form page styling (deprecated) */
 .vt-page-form {
     max-width: 90%;
     width: 90%;
     margin: 0 auto;
     padding: 1.25rem;
+}
+
+/* New centered form layout - matches main column width */
+.vt-page-form-centered {
+    max-width: 800px; /* Match the main column width from two-column layout */
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.25rem;
+}
+
+/* Action bar for context navigation */
+.vt-action-bar {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--vt-border);
+}
+
+/* Main nav styling - works in both two-column and centered layouts */
+.vt-main-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--vt-surface);
+    border-bottom: 1px solid var(--vt-border);
+    margin-bottom: 1rem;
+}
+
+/* When nav is inside centered container, remove negative margins */
+.vt-page-form-centered .vt-main-nav {
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    margin-top: -1.25rem;
+    margin-bottom: 1rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}
+
+/* Responsive adjustments for centered form layout */
+@media (max-width: 768px) {
+    .vt-page-form-centered {
+        max-width: 100%;
+        padding: 0.75rem;
+    }
+
+    .vt-action-bar {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+    }
 }
 
 /* Old grid styles removed - now using flex layout above */

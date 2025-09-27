@@ -91,18 +91,19 @@ class VT_Image_Manager {
 	 * Get upload directory for entity type
 	 */
 	private static function getUploadDirectory($entity_type, $event_id = null) {
-		$upload_base = VT_Config::get('upload_path', '/uploads');
-		$upload_url_base = VT_Http::getBaseUrl() . $upload_base;
+		$upload_base_dir = VT_Config::get('upload_path', __DIR__ . '/../uploads');
+		$upload_base_url = '/uploads'; // URL path, not filesystem path
+		$upload_url_base = VT_Http::getBaseUrl() . $upload_base_url;
 
 		// Handle different entity types
 		if ($entity_type === 'post' && $event_id) {
-			$upload_dir = $upload_base . '/vivalatable/events/' . $event_id . '/posts/';
+			$upload_dir = $upload_base_dir . '/vivalatable/events/' . $event_id . '/posts/';
 			$upload_url = $upload_url_base . '/vivalatable/events/' . $event_id . '/posts/';
 		} elseif ($entity_type === 'conversation' && $event_id) {
-			$upload_dir = $upload_base . '/vivalatable/conversations/' . $event_id . '/';
+			$upload_dir = $upload_base_dir . '/vivalatable/conversations/' . $event_id . '/';
 			$upload_url = $upload_url_base . '/vivalatable/conversations/' . $event_id . '/';
 		} else {
-			$upload_dir = $upload_base . '/vivalatable/' . $entity_type . 's/';
+			$upload_dir = $upload_base_dir . '/vivalatable/' . $entity_type . 's/';
 			$upload_url = $upload_url_base . '/vivalatable/' . $entity_type . 's/';
 		}
 
@@ -293,14 +294,15 @@ class VT_Image_Manager {
 		}
 
 		// Convert URL to file path
-		$upload_base = VT_Config::get('upload_path', '/uploads');
-		$base_url = VT_Http::getBaseUrl() . $upload_base;
+		$upload_base_dir = VT_Config::get('upload_path', __DIR__ . '/../uploads');
+		$upload_base_url = '/uploads';
+		$base_url = VT_Http::getBaseUrl() . $upload_base_url;
 
 		if (strpos($image_url, $base_url) !== 0) {
 			return false; // Not our image
 		}
 
-		$file_path = str_replace($base_url, $upload_base, $image_url);
+		$file_path = str_replace($base_url, $upload_base_dir, $image_url);
 
 		if (file_exists($file_path)) {
 			return unlink($file_path);
@@ -322,7 +324,7 @@ class VT_Image_Manager {
 			return $image_path;
 		}
 
-		$upload_base = VT_Config::get('upload_path', '/uploads');
-		return VT_Http::getBaseUrl() . $upload_base . '/' . ltrim($image_path, '/');
+		$upload_base_url = '/uploads';
+		return VT_Http::getBaseUrl() . $upload_base_url . '/' . ltrim($image_path, '/');
 	}
 }

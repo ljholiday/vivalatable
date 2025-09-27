@@ -132,6 +132,23 @@ $event_time_formatted = date('g:i A', strtotime($event->event_date));
 			<?php endif; ?>
 		</div>
 
+		<!-- Signup Prompt - Critical missing piece from docs -->
+		<div class="vt-card vt-mb-4 signup-prompt">
+			<div class="vt-card-body vt-text-center">
+				<h3 class="vt-heading vt-heading-md vt-mb-2">Want to create more events like this?</h3>
+				<p class="vt-text-muted vt-mb-4">Create a free VivalaTable account to host your own events and join communities.</p>
+
+				<div class="vt-flex vt-gap vt-justify-center vt-flex-wrap">
+					<a href="/register?guest_token=<?php echo urlencode($invitation_token); ?>&email=<?php echo urlencode($guest->email); ?>&name=<?php echo urlencode($guest->name); ?>" class="vt-btn vt-btn-primary">
+						Create Free Account
+					</a>
+					<button type="button" class="vt-btn vt-btn-secondary" onclick="this.closest('.signup-prompt').style.display='none'">
+						Maybe Later
+					</button>
+				</div>
+			</div>
+		</div>
+
 		<div class="vt-flex vt-gap vt-justify-center vt-flex-wrap">
 			<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn">
 				View Event Details

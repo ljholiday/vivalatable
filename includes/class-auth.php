@@ -28,7 +28,7 @@ class VT_Auth {
     public static function login($email_or_username, $password) {
         $db = VT_Database::getInstance();
 
-        $query = "SELECT * FROM vt_users WHERE (email = ? OR login = ?) AND status = 'active' LIMIT 1";
+        $query = "SELECT * FROM vt_users WHERE (email = ? OR username = ?) AND status = 'active' LIMIT 1";
         $stmt = $db->prepare($query);
         $stmt->execute([$email_or_username, $email_or_username]);
         $user = $stmt->fetch();
@@ -74,13 +74,13 @@ class VT_Auth {
         $db = VT_Database::getInstance();
 
         // Check if user exists
-        $existing = $db->getVar("SELECT id FROM vt_users WHERE email = '$email' OR login = '$username'");
+        $existing = $db->getVar("SELECT id FROM vt_users WHERE email = '$email' OR username = '$username'");
         if ($existing) {
             return false;
         }
 
         $user_data = [
-            'login' => $username,
+            'username' => $username,
             'email' => $email,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'display_name' => $display_name ?: $username,
