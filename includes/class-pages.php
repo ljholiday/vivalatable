@@ -53,8 +53,8 @@ class VT_Pages {
 	 * Single event page
 	 */
 	public static function singleEvent($params) {
-		$event_id = $params['id'];
-		self::renderPage('single-event', 'Event Details', null, 'two-column', compact('event_id'));
+		$event_slug = $params['slug'];
+		self::renderPage('single-event', 'Event Details', null, 'two-column', compact('event_slug'));
 	}
 
 	/**
@@ -62,16 +62,59 @@ class VT_Pages {
 	 */
 	public static function editEvent($params) {
 		self::requireAuth();
-		$event_id = $params['id'];
+		// Get event_id from query parameter
+		$event_id = isset($_GET['event_id']) ? intval($_GET['event_id']) : 0;
+		if (!$event_id) {
+			self::notFound();
+			return;
+		}
 		self::renderPage('edit-event', 'Edit Event', null, 'form', compact('event_id'));
 	}
 
 	/**
-	 * Manage event page
+	 * Manage event page (query parameter version)
 	 */
 	public static function manageEvent($params) {
 		self::requireAuth();
-		$event_id = $params['id'];
+		// Get event_id from query parameter
+		$event_id = isset($_GET['event_id']) ? intval($_GET['event_id']) : 0;
+		if (!$event_id) {
+			self::notFound();
+			return;
+		}
+		self::renderPage('manage-event', 'Manage Event', null, 'two-column', compact('event_id'));
+	}
+
+	/**
+	 * Edit event page (route parameter version)
+	 */
+	public static function editEventBySlug($params) {
+		self::requireAuth();
+		// Get event by slug, then pass event_id to template
+		$event_manager = new VT_Event_Manager();
+		$event = $event_manager->getEventBySlug($params['slug']);
+		if (!$event) {
+			self::notFound();
+			return;
+		}
+		$event_id = $event->id;
+		self::renderPage('edit-event', 'Edit Event', null, 'form', compact('event_id'));
+	}
+
+	/**
+	 * Manage event page (route parameter version)
+	 */
+	public static function manageEventBySlug($params) {
+		self::requireAuth();
+		// Get event by slug, then pass event_id to template
+		$event_manager = new VT_Event_Manager();
+		$event = $event_manager->getEventBySlug($params['slug']);
+		if (!$event) {
+			self::notFound();
+			return;
+		}
+		$event_id = $event->id;
+
 		self::renderPage('manage-event', 'Manage Event', null, 'two-column', compact('event_id'));
 	}
 
@@ -94,8 +137,8 @@ class VT_Pages {
 	 * Single community page
 	 */
 	public static function singleCommunity($params) {
-		$community_id = $params['id'];
-		self::renderPage('single-community', 'Community', null, 'two-column', compact('community_id'));
+		$community_slug = $params['slug'];
+		self::renderPage('single-community', 'Community', null, 'two-column', compact('community_slug'));
 	}
 
 	/**
@@ -115,11 +158,62 @@ class VT_Pages {
 	}
 
 	/**
-	 * Manage community page
+	 * Manage community page (query parameter version)
 	 */
 	public static function manageCommunity($params) {
 		self::requireAuth();
-		$community_id = $params['id'];
+		// Get community_id from query parameter
+		$community_id = isset($_GET['community_id']) ? intval($_GET['community_id']) : 0;
+		if (!$community_id) {
+			self::notFound();
+			return;
+		}
+		self::renderPage('manage-community', 'Manage Community', null, 'two-column', compact('community_id'));
+	}
+
+	/**
+	 * Edit community page (route parameter version)
+	 */
+	public static function editCommunityBySlug($params) {
+		self::requireAuth();
+		// Get community by slug, then pass community_id to template
+		$community_manager = new VT_Community_Manager();
+		$community = $community_manager->getCommunityBySlug($params['slug']);
+		if (!$community) {
+			self::notFound();
+			return;
+		}
+		$community_id = $community->id;
+		self::renderPage('edit-community', 'Edit Community', null, 'form', compact('community_id'));
+	}
+
+	/**
+	 * Manage community page (route parameter version)
+	 */
+	public static function manageCommunityBySlug($params) {
+		self::requireAuth();
+		// Get community by slug, then pass community_id to template
+		$community_manager = new VT_Community_Manager();
+		$community = $community_manager->getCommunityBySlug($params['slug']);
+		if (!$community) {
+			self::notFound();
+			return;
+		}
+		$community_id = $community->id;
+		self::renderPage('manage-community', 'Manage Community', null, 'two-column', compact('community_id'));
+	}
+
+	/**
+	 * Manage community page (legacy route parameter version)
+	 */
+	public static function manageCommunityById($params) {
+		self::requireAuth();
+		// Get community_id from route parameter
+		$community_id = isset($params['id']) ? intval($params['id']) : 0;
+		if (!$community_id) {
+			self::notFound();
+			return;
+		}
 		self::renderPage('manage-community', 'Manage Community', null, 'two-column', compact('community_id'));
 	}
 

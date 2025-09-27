@@ -5,9 +5,8 @@
  * Ported from PartyMinder WordPress plugin
  */
 
-// Get community slug from URL
-$community_slug = $_GET['community'] ?? '';
-if (!$community_slug) {
+// Get community slug from route parameter (passed from VT_Pages::singleCommunity)
+if (!isset($community_slug) || !$community_slug) {
 	VT_Router::redirect('/communities');
 	exit;
 }
@@ -146,49 +145,22 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 			</div>
 		</div>
 
-		<div class="vt-flex vt-flex-column vt-gap">
-			<?php if ($is_logged_in) : ?>
-				<?php if ($is_member) : ?>
-					<?php if ($user_role === 'admin') : ?>
-						<a href="/manage-community?community_id=<?php echo $community->id; ?>" class="vt-btn vt-btn-primary">
-							Manage Community
-						</a>
-					<?php endif; ?>
-					<a href="/create-event?community_id=<?php echo $community->id; ?>" class="vt-btn">
-						Create Event
-					</a>
-					<form method="post" style="display: inline;">
-						<?php echo VT_Security::nonceField('vt_community_action', 'community_nonce'); ?>
-						<input type="hidden" name="action" value="leave">
-						<button type="submit" class="vt-btn vt-btn-secondary">Leave Community</button>
-					</form>
-				<?php else : ?>
-					<form method="post" style="display: inline;">
-						<?php echo VT_Security::nonceField('vt_community_action', 'community_nonce'); ?>
-						<input type="hidden" name="action" value="join">
-						<button type="submit" class="vt-btn vt-btn-primary">Join Community</button>
-					</form>
-				<?php endif; ?>
-			<?php else : ?>
-				<a href="/login" class="vt-btn vt-btn-primary">Login to Join</a>
-			<?php endif; ?>
-		</div>
 	</div>
 </div>
 
 <!-- Community Navigation Tabs -->
 <div class="vt-section vt-mb-4">
-	<div class="vt-tabs">
+	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<a href="/communities/<?php echo $community->slug; ?>?tab=events"
-		   class="vt-tab <?php echo ($active_tab === 'events') ? 'active' : ''; ?>">
+		   class="vt-btn <?php echo ($active_tab === 'events') ? 'is-active' : ''; ?>">
 			Events
 		</a>
 		<a href="/communities/<?php echo $community->slug; ?>?tab=conversations"
-		   class="vt-tab <?php echo ($active_tab === 'conversations') ? 'active' : ''; ?>">
+		   class="vt-btn <?php echo ($active_tab === 'conversations') ? 'is-active' : ''; ?>">
 			Conversations
 		</a>
 		<a href="/communities/<?php echo $community->slug; ?>?tab=members"
-		   class="vt-tab <?php echo ($active_tab === 'members') ? 'active' : ''; ?>">
+		   class="vt-btn <?php echo ($active_tab === 'members') ? 'is-active' : ''; ?>">
 			Members
 		</a>
 	</div>
@@ -201,7 +173,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 		<div class="vt-flex vt-flex-between vt-mb-4">
 			<h3 class="vt-heading vt-heading-md">Community Events</h3>
 			<?php if ($is_member) : ?>
-				<a href="/create-event?community_id=<?php echo $community->id; ?>" class="vt-btn">
+				<a href="/events/create?community_id=<?php echo $community->id; ?>" class="vt-btn">
 					Create Event
 				</a>
 			<?php endif; ?>
@@ -238,7 +210,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 			<div class="vt-text-center vt-p-4">
 				<p class="vt-text-muted vt-mb-4">No events have been created yet.</p>
 				<?php if ($is_member) : ?>
-					<a href="/create-event?community_id=<?php echo $community->id; ?>" class="vt-btn">
+					<a href="/events/create?community_id=<?php echo $community->id; ?>" class="vt-btn">
 						Create the First Event
 					</a>
 				<?php endif; ?>
@@ -252,7 +224,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 		<div class="vt-flex vt-flex-between vt-mb-4">
 			<h3 class="vt-heading vt-heading-md">Community Discussions</h3>
 			<?php if ($is_member) : ?>
-				<a href="/create-conversation?community_id=<?php echo $community->id; ?>" class="vt-btn">
+				<a href="/conversations/create?community_id=<?php echo $community->id; ?>" class="vt-btn">
 					Start Discussion
 				</a>
 			<?php endif; ?>
@@ -281,7 +253,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 			<div class="vt-text-center vt-p-4">
 				<p class="vt-text-muted vt-mb-4">No discussions have been started yet.</p>
 				<?php if ($is_member) : ?>
-					<a href="/create-conversation?community_id=<?php echo $community->id; ?>" class="vt-btn">
+					<a href="/conversations/create?community_id=<?php echo $community->id; ?>" class="vt-btn">
 						Start the First Discussion
 					</a>
 				<?php endif; ?>

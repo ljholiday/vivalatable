@@ -58,6 +58,11 @@ private function connect() {
             // Replace WordPress-style placeholders with PDO placeholders
             $pdo_query = str_replace(['%d', '%s', '%f'], '?', $query);
 
+            // Flatten args if first argument is an array
+            if (count($args) === 1 && is_array($args[0])) {
+                $args = $args[0];
+            }
+
             if (!empty($args)) {
                 $stmt = $this->pdo->prepare($pdo_query);
                 $stmt->execute($args);

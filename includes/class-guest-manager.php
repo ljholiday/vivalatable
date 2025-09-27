@@ -1,416 +1,659 @@
 <?php
 /**
  * VivalaTable Guest Manager
- * Ported from PartyMinder Guest Manager
+ * Handles guest invitations, anonymous RSVP, and guest-to-user conversion
+ * Ported from PartyMinder WordPress plugin - maintains 32-character token system
  */
 
 class VT_Guest_Manager {
 
-    public function processRsvp($rsvp_data) {
-        $db = VT_Database::getInstance();
-
-        // Validate required fields
-        if (empty($rsvp_data['event_id']) || empty($rsvp_data['name']) || empty($rsvp_data['email'])) {
-            return VT_Http::jsonError('Event ID, name, and email are required', 'missing_data');
-        }
-
-        // Validate email
-        if (!filter_var($rsvp_data['email'], FILTER_VALIDATE_EMAIL)) {
-            return VT_Http::jsonError('Please provide a valid email address', 'invalid_email');
-        }
-
-        // Validate status
-        $valid_statuses = ['confirmed', 'declined', 'maybe', 'pending'];
-        if (!in_array($rsvp_data['status'], $valid_statuses)) {
-            $rsvp_data['status'] = 'pending';
-        }
-
-        // Check for existing guest
-        $existing_guest = null;
-        if (!empty($rsvp_data['existing_guest_id'])) {
-            $existing_guest = $db->getRow("SELECT * FROM vt_guests WHERE id = " . VT_Sanitize::int($rsvp_data['existing_guest_id']));
-        }
-
-        // If no existing guest found by ID, check by event_id + email
-        if (!$existing_guest) {
-            $event_id = VT_Sanitize::int($rsvp_data['event_id']);
-            $email = VT_Sanitize::email($rsvp_data['email']);
-            $existing_guest = $db->getRow("SELECT * FROM vt_guests WHERE event_id = $event_id AND email = '$email'");
-        }
-
-        if ($existing_guest) {
-            // Update existing RSVP
-            $update_data = [
-                'name' => VT_Sanitize::textField($rsvp_data['name']),
-                'status' => VT_Sanitize::textField($rsvp_data['status']),
-                'dietary_restrictions' => VT_Sanitize::textField($rsvp_data['dietary'] ?? ''),
-                'notes' => VT_Sanitize::textField($rsvp_data['notes'] ?? ''),
-            ];
-
-            $result = $db->update('guests', $update_data, ['id' => $existing_guest->id]);
-            $guest_id = $existing_guest->id;
-        } else {
-            // Create new guest record with token for RSVPs
-            $rsvp_token = VT_Security::generateToken();
-            $invitation_source = VT_Sanitize::textField($rsvp_data['invitation_source'] ?? 'direct');
-
-            $result = $db->insert('guests', [
-                'event_id' => VT_Sanitize::int($rsvp_data['event_id']),
-                'name' => VT_Sanitize::textField($rsvp_data['name']),
-                'email' => VT_Sanitize::email($rsvp_data['email']),
-                'status' => VT_Sanitize::textField($rsvp_data['status']),
-                'dietary_restrictions' => VT_Sanitize::textField($rsvp_data['dietary'] ?? ''),
-                'notes' => VT_Sanitize::textField($rsvp_data['notes'] ?? ''),
-                'rsvp_token' => $rsvp_token,
-                'invitation_source' => $invitation_source,
-            ]);
-
-            $guest_id = $result;
-        }
-
-        if ($result !== false) {
-            // Send confirmation email
-            $this->sendRsvpConfirmation($guest_id, $rsvp_data['event_id'], $rsvp_data['status']);
-
-            // Update profile stats for confirmed RSVP
-            if ($rsvp_data['status'] === 'confirmed' && class_exists('VT_Profile_Manager')) {
-                $user_id = $this->getUserIdByEmail($rsvp_data['email']);
-                if ($user_id) {
-                    VT_Profile_Manager::incrementEventsAttended($user_id);
-                }
-            }
-
-            return [
-                'success' => true,
-                'message' => $this->getRsvpSuccessMessage($rsvp_data['status']),
-                'guest_id' => $guest_id,
-            ];
-        } else {
-            return VT_Http::jsonError('Failed to process RSVP. Please try again.', 'rsvp_failed');
-        }
-    }
-
-    public function getEventGuests($event_id, $status = null) {
-        $db = VT_Database::getInstance();
-
-        $query = "SELECT * FROM vt_guests WHERE event_id = " . VT_Sanitize::int($event_id);
-
-        if ($status) {
-            $query .= " AND status = '" . VT_Sanitize::textField($status) . "'";
-        }
-
-        $query .= " ORDER BY rsvp_date DESC";
-
-        return $db->getResults($query);
-    }
-
-    public function getGuestStats($event_id) {
-        $db = VT_Database::getInstance();
-
-        $event_id = VT_Sanitize::int($event_id);
-        $stats = $db->getRow("
-            SELECT
-                COUNT(*) as total,
-                SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
-                SUM(CASE WHEN status = 'declined' THEN 1 ELSE 0 END) as declined,
-                SUM(CASE WHEN status = 'maybe' THEN 1 ELSE 0 END) as maybe,
-                SUM(CASE WHEN status IN ('pending') THEN 1 ELSE 0 END) as pending
-            FROM vt_guests WHERE event_id = $event_id
-        ");
-
-        return $stats ?: (object) [
-            'total' => 0,
-            'confirmed' => 0,
-            'declined' => 0,
-            'maybe' => 0,
-            'pending' => 0,
-        ];
-    }
-
-    public function sendInvitation($guest_id, $event_id) {
-        $guest = $this->getGuest($guest_id);
-        if (class_exists('VT_Event_Manager')) {
-            $event_manager = new VT_Event_Manager();
-            $event = $event_manager->getEvent($event_id);
-        }
-
-        if (!$guest || !$event) {
-            return false;
-        }
-
-        $subject = sprintf('You\'re invited to %s', $event->title);
-
-        $rsvp_link = VT_Http::getBaseUrl() . '/events/' . $event->slug . '?guest_email=' . $guest->email;
-
-        $message = sprintf(
-            "Hi %s,\n\nYou're invited to: %s\n\nWhen: %s\nWhere: %s\n\n%s\n\nPlease RSVP: %s\n\nBest regards,\n%s",
-            $guest->name,
-            $event->title,
-            VT_Time::formatDateTime(strtotime($event->event_date)),
-            $event->venue_info,
-            strip_tags($event->description),
-            $rsvp_link,
-            $event->host_email ?: VT_Config::get('site_title')
-        );
-
-        return VT_Mail::send($guest->email, $subject, $message);
-    }
-
-    private function sendRsvpConfirmation($guest_id, $event_id, $status) {
-        $guest = $this->getGuest($guest_id);
-        if (class_exists('VT_Event_Manager')) {
-            $event_manager = new VT_Event_Manager();
-            $event = $event_manager->getEvent($event_id);
-        }
-
-        if (!$guest || !$event) {
-            return false;
-        }
-
-        $subject = sprintf('RSVP Confirmation for %s', $event->title);
-
-        $status_messages = [
-            'confirmed' => 'Thank you for confirming! We\'re excited to see you there.',
-            'declined' => 'Thank you for letting us know. We\'ll miss you!',
-            'maybe' => 'Thank you for your response. Please confirm when you can.',
-            'pending' => 'We received your RSVP. Please confirm when you can.',
-        ];
-
-        $message = sprintf(
-            "Hi %s,\n\n%s\n\nEvent: %s\nDate: %s\nYour Status: %s\n\nBest regards,\n%s",
-            $guest->name,
-            $status_messages[$status] ?? '',
-            $event->title,
-            VT_Time::formatDateTime(strtotime($event->event_date)),
-            ucfirst($status),
-            $event->host_email ?: VT_Config::get('site_title')
-        );
-
-        return VT_Mail::send($guest->email, $subject, $message);
-    }
-
-    private function getGuest($guest_id) {
-        $db = VT_Database::getInstance();
-        return $db->getRow("SELECT * FROM vt_guests WHERE id = " . VT_Sanitize::int($guest_id));
-    }
-
-    private function getRsvpSuccessMessage($status) {
-        $messages = [
-            'confirmed' => 'Thank you for confirming! We\'re excited to see you.',
-            'declined' => 'Thank you for letting us know.',
-            'maybe' => 'Thank you! Please confirm when you can.',
-            'pending' => 'RSVP received. Please confirm when possible.',
-        ];
-
-        return $messages[$status] ?? 'RSVP updated successfully.';
-    }
-
-    public function createRsvpInvitation($event_id, $email, $temporary_guest_id = '', $invitation_source = 'email') {
-        $db = VT_Database::getInstance();
-
-        // Generate secure token
-        $rsvp_token = VT_Security::generateToken();
-
-        if (empty($temporary_guest_id)) {
-            $temporary_guest_id = VT_Security::generateToken();
-        }
-
-        // Check if invitation already exists
-        $event_id = VT_Sanitize::int($event_id);
-        $email = VT_Sanitize::email($email);
-        $existing_guest = $db->getRow("SELECT * FROM vt_guests WHERE event_id = $event_id AND email = '$email'");
-
-        if ($existing_guest) {
-            // Update token and reset status to pending for existing guest
-            $db->update('guests', [
-                'rsvp_token' => $rsvp_token,
-                'temporary_guest_id' => $temporary_guest_id,
-                'status' => 'pending',
-                'invitation_source' => $invitation_source,
-            ], ['id' => $existing_guest->id]);
-        } else {
-            // Create new anonymous guest record
-            $db->insert('guests', [
-                'rsvp_token' => $rsvp_token,
-                'temporary_guest_id' => $temporary_guest_id,
-                'event_id' => $event_id,
-                'email' => $email,
-                'name' => '', // Will be filled during RSVP
-                'status' => 'pending',
-                'invitation_source' => $invitation_source,
-            ]);
-        }
-
-        // Get event details for URL generation
-        if (class_exists('VT_Event_Manager')) {
-            $event_manager = new VT_Event_Manager();
-            $event = $event_manager->getEvent($event_id);
-        }
-
-        $invitation_url = $event ?
-            VT_Http::getBaseUrl() . '/events/' . $event->slug . '?token=' . $rsvp_token :
-            VT_Http::getBaseUrl() . '/events/join?token=' . $rsvp_token;
-
-        return [
-            'token' => $rsvp_token,
-            'url' => $invitation_url
-        ];
-    }
-
-    public function processAnonymousRsvp($rsvp_token, $status, $guest_data = []) {
-        $db = VT_Database::getInstance();
-
-        // Validate status
-        $valid_statuses = ['confirmed', 'declined', 'maybe'];
-        if (!in_array($status, $valid_statuses)) {
-            return VT_Http::jsonError('Invalid RSVP status', 'invalid_status');
-        }
-
-        // Find guest by token
-        $guest = $db->getRow("SELECT * FROM vt_guests WHERE rsvp_token = '" . VT_Sanitize::textField($rsvp_token) . "'");
-
-        if (!$guest) {
-            return VT_Http::jsonError('Invalid or expired RSVP link', 'invalid_token');
-        }
-
-        // Update RSVP
-        $update_data = [
-            'status' => $status,
-        ];
-
-        // Add guest data if provided (name, dietary restrictions, etc.)
-        if (!empty($guest_data['name'])) {
-            $update_data['name'] = VT_Sanitize::textField($guest_data['name']);
-        }
-        if (!empty($guest_data['dietary'])) {
-            $update_data['dietary_restrictions'] = VT_Sanitize::textField($guest_data['dietary']);
-        }
-        if (!empty($guest_data['notes'])) {
-            $update_data['notes'] = VT_Sanitize::textField($guest_data['notes']);
-        }
-
-        $result = $db->update('guests', $update_data, ['id' => $guest->id]);
-
-        if ($result === false) {
-            return VT_Http::jsonError('Failed to update RSVP', 'update_failed');
-        }
-
-        return [
-            'success' => true,
-            'message' => $this->getRsvpSuccessMessage($status),
-            'guest_id' => $guest->id,
-            'event_id' => $guest->event_id,
-        ];
-    }
-
-    public function getGuestByToken($rsvp_token) {
-        $db = VT_Database::getInstance();
-        return $db->getRow("SELECT * FROM {$db->prefix}guests WHERE rsvp_token = '" . VT_Sanitize::textField($rsvp_token) . "'");
-    }
-
-    public function convertGuestToUser($guest_id, $user_data) {
-        $db = VT_Database::getInstance();
-        $guest = $db->getRow("SELECT * FROM vt_guests WHERE id = " . VT_Sanitize::int($guest_id));
-
-        if (!$guest) {
-            return VT_Http::jsonError('Guest not found', 'guest_not_found');
-        }
-
-        // Check if user already exists with this email
-        $existing_user = $db->getRow("SELECT * FROM vt_users WHERE email = '" . $guest->email . "'");
-        if ($existing_user) {
-            // Link existing user
-            $user_id = $existing_user->id;
-        } else {
-            // Create new user account
-            $user_id = VT_Auth::register(
-                $guest->email,
-                $guest->email,
-                VT_Security::generateToken(16),
-                $guest->name ?: $user_data['name']
-            );
-
-            if (!$user_id) {
-                return VT_Http::jsonError('Failed to create user account', 'user_creation_failed');
-            }
-        }
-
-        // Update guest record with converted user ID
-        $db->update('guests', ['converted_user_id' => $user_id], ['id' => $guest_id]);
-
-        // Create/update user profile with dietary preferences
-        if (class_exists('VT_Profile_Manager')) {
-            $profile_data = [
-                'dietary_restrictions' => $guest->dietary_restrictions
-            ];
-
-            if (!empty($user_data)) {
-                $profile_data = array_merge($profile_data, $user_data);
-            }
-
-            VT_Profile_Manager::updateProfile($user_id, $profile_data);
-        }
-
-        return $user_id;
-    }
-
-    public function sendRsvpInvitation($event_id, $email, $host_name = '', $personal_message = '') {
-        // Create the invitation
-        $invitation_data = $this->createRsvpInvitation($event_id, $email);
-        $rsvp_token = $invitation_data['token'];
-        $invitation_url = $invitation_data['url'];
-
-        if (class_exists('VT_Event_Manager')) {
-            $event_manager = new VT_Event_Manager();
-            $event = $event_manager->getEvent($event_id);
-        }
-
-        if (!$event) {
-            return false;
-        }
-
-        // Create quick RSVP URLs
-        $rsvp_yes_url = $invitation_url . '&response=confirmed';
-        $rsvp_maybe_url = $invitation_url . '&response=maybe';
-        $rsvp_no_url = $invitation_url . '&response=declined';
-
-        $event_date = VT_Time::formatDate(strtotime($event->event_date));
-        $event_time = VT_Time::formatTime(strtotime($event->event_date));
-        $event_day = VT_Time::format('l', strtotime($event->event_date));
-
-        $site_name = VT_Config::get('site_title');
-        $host_name = $host_name ?: $site_name;
-
-        $subject = sprintf('You\'re invited: %s', $event->title);
-
-        // Use email template system
-        $variables = [
-            'event_title' => $event->title,
-            'event_description' => $event->description,
-            'event_date' => $event->event_date,
-            'venue_info' => $event->venue_info,
-            'from_name' => $host_name,
-            'custom_message' => $personal_message,
-            'invitation_url' => $invitation_url,
-            'site_name' => $site_name,
-            'site_url' => VT_Mail::getSiteUrl(),
-            'subject' => $subject
-        ];
-
-        $sent = VT_Mail::sendTemplate($email, 'invitation', $variables);
-
-        // Always return the invitation data - email failure shouldn't break the invitation system
-        return [
-            'success' => true,
-            'email_sent' => $sent,
-            'token' => $rsvp_token,
-            'url' => $invitation_url
-        ];
-    }
-
-
-    private function getUserIdByEmail($email) {
-        $db = VT_Database::getInstance();
-        return $db->getVar("SELECT id FROM vt_users WHERE email = '" . VT_Sanitize::email($email) . "'");
-    }
+	private $db;
+
+	public function __construct() {
+		$this->db = VT_Database::getInstance();
+	}
+
+	/**
+	 * Create RSVP invitation for a guest
+	 * Generates 32-character token exactly like PartyMinder
+	 */
+	public function createRsvpInvitation($event_id, $email, $temporary_guest_id = '', $invitation_source = 'email') {
+		$event_id = intval($event_id);
+		if (!$event_id) {
+			return new VT_Error('invalid_event', 'Invalid event ID');
+		}
+
+		if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+			return new VT_Error('invalid_email', 'Valid email address required');
+		}
+
+		// Generate 32-character token (CRITICAL: matches PartyMinder exactly)
+		$rsvp_token = VT_Security::generateToken(32);
+
+		if (empty($temporary_guest_id)) {
+			$temporary_guest_id = VT_Security::generateToken(32);
+		}
+
+		// Check if guest already exists for this event
+		$existing_guest = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT * FROM {$this->db->prefix}guests WHERE event_id = %d AND email = %s",
+				$event_id, VT_Sanitize::email($email)
+			)
+		);
+
+		if ($existing_guest) {
+			// Update existing guest with new token
+			$result = $this->db->update(
+				'guests',
+				array(
+					'rsvp_token' => $rsvp_token,
+					'temporary_guest_id' => $temporary_guest_id,
+					'status' => 'pending',
+					'updated_at' => VT_Time::currentTime('mysql')
+				),
+				array('id' => $existing_guest->id)
+			);
+
+			if ($result === false) {
+				return new VT_Error('update_failed', 'Failed to update existing guest invitation');
+			}
+
+			$guest_id = $existing_guest->id;
+		} else {
+			// Create new guest
+			$guest_data = array(
+				'event_id' => $event_id,
+				'email' => VT_Sanitize::email($email),
+				'name' => '', // Will be filled when they RSVP
+				'rsvp_token' => $rsvp_token,
+				'temporary_guest_id' => $temporary_guest_id,
+				'status' => 'pending',
+				'invitation_source' => VT_Sanitize::textField($invitation_source),
+				'invited_at' => VT_Time::currentTime('mysql'),
+				'created_at' => VT_Time::currentTime('mysql'),
+				'updated_at' => VT_Time::currentTime('mysql')
+			);
+
+			$guest_id = $this->db->insert('guests', $guest_data);
+
+			if (!$guest_id) {
+				return new VT_Error('insert_failed', 'Failed to create guest invitation');
+			}
+		}
+
+		// Send invitation email
+		$email_result = $this->sendRSVPInvitation($event_id, $email, $rsvp_token);
+
+		if (is_vt_error($email_result)) {
+			return $email_result;
+		}
+
+		return array(
+			'guest_id' => $guest_id,
+			'token' => $rsvp_token,
+			'temporary_guest_id' => $temporary_guest_id,
+			'email_sent' => $email_result
+		);
+	}
+
+	/**
+	 * Process anonymous RSVP submission
+	 * Core functionality for guest RSVP without registration
+	 */
+	public function processAnonymousRsvp($rsvp_token, $status, $guest_data = array()) {
+		if (empty($rsvp_token) || strlen($rsvp_token) !== 32) {
+			return new VT_Error('invalid_token', 'Invalid RSVP token');
+		}
+
+		if (!in_array($status, array('yes', 'no', 'maybe'))) {
+			return new VT_Error('invalid_status', 'Invalid RSVP status');
+		}
+
+		// Find guest by token
+		$guest = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT g.*, e.title as event_title, e.slug as event_slug, e.event_date, e.guest_limit
+				 FROM {$this->db->prefix}guests g
+				 JOIN {$this->db->prefix}events e ON g.event_id = e.id
+				 WHERE g.rsvp_token = %s",
+				$rsvp_token
+			)
+		);
+
+		if (!$guest) {
+			return new VT_Error('guest_not_found', 'RSVP invitation not found');
+		}
+
+		// Check guest limit if saying yes
+		if ($status === 'yes' && $guest->guest_limit > 0) {
+			$current_yes_count = $this->getGuestCount($guest->event_id, 'yes');
+			if ($current_yes_count >= $guest->guest_limit) {
+				return new VT_Error('event_full', 'This event has reached its guest limit');
+			}
+		}
+
+		// Sanitize guest data
+		$sanitized_data = array(
+			'status' => $status,
+			'name' => VT_Sanitize::textField($guest_data['name'] ?? ''),
+			'phone' => VT_Sanitize::textField($guest_data['phone'] ?? ''),
+			'dietary_restrictions' => VT_Sanitize::textField($guest_data['dietary_restrictions'] ?? ''),
+			'plus_one' => intval($guest_data['plus_one'] ?? 0),
+			'plus_one_name' => VT_Sanitize::textField($guest_data['plus_one_name'] ?? ''),
+			'notes' => VT_Sanitize::textField($guest_data['notes'] ?? ''),
+			'rsvp_date' => VT_Time::currentTime('mysql'),
+			'updated_at' => VT_Time::currentTime('mysql')
+		);
+
+		// Clear plus one data if not bringing one
+		if ($sanitized_data['plus_one'] <= 0) {
+			$sanitized_data['plus_one'] = 0;
+			$sanitized_data['plus_one_name'] = '';
+		}
+
+		$result = $this->db->update('guests', $sanitized_data, array('id' => $guest->id));
+
+		if ($result === false) {
+			return new VT_Error('update_failed', 'Failed to save RSVP response');
+		}
+
+		// Clear any cached data
+		VT_Cache::delete('event_guests_' . $guest->event_id);
+
+		// Send confirmation email
+		$this->sendRSVPConfirmation($guest->id, $status);
+
+		return array(
+			'guest_id' => $guest->id,
+			'status' => $status,
+			'event_title' => $guest->event_title,
+			'event_slug' => $guest->event_slug
+		);
+	}
+
+	/**
+	 * Get guest by RSVP token
+	 */
+	public function getGuestByToken($rsvp_token) {
+		if (empty($rsvp_token) || strlen($rsvp_token) !== 32) {
+			return null;
+		}
+
+		return $this->db->getRow(
+			$this->db->prepare(
+				"SELECT g.*, e.title as event_title, e.slug as event_slug, e.event_date,
+				        e.event_time, e.venue_info, e.description, e.host_email, e.featured_image
+				 FROM {$this->db->prefix}guests g
+				 JOIN {$this->db->prefix}events e ON g.event_id = e.id
+				 WHERE g.rsvp_token = %s",
+				$rsvp_token
+			)
+		);
+	}
+
+	/**
+	 * Get guest by temporary guest ID
+	 */
+	public function getGuestByTemporaryId($temporary_guest_id) {
+		if (empty($temporary_guest_id) || strlen($temporary_guest_id) !== 32) {
+			return null;
+		}
+
+		return $this->db->getRow(
+			$this->db->prepare(
+				"SELECT g.*, e.title as event_title, e.slug as event_slug
+				 FROM {$this->db->prefix}guests g
+				 JOIN {$this->db->prefix}events e ON g.event_id = e.id
+				 WHERE g.temporary_guest_id = %s",
+				$temporary_guest_id
+			)
+		);
+	}
+
+	/**
+	 * Convert guest to registered user
+	 * Core feature for seamless guest-to-user conversion
+	 */
+	public function convertGuestToUser($guest_id, $user_data) {
+		$guest_id = intval($guest_id);
+		if (!$guest_id) {
+			return new VT_Error('invalid_guest', 'Invalid guest ID');
+		}
+
+		$guest = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT * FROM {$this->db->prefix}guests WHERE id = %d",
+				$guest_id
+			)
+		);
+
+		if (!$guest) {
+			return new VT_Error('guest_not_found', 'Guest not found');
+		}
+
+		// Validate user data
+		if (empty($user_data['username']) || empty($user_data['password'])) {
+			return new VT_Error('invalid_user_data', 'Username and password are required');
+		}
+
+		// Check if user already exists with this email
+		$existing_user = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT id FROM {$this->db->prefix}users WHERE email = %s",
+				$guest->email
+			)
+		);
+
+		if ($existing_user) {
+			return new VT_Error('user_exists', 'An account already exists with this email address');
+		}
+
+		// Create user account
+		$user_manager = new VT_User_Manager();
+		$user_id = $user_manager->createUser(
+			VT_Sanitize::textField($user_data['username']),
+			$guest->email,
+			$user_data['password'],
+			$guest->name ?: VT_Sanitize::textField($user_data['display_name'] ?? '')
+		);
+
+		if (is_vt_error($user_id)) {
+			return $user_id;
+		}
+
+		// Update guest record with converted user ID
+		$this->db->update(
+			'guests',
+			array(
+				'converted_user_id' => $user_id,
+				'updated_at' => VT_Time::currentTime('mysql')
+			),
+			array('id' => $guest_id)
+		);
+
+		// Log the user in immediately
+		VT_Auth::loginById($user_id);
+
+		return $user_id;
+	}
+
+	/**
+	 * Get all guests for an event
+	 */
+	public function getEventGuests($event_id, $status = null) {
+		$event_id = intval($event_id);
+		if (!$event_id) {
+			return array();
+		}
+
+		$where_conditions = array("g.event_id = %d");
+		$where_values = array($event_id);
+
+		if ($status) {
+			$where_conditions[] = "g.status = %s";
+			$where_values[] = $status;
+		}
+
+		return $this->db->getResults(
+			$this->db->prepare(
+				"SELECT g.*, u.username, u.display_name as user_display_name
+				 FROM {$this->db->prefix}guests g
+				 LEFT JOIN {$this->db->prefix}users u ON g.converted_user_id = u.id
+				 WHERE " . implode(' AND ', $where_conditions) . "
+				 ORDER BY g.rsvp_date DESC, g.id DESC",
+				$where_values
+			)
+		);
+	}
+
+	/**
+	 * Get guest statistics for an event
+	 */
+	public function getGuestStats($event_id) {
+		$event_id = intval($event_id);
+		if (!$event_id) {
+			return array();
+		}
+
+		$cache_key = 'guest_stats_' . $event_id;
+		$stats = VT_Cache::get($cache_key);
+
+		if ($stats === false) {
+			$stats = array(
+				'total' => 0,
+				'yes' => 0,
+				'no' => 0,
+				'maybe' => 0,
+				'pending' => 0,
+				'plus_ones' => 0
+			);
+
+			$results = $this->db->getResults(
+				$this->db->prepare(
+					"SELECT status, COUNT(*) as count, SUM(plus_one) as plus_ones_count
+					 FROM {$this->db->prefix}guests
+					 WHERE event_id = %d
+					 GROUP BY status",
+					$event_id
+				)
+			);
+
+			foreach ($results as $result) {
+				$stats[$result->status] = intval($result->count);
+				$stats['total'] += intval($result->count);
+				if ($result->status === 'yes') {
+					$stats['plus_ones'] += intval($result->plus_ones_count ?? 0);
+				}
+			}
+
+			// Cache for 5 minutes
+			VT_Cache::set($cache_key, $stats, 300);
+		}
+
+		return $stats;
+	}
+
+	/**
+	 * Get guest count for specific status
+	 */
+	public function getGuestCount($event_id, $status = null) {
+		$event_id = intval($event_id);
+		if (!$event_id) {
+			return 0;
+		}
+
+		if ($status) {
+			return intval($this->db->getVar(
+				$this->db->prepare(
+					"SELECT COUNT(*) FROM {$this->db->prefix}guests WHERE event_id = %d AND status = %s",
+					$event_id, $status
+				)
+			));
+		} else {
+			return intval($this->db->getVar(
+				$this->db->prepare(
+					"SELECT COUNT(*) FROM {$this->db->prefix}guests WHERE event_id = %d",
+					$event_id
+				)
+			));
+		}
+	}
+
+	/**
+	 * Send RSVP invitation email
+	 */
+	private function sendRSVPInvitation($event_id, $email, $rsvp_token) {
+		$event = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT * FROM {$this->db->prefix}events WHERE id = %d",
+				$event_id
+			)
+		);
+
+		if (!$event) {
+			return new VT_Error('event_not_found', 'Event not found for invitation');
+		}
+
+		// Get host information
+		$host = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT u.display_name, up.display_name as profile_display_name
+				 FROM {$this->db->prefix}users u
+				 LEFT JOIN {$this->db->prefix}user_profiles up ON u.id = up.user_id
+				 WHERE u.id = %d",
+				$event->author_id
+			)
+		);
+
+		$host_name = $host ? ($host->profile_display_name ?: $host->display_name) : 'Event Host';
+
+		$rsvp_url = VT_Config::get('site_url') . '/events/' . $event->slug . '?token=' . $rsvp_token;
+
+		$subject = sprintf('%s invited you to %s', $host_name, $event->title);
+
+		$message = $this->getRSVPInvitationTemplate($event, $host_name, $rsvp_url);
+
+		return VT_Mail::send($email, $subject, $message);
+	}
+
+	/**
+	 * Get RSVP invitation email template
+	 */
+	private function getRSVPInvitationTemplate($event, $host_name, $rsvp_url) {
+		ob_start();
+		?>
+		<html>
+		<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+			<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+				<h2 style="color: #2c5aa0;">You're invited to <?php echo VT_Sanitize::escHtml($event->title); ?></h2>
+
+				<p>Hi there!</p>
+
+				<p><?php echo VT_Sanitize::escHtml($host_name); ?> has invited you to join their event.</p>
+
+				<div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+					<h3 style="margin-top: 0; color: #2c5aa0;"><?php echo VT_Sanitize::escHtml($event->title); ?></h3>
+
+					<p><strong>📅 Date:</strong> <?php echo date('l, F j, Y', strtotime($event->event_date)); ?></p>
+
+					<?php if ($event->event_time): ?>
+					<p><strong>🕐 Time:</strong> <?php echo VT_Sanitize::escHtml($event->event_time); ?></p>
+					<?php endif; ?>
+
+					<?php if ($event->venue_info): ?>
+					<p><strong>📍 Location:</strong> <?php echo VT_Sanitize::escHtml($event->venue_info); ?></p>
+					<?php endif; ?>
+
+					<?php if ($event->description): ?>
+					<div style="margin-top: 15px;">
+						<strong>About this event:</strong>
+						<p><?php echo nl2br(VT_Sanitize::escHtml(substr($event->description, 0, 300))); ?>
+						<?php if (strlen($event->description) > 300): ?>...<?php endif; ?></p>
+					</div>
+					<?php endif; ?>
+				</div>
+
+				<div style="text-align: center; margin: 30px 0;">
+					<a href="<?php echo VT_Sanitize::escUrl($rsvp_url); ?>"
+					   style="background: #2c5aa0; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+						RSVP Now
+					</a>
+				</div>
+
+				<p style="font-size: 14px; color: #666;">
+					Can't click the button? Copy and paste this link into your browser:<br>
+					<?php echo VT_Sanitize::escUrl($rsvp_url); ?>
+				</p>
+
+				<hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+				<p style="font-size: 12px; color: #999;">
+					This invitation was sent by <?php echo VT_Sanitize::escHtml($host_name); ?> through VivalaTable.
+					If you have questions about this event, please contact the host directly.
+				</p>
+			</div>
+		</body>
+		</html>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Send RSVP confirmation email
+	 */
+	private function sendRSVPConfirmation($guest_id, $status) {
+		$guest = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT g.*, e.title as event_title, e.slug as event_slug, e.event_date,
+				        e.event_time, e.venue_info, e.host_email
+				 FROM {$this->db->prefix}guests g
+				 JOIN {$this->db->prefix}events e ON g.event_id = e.id
+				 WHERE g.id = %d",
+				$guest_id
+			)
+		);
+
+		if (!$guest) {
+			return false;
+		}
+
+		$status_messages = array(
+			'yes' => 'confirmed your attendance',
+			'no' => 'declined the invitation',
+			'maybe' => 'marked yourself as maybe attending'
+		);
+
+		$subject = sprintf('RSVP Confirmation: %s', $guest->event_title);
+
+		$message = $this->getRSVPConfirmationTemplate($guest, $status, $status_messages[$status]);
+
+		return VT_Mail::send($guest->email, $subject, $message);
+	}
+
+	/**
+	 * Get RSVP confirmation email template
+	 */
+	private function getRSVPConfirmationTemplate($guest, $status, $status_message) {
+		$event_url = VT_Config::get('site_url') . '/events/' . $guest->event_slug;
+
+		ob_start();
+		?>
+		<html>
+		<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+			<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+				<h2 style="color: #2c5aa0;">RSVP Confirmation</h2>
+
+				<p>Hi <?php echo VT_Sanitize::escHtml($guest->name ?: 'there'); ?>!</p>
+
+				<p>Thank you for your RSVP. You have <strong><?php echo $status_message; ?></strong> for:</p>
+
+				<div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+					<h3 style="margin-top: 0; color: #2c5aa0;"><?php echo VT_Sanitize::escHtml($guest->event_title); ?></h3>
+
+					<p><strong>📅 Date:</strong> <?php echo date('l, F j, Y', strtotime($guest->event_date)); ?></p>
+
+					<?php if ($guest->event_time): ?>
+					<p><strong>🕐 Time:</strong> <?php echo VT_Sanitize::escHtml($guest->event_time); ?></p>
+					<?php endif; ?>
+
+					<?php if ($guest->venue_info): ?>
+					<p><strong>📍 Location:</strong> <?php echo VT_Sanitize::escHtml($guest->venue_info); ?></p>
+					<?php endif; ?>
+
+					<p><strong>Your RSVP Status:</strong>
+						<span style="text-transform: uppercase; font-weight: bold; color: <?php echo $status === 'yes' ? '#28a745' : ($status === 'no' ? '#dc3545' : '#ffc107'); ?>;">
+							<?php echo $status; ?>
+						</span>
+					</p>
+
+					<?php if ($guest->plus_one > 0): ?>
+					<p><strong>Plus One:</strong> <?php echo VT_Sanitize::escHtml($guest->plus_one_name ?: 'Yes'); ?></p>
+					<?php endif; ?>
+				</div>
+
+				<?php if ($status === 'yes'): ?>
+				<div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; padding: 15px; margin: 20px 0;">
+					<p style="margin: 0; color: #155724;">
+						<strong>Great!</strong> We're excited to see you at the event.
+						<?php if ($guest->host_email): ?>
+						If you have any questions, feel free to contact the host at <?php echo VT_Sanitize::escHtml($guest->host_email); ?>.
+						<?php endif; ?>
+					</p>
+				</div>
+				<?php endif; ?>
+
+				<div style="text-align: center; margin: 30px 0;">
+					<a href="<?php echo VT_Sanitize::escUrl($event_url); ?>"
+					   style="background: #2c5aa0; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+						View Event Details
+					</a>
+				</div>
+
+				<p style="font-size: 14px; color: #666;">
+					Need to change your RSVP? Use the original invitation link or contact the event host.
+				</p>
+
+				<hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+				<p style="font-size: 12px; color: #999;">
+					This confirmation was sent by VivalaTable.
+					Event details are subject to change - please check the event page for updates.
+				</p>
+			</div>
+		</body>
+		</html>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Delete guest (admin function)
+	 */
+	public function deleteGuest($guest_id) {
+		$guest_id = intval($guest_id);
+		if (!$guest_id) {
+			return new VT_Error('invalid_guest', 'Invalid guest ID');
+		}
+
+		$guest = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT event_id FROM {$this->db->prefix}guests WHERE id = %d",
+				$guest_id
+			)
+		);
+
+		if (!$guest) {
+			return new VT_Error('guest_not_found', 'Guest not found');
+		}
+
+		$result = $this->db->delete('guests', array('id' => $guest_id));
+
+		if ($result === false) {
+			return new VT_Error('delete_failed', 'Failed to delete guest');
+		}
+
+		// Clear cache
+		VT_Cache::delete('guest_stats_' . $guest->event_id);
+		VT_Cache::delete('event_guests_' . $guest->event_id);
+
+		return true;
+	}
+
+	/**
+	 * Resend invitation to a guest
+	 */
+	public function resendInvitation($guest_id) {
+		$guest_id = intval($guest_id);
+		if (!$guest_id) {
+			return new VT_Error('invalid_guest', 'Invalid guest ID');
+		}
+
+		$guest = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT * FROM {$this->db->prefix}guests WHERE id = %d",
+				$guest_id
+			)
+		);
+
+		if (!$guest) {
+			return new VT_Error('guest_not_found', 'Guest not found');
+		}
+
+		// Generate new token
+		$new_token = VT_Security::generateToken(32);
+
+		// Update guest with new token
+		$this->db->update(
+			'guests',
+			array(
+				'rsvp_token' => $new_token,
+				'updated_at' => VT_Time::currentTime('mysql')
+			),
+			array('id' => $guest_id)
+		);
+
+		// Send new invitation
+		return $this->sendRSVPInvitation($guest->event_id, $guest->email, $new_token);
+	}
 }

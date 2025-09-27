@@ -5,15 +5,15 @@
  * Ported from PartyMinder WordPress plugin
  */
 
-// Get event ID from URL parameter
-$event_id = intval($_GET['event_id'] ?? 0);
+// Get event slug from route parameter
+$event_slug = VT_Router::getParam('slug');
 $active_tab = $_GET['tab'] ?? 'settings';
 
-if (!$event_id) {
+if (!$event_slug) {
 	?>
 	<div class="vt-section vt-text-center">
 		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Event Not Found</h3>
-		<p class="vt-text-muted vt-mb-4">Event ID is required to manage an event.</p>
+		<p class="vt-text-muted vt-mb-4">Event slug is required to manage an event.</p>
 		<a href="/events" class="vt-btn">Back to Events</a>
 	</div>
 	<?php
@@ -23,7 +23,7 @@ if (!$event_id) {
 // Load managers and get event
 $event_manager = new VT_Event_Manager();
 $guest_manager = new VT_Guest_Manager();
-$event = $event_manager->getEvent($event_id);
+$event = $event_manager->getEventBySlug($event_slug);
 
 if (!$event) {
 	?>
@@ -54,7 +54,7 @@ $errors = array();
 $messages = array();
 
 // Get event data for display
-$guests = $guest_manager->getEventGuests($event_id);
+$guests = $guest_manager->getEventGuests($event->id);
 $guest_count = count($guests);
 $confirmed_count = count(array_filter($guests, function($guest) { return $guest->status === 'confirmed'; }));
 
@@ -62,6 +62,24 @@ $confirmed_count = count(array_filter($guests, function($guest) { return $guest-
 $page_title = 'Manage: ' . htmlspecialchars($event->title);
 $page_description = 'Manage your event settings, guests, and invitations';
 ?>
+
+<!-- Management Tabs -->
+<div class="vt-section vt-mb-4">
+	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+		<a href="/events/<?php echo $event->slug; ?>/manage?tab=settings"
+		   class="vt-btn <?php echo ($active_tab === 'settings') ? 'is-active' : ''; ?>">
+			Settings
+		</a>
+		<a href="/events/<?php echo $event->slug; ?>/manage?tab=guests"
+		   class="vt-btn <?php echo ($active_tab === 'guests') ? 'is-active' : ''; ?>">
+			Guests (<?php echo $confirmed_count; ?>)
+		</a>
+		<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites"
+		   class="vt-btn <?php echo ($active_tab === 'invites') ? 'is-active' : ''; ?>">
+			Invitations
+		</a>
+	</div>
+</div>
 
 <!-- Event Header -->
 <div class="vt-section vt-mb-4">
@@ -78,28 +96,10 @@ $page_description = 'Manage your event settings, guests, and invitations';
 			<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn vt-btn-secondary">
 				View Event
 			</a>
-			<a href="/edit-event?event_id=<?php echo $event->id; ?>" class="vt-btn">
+			<a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn">
 				Edit Details
 			</a>
 		</div>
-	</div>
-</div>
-
-<!-- Management Tabs -->
-<div class="vt-section vt-mb-4">
-	<div class="vt-tabs">
-		<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=settings"
-		   class="vt-tab <?php echo ($active_tab === 'settings') ? 'active' : ''; ?>">
-			Settings
-		</a>
-		<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=guests"
-		   class="vt-tab <?php echo ($active_tab === 'guests') ? 'active' : ''; ?>">
-			Guests (<?php echo $confirmed_count; ?>)
-		</a>
-		<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=invites"
-		   class="vt-tab <?php echo ($active_tab === 'invites') ? 'active' : ''; ?>">
-			Invitations
-		</a>
 	</div>
 </div>
 
@@ -146,7 +146,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 							Only invited people can see and join
 						<?php endif; ?>
 					</p>
-					<a href="/edit-event?event_id=<?php echo $event->id; ?>" class="vt-btn vt-btn-secondary">
+					<a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn vt-btn-secondary">
 						Change Privacy
 					</a>
 				</div>
@@ -161,7 +161,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 					<?php else : ?>
 						<p class="vt-text-muted vt-mb-4">No guest limit</p>
 					<?php endif; ?>
-					<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=guests" class="vt-btn vt-btn-secondary">
+					<a href="/events/<?php echo $event->slug; ?>/manage?tab=guests" class="vt-btn vt-btn-secondary">
 						Manage Guests
 					</a>
 				</div>
@@ -174,7 +174,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 	<div class="vt-section">
 		<div class="vt-flex vt-flex-between vt-mb-4">
 			<h3 class="vt-heading vt-heading-md">Event Guests</h3>
-			<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=invites" class="vt-btn">
+			<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites" class="vt-btn">
 				Send Invitations
 			</a>
 		</div>
@@ -223,7 +223,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 		<?php else : ?>
 			<div class="vt-text-center vt-p-4">
 				<p class="vt-text-muted vt-mb-4">No guests have RSVP'd yet.</p>
-				<a href="/manage-event?event_id=<?php echo $event->id; ?>&tab=invites" class="vt-btn">
+				<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites" class="vt-btn">
 					Send Your First Invitations
 				</a>
 			</div>

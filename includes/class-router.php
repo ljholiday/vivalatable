@@ -31,11 +31,17 @@ class VT_Router {
 		self::addRoute('GET', '/register', array('VT_Pages', 'register'));
 		self::addRoute('POST', '/register', array('VT_Pages', 'register'));
 
-		// Event routes
+		// Event routes (specific routes first, general routes last)
 		self::addRoute('GET', '/events', array('VT_Pages', 'eventsList'));
 		self::addRoute('GET', '/events/create', array('VT_Pages', 'createEvent'));
 		self::addRoute('POST', '/events/create', array('VT_Pages', 'createEvent'));
+		self::addRoute('GET', '/events/{slug}/edit', array('VT_Pages', 'editEventBySlug'));
+		self::addRoute('POST', '/events/{slug}/edit', array('VT_Pages', 'editEventBySlug'));
+		self::addRoute('GET', '/events/{slug}/manage', array('VT_Pages', 'manageEventBySlug'));
+		self::addRoute('POST', '/events/{slug}/manage', array('VT_Pages', 'manageEventBySlug'));
 		self::addRoute('GET', '/events/{slug}', array('VT_Pages', 'singleEvent'));
+
+		// Legacy routes (deprecated)
 		self::addRoute('GET', '/create-event', array('VT_Pages', 'createEvent'));
 		self::addRoute('POST', '/create-event', array('VT_Pages', 'createEvent'));
 		self::addRoute('GET', '/edit-event', array('VT_Pages', 'editEvent'));
@@ -43,12 +49,18 @@ class VT_Router {
 		self::addRoute('GET', '/manage-event', array('VT_Pages', 'manageEvent'));
 		self::addRoute('POST', '/manage-event', array('VT_Pages', 'manageEvent'));
 
-		// Community routes
+		// Community routes (specific routes first, general routes last)
 		self::addRoute('GET', '/communities', array('VT_Pages', 'communitiesList'));
 		self::addRoute('GET', '/communities/create', array('VT_Pages', 'createCommunity'));
 		self::addRoute('POST', '/communities/create', array('VT_Pages', 'createCommunity'));
+		self::addRoute('GET', '/communities/{slug}/edit', array('VT_Pages', 'editCommunityBySlug'));
+		self::addRoute('POST', '/communities/{slug}/edit', array('VT_Pages', 'editCommunityBySlug'));
+		self::addRoute('GET', '/communities/{slug}/manage', array('VT_Pages', 'manageCommunityBySlug'));
+		self::addRoute('POST', '/communities/{slug}/manage', array('VT_Pages', 'manageCommunityBySlug'));
 		self::addRoute('GET', '/communities/{slug}', array('VT_Pages', 'singleCommunity'));
 		self::addRoute('POST', '/communities/{slug}', array('VT_Pages', 'singleCommunity'));
+
+		// Legacy routes (deprecated)
 		self::addRoute('GET', '/create-community', array('VT_Pages', 'createCommunity'));
 		self::addRoute('POST', '/create-community', array('VT_Pages', 'createCommunity'));
 		self::addRoute('GET', '/manage-community', array('VT_Pages', 'manageCommunity'));
@@ -106,7 +118,8 @@ class VT_Router {
 	 * Dispatch the current request to appropriate handler
 	 */
 	public static function dispatch() {
-		$method = $_SERVER['REQUEST_METHOD'];
+		// Handle CLI mode
+		$method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
 		$path = self::getRequestPath();
 
 		foreach (self::$routes as $route) {
@@ -137,15 +150,29 @@ class VT_Router {
 	}
 
 	/**
+	 * Get current URI for template use (public method)
+	 */
+	public static function getCurrentUri() {
+		return isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/';
+	}
+
+	/**
 	 * Get the current request path
 	 */
 	private static function getRequestPath() {
+		// Handle CLI mode
+		if (!isset($_SERVER['REQUEST_URI'])) {
+			return '/';
+		}
+
 		$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 		// Remove script name if present (for development servers)
-		$script_name = dirname($_SERVER['SCRIPT_NAME']);
-		if ($script_name !== '/' && strpos($path, $script_name) === 0) {
-			$path = substr($path, strlen($script_name));
+		if (isset($_SERVER['SCRIPT_NAME'])) {
+			$script_name = dirname($_SERVER['SCRIPT_NAME']);
+			if ($script_name !== '/' && strpos($path, $script_name) === 0) {
+				$path = substr($path, strlen($script_name));
+			}
 		}
 
 		return $path ?: '/';

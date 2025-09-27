@@ -5,14 +5,14 @@
  * Ported from PartyMinder WordPress plugin
  */
 
-// Get event ID from URL parameter
-$event_id = intval($_GET['event_id'] ?? 0);
+// Get event slug from route parameter
+$event_slug = VT_Router::getParam('slug');
 
-if (!$event_id) {
+if (!$event_slug) {
 	?>
 	<div class="vt-section vt-text-center">
 		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Event Not Found</h3>
-		<p class="vt-text-muted vt-mb-4">Event ID is required to edit an event.</p>
+		<p class="vt-text-muted vt-mb-4">Event slug is required to edit an event.</p>
 		<a href="/events" class="vt-btn">Back to Events</a>
 	</div>
 	<?php
@@ -21,7 +21,7 @@ if (!$event_id) {
 
 // Load event manager and get event
 $event_manager = new VT_Event_Manager();
-$event = $event_manager->getEvent($event_id);
+$event = $event_manager->getEventBySlug($event_slug);
 
 if (!$event) {
 	?>
@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && VT_Security::verifyNonce($_POST['ed
 
 	// If no validation errors, update the event
 	if (empty($errors)) {
-		$result = $event_manager->updateEvent($event_id, $event_data);
+		$result = $event_manager->updateEvent($event->id, $event_data);
 		if ($result) {
 			$messages[] = 'Event updated successfully!';
 			// Refresh event data
-			$event = $event_manager->getEvent($event_id);
+			$event = $event_manager->getEventBySlug($event_slug);
 		} else {
 			$errors[] = 'Failed to update event. Please try again.';
 		}
