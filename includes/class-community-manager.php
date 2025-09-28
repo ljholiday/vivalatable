@@ -881,4 +881,124 @@ class VT_Community_Manager {
 
 		return $member_result;
 	}
+
+	/**
+	 * Get public communities for discovery
+	 */
+	public function getPublicCommunities($limit = 20, $offset = 0) {
+		$communities_table = $this->db->prefix . 'communities';
+		$members_table = $this->db->prefix . 'community_members';
+		$events_table = $this->db->prefix . 'events';
+
+		return $this->db->getResults($this->db->prepare(
+			"SELECT c.*,
+			 COUNT(DISTINCT m.id) as member_count,
+			 COUNT(DISTINCT e.id) as event_count
+			 FROM $communities_table c
+			 LEFT JOIN $members_table m ON c.id = m.community_id AND m.status = 'active'
+			 LEFT JOIN $events_table e ON c.id = e.community_id AND e.event_status = 'active'
+			 WHERE c.visibility = 'public' AND c.is_active = 1
+			 GROUP BY c.id
+			 ORDER BY c.created_at DESC
+			 LIMIT %d OFFSET %d",
+			$limit,
+			$offset
+		));
+	}
+
+	/**
+	 * Get admin count for a community
+	 */
+	public function getAdminCount($community_id) {
+		$members_table = $this->db->prefix . 'community_members';
+
+		return $this->db->getVar($this->db->prepare(
+			"SELECT COUNT(*) FROM $members_table
+			 WHERE community_id = %d AND role = 'admin' AND status = 'active'",
+			$community_id
+		));
+	}
+
+	/**
+	 * Remove member from community
+	 */
+	public function removeMember($community_id, $member_id) {
+		$members_table = $this->db->prefix . 'community_members';
+
+		// Get community and member info for validation
+		$community = $this->getCommunityById($community_id);
+		if (!$community) {
+			return ['error' => 'Community not found'];
+		}
+
+		$member = $this->db->getRow($this->db->prepare(
+			"SELECT * FROM $members_table WHERE id = %d AND community_id = %d",
+			$member_id,
+			$community_id
+		));
+
+		if (!$member) {
+			return ['error' => 'Member not found'];
+		}
+
+		// Check if removing last admin
+		if ($member->role === 'admin') {
+			$admin_count = $this->getAdminCount($community_id);
+			if ($admin_count <= 1) {
+				return ['error' => 'Cannot remove the last admin from the community'];
+			}
+		}
+
+		$result = $this->db->delete($members_table, ['id' => $member_id]);
+
+		if ($result) {
+			return ['success' => true];
+		} else {
+			return ['error' => 'Failed to remove member'];
+		}
+	}
+
+	/**
+	 * Update member role
+	 */
+	public function updateMemberRole($community_id, $member_id, $new_role) {
+		$members_table = $this->db->prefix . 'community_members';
+
+		// Validate role
+		$allowed_roles = ['member', 'admin'];
+		if (!in_array($new_role, $allowed_roles)) {
+			return ['error' => 'Invalid role'];
+		}
+
+		// Get member info
+		$member = $this->db->getRow($this->db->prepare(
+			"SELECT * FROM $members_table WHERE id = %d AND community_id = %d",
+			$member_id,
+			$community_id
+		));
+
+		if (!$member) {
+			return ['error' => 'Member not found'];
+		}
+
+		// Check if demoting last admin
+		if ($member->role === 'admin' && $new_role !== 'admin') {
+			$admin_count = $this->getAdminCount($community_id);
+			if ($admin_count <= 1) {
+				return ['error' => 'Cannot demote the last admin'];
+			}
+		}
+
+		$result = $this->db->update(
+			$members_table,
+			['role' => $new_role],
+			['id' => $member_id]
+		);
+
+		if ($result !== false) {
+			return ['success' => true, 'new_role' => $new_role];
+		} else {
+			return ['error' => 'Failed to update member role'];
+		}
+	}
 }

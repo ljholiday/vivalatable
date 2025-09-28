@@ -20,20 +20,27 @@ $current_user = VT_Auth::getCurrentUser();
 $user_logged_in = VT_Auth::isLoggedIn();
 $user_email = $user_logged_in ? $current_user->email : '';
 
-// Get data for both tabs - use direct database query since method doesn't exist yet
-$db = VT_Database::getInstance();
-$communities_table = $db->prefix . 'communities';
-$public_communities = $db->getResults(
-    $db->prepare(
-        "SELECT * FROM $communities_table WHERE visibility = 'public' AND is_active = 1 ORDER BY created_at DESC LIMIT %d",
-        20
-    )
-);
+// Get data for both tabs
 $user_communities = array();
+$public_communities = array();
 
 if ($user_logged_in) {
-	$user_communities = $community_manager->getUserCommunities($current_user->id);
+	$db = VT_Database::getInstance();
+	$communities_table = $db->prefix . 'communities';
+	$members_table = $db->prefix . 'community_members';
+
+	// My Communities: Communities user is a member of
+	$user_communities = $db->getResults($db->prepare(
+		"SELECT c.*, m.role, m.status as member_status, m.joined_at FROM $communities_table c
+		 JOIN $members_table m ON c.id = m.community_id
+		 WHERE m.user_id = %d AND m.status = 'active' AND c.is_active = 1
+		 ORDER BY c.created_at DESC LIMIT 20",
+		$current_user->id
+	));
 }
+
+// Public Communities: All discoverable communities
+$public_communities = $community_manager->getPublicCommunities(20);
 
 // Set up template variables
 $page_title = 'Communities';
@@ -48,11 +55,10 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 	</div>
 <?php endif; ?>
 
-<!-- Community Filters/Tabs -->
+<!-- Community Tabs Navigation -->
 <?php if ($user_logged_in) : ?>
 <div class="vt-section vt-mb-4">
 	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
-		<!-- Community Type Filters -->
 		<button class="vt-btn is-active" data-filter="my-communities" role="tab" aria-selected="true" aria-controls="vt-communities-list">
 			My Communities
 		</button>
@@ -71,11 +77,6 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 				<?php if (!empty($user_communities)) : ?>
 					<?php foreach ($user_communities as $community) : ?>
 						<div class="vt-section vt-border vt-p-4">
-							<?php if (!empty($community->featured_image)) : ?>
-								<div class="vt-mb-4">
-									<img src="<?php echo VT_Sanitize::escUrl($community->featured_image); ?>" alt="<?php echo VT_Sanitize::escHtml($community->name); ?>" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px;">
-								</div>
-							<?php endif; ?>
 							<div class="vt-flex vt-flex-between vt-mb-4">
 								<div class="vt-flex-1">
 									<h3 class="vt-heading vt-heading-sm vt-mb-2">
@@ -84,19 +85,25 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 										</a>
 									</h3>
 									<div class="vt-flex vt-gap vt-flex-wrap vt-mb-2">
+										<?php if (!empty($community->role)) : ?>
 										<span class="vt-badge vt-badge-<?php echo $community->role === 'admin' ? 'primary' : 'success'; ?>">
 											<?php echo VT_Sanitize::escHtml(ucfirst($community->role)); ?>
 										</span>
+										<?php endif; ?>
 										<?php if ($community->visibility === 'private') : ?>
 											<span class="vt-badge vt-badge-secondary">Private</span>
 										<?php endif; ?>
 									</div>
 									<div class="vt-text-muted">
-										<?php echo sprintf('Joined %s ago', VT_Text::timeAgo($community->joined_at)); ?>
+										<?php if (!empty($community->joined_at)) : ?>
+											<?php echo sprintf('Joined %s ago', VT_Text::timeAgo($community->joined_at)); ?>
+										<?php else : ?>
+											Member
+										<?php endif; ?>
 									</div>
 								</div>
 								<div class="vt-stat vt-text-center">
-									<div class="vt-stat-number vt-text-primary"><?php echo intval($community->event_count); ?></div>
+									<div class="vt-stat-number vt-text-primary"><?php echo intval($community->event_count ?? 0); ?></div>
 									<div class="vt-stat-label">Events</div>
 								</div>
 							</div>
@@ -110,7 +117,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 							<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap">
 								<div class="vt-flex vt-gap vt-flex-wrap">
 									<div class="vt-stat vt-text-center">
-										<div class="vt-stat-number vt-text-primary"><?php echo intval($community->member_count); ?></div>
+										<div class="vt-stat-number vt-text-primary"><?php echo intval($community->member_count ?? 0); ?></div>
 										<div class="vt-stat-label">Members</div>
 									</div>
 								</div>
@@ -120,7 +127,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 										View
 									</a>
 									<?php if ($community->role === 'admin') : ?>
-										<a href="/communities/<?php echo $community->slug; ?>/manage" class="vt-btn">
+										<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>/manage" class="vt-btn">
 											Manage
 										</a>
 									<?php endif; ?>
@@ -132,14 +139,12 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 					<div class="vt-text-center vt-p-4">
 						<p class="vt-text-muted vt-mb-4">You haven't joined any communities yet.</p>
 						<div class="vt-flex vt-gap vt-justify-center">
-							<a href="/communities" class="vt-btn">
+							<button class="vt-btn" onclick="document.querySelector('[data-filter=all-communities]').click()">
 								Browse Communities
+							</button>
+							<a href="/communities/create" class="vt-btn">
+								Create Community
 							</a>
-							<?php if (VT_Feature_Flags::canUserCreateCommunity()) : ?>
-								<a href="/communities/create" class="vt-btn">
-									Create Community
-								</a>
-							<?php endif; ?>
 						</div>
 					</div>
 				<?php endif; ?>
@@ -151,11 +156,6 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 			<?php if (!empty($public_communities)) : ?>
 				<?php foreach ($public_communities as $community) : ?>
 				<div class="vt-section vt-border vt-p-4">
-					<?php if (!empty($community->featured_image)) : ?>
-						<div class="vt-mb-4">
-							<img src="<?php echo VT_Sanitize::escUrl($community->featured_image); ?>" alt="<?php echo VT_Sanitize::escHtml($community->name); ?>" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px;">
-						</div>
-					<?php endif; ?>
 					<div class="vt-section-header vt-flex vt-flex-between vt-mb-4">
 						<h3 class="vt-heading vt-heading-sm">
 							<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>" class="vt-text-primary">
@@ -166,140 +166,49 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 							<?php echo VT_Sanitize::escHtml(ucfirst($community->visibility)); ?>
 						</div>
 					</div>
-						<div class="vt-mb-4">
-							<div class="vt-flex vt-gap">
-								<span class="vt-text-muted"><?php echo intval($community->member_count); ?> members</span>
-							</div>
+					<div class="vt-mb-4">
+						<div class="vt-flex vt-gap">
+							<span class="vt-text-muted"><?php echo intval($community->member_count); ?> members</span>
 						</div>
+					</div>
 
 					<?php if ($community->description) : ?>
-					<div class="vt-mb-4">
-						<p class="vt-text-muted"><?php echo VT_Sanitize::escHtml(VT_Text::truncateWords($community->description, 20)); ?></p>
+				<div class="vt-mb-4">
+					<p class="vt-text-muted"><?php echo VT_Sanitize::escHtml(VT_Text::truncateWords($community->description, 20)); ?></p>
+				</div>
+				<?php endif; ?>
+
+				<div class="vt-flex vt-flex-between vt-mt-4">
+					<div class="vt-stat">
+						<div class="vt-stat-number vt-text-primary"><?php echo intval($community->event_count); ?></div>
+						<div class="vt-text-muted">Events</div>
 					</div>
+
+					<?php if ($user_logged_in) : ?>
+						<?php
+						$is_member = $community_manager->isMember($community->id, $current_user->id);
+						?>
+						<button class="vt-btn <?php echo $is_member ? 'vt-btn-secondary' : 'vt-btn-primary'; ?> join-community-btn"
+								data-community-id="<?php echo $community->id; ?>"
+								data-community-name="<?php echo VT_Sanitize::escHtml($community->name); ?>"
+								<?php echo $is_member ? 'disabled' : ''; ?>>
+							<?php echo $is_member ? 'Member' : 'Join'; ?>
+						</button>
+					<?php else : ?>
+						<a href="/login?redirect_to=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>" class="vt-btn">
+							Login to Join
+						</a>
 					<?php endif; ?>
-
-					<div class="vt-flex vt-flex-between vt-mt-4">
-						<div class="vt-stat">
-							<div class="vt-stat-number vt-text-primary"><?php echo intval($community->event_count); ?></div>
-							<div class="vt-text-muted">Events</div>
-						</div>
-
-						<?php if ($user_logged_in) : ?>
-							<?php
-							$is_member = $community_manager->isMember($community->id, $current_user->id);
-							$is_personal_community = !empty($community->personal_owner_user_id);
-							$join_text = $is_personal_community ? 'Connect' : 'Join';
-							?>
-							<?php if ($is_member) : ?>
-								<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>" class="vt-btn">
-									Member
-								</a>
-							<?php else : ?>
-								<button class="vt-btn join-community-btn"
-									data-community-id="<?php echo $community->id; ?>"
-									data-community-name="<?php echo VT_Sanitize::escAttr($community->name); ?>">
-									<?php echo $join_text; ?>
-								</button>
-							<?php endif; ?>
-						<?php else : ?>
-							<a href="/login?redirect_to=<?php echo urlencode(VT_Router::getCurrentUri()); ?>" class="vt-btn">
-								Login to Join
-							</a>
-						<?php endif; ?>
-					</div>
 				</div>
-				<?php endforeach; ?>
-			<?php else : ?>
-				<div class="vt-text-center vt-p-4">
-					<p class="vt-text-muted vt-mb-4">No public communities yet.</p>
-					<p class="vt-text-muted">Be the first to create a community!</p>
-				</div>
-			<?php endif; ?>
+			</div>
+			<?php endforeach; ?>
+		<?php else : ?>
+			<div class="vt-text-center vt-p-4">
+				<p class="vt-text-muted vt-mb-4">No public communities yet.</p>
+				<p class="vt-text-muted">Be the first to create a community!</p>
+			</div>
+		<?php endif; ?>
 		</div>
 	</div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-	// Tab functionality for communities
-	const communityTabs = document.querySelectorAll('[data-filter]');
-	const communityTabContents = document.querySelectorAll('.vt-communities-tab-content');
-
-	// Initialize tab functionality
-	function initCommunityTabs() {
-		communityTabs.forEach(tab => {
-			tab.addEventListener('click', function() {
-				const filter = this.getAttribute('data-filter');
-
-				// Update active tab
-				communityTabs.forEach(t => {
-					t.classList.remove('is-active');
-					t.setAttribute('aria-selected', 'false');
-				});
-				this.classList.add('is-active');
-				this.setAttribute('aria-selected', 'true');
-
-				// Show/hide content
-				communityTabContents.forEach(content => {
-					const tab = content.getAttribute('data-tab');
-					content.style.display = (tab === filter) ? '' : 'none';
-				});
-			});
-		});
-	}
-
-	// Initialize tabs if they exist
-	if (communityTabs.length > 0) {
-		initCommunityTabs();
-	}
-
-	// Join community functionality
-	const joinBtns = document.querySelectorAll('.join-community-btn');
-	joinBtns.forEach(btn => {
-		btn.addEventListener('click', function(e) {
-			e.preventDefault();
-
-			const communityId = this.getAttribute('data-community-id');
-			const communityName = this.getAttribute('data-community-name');
-			const isPersonalCommunity = this.textContent.trim() === 'Connect';
-
-			const action = isPersonalCommunity ? 'Connect to' : 'Join';
-			if (!confirm(`${action} community "${communityName}"?`)) {
-				return;
-			}
-
-			// Disable button to prevent double-clicks
-			this.disabled = true;
-			this.textContent = 'Joining...';
-
-			// Make AJAX request to join community
-			fetch('/api/communities/' + communityId + '/join', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				body: 'community_id=' + communityId + '&nonce=' + (window.vt_nonce || '')
-			})
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					this.textContent = 'Member';
-					this.disabled = false;
-					this.onclick = () => window.location.href = '/communities/' + data.community_slug;
-
-					// Show success message
-					alert(`Welcome to ${communityName}!`);
-				} else {
-					throw new Error(data.message || 'Failed to join community');
-				}
-			})
-			.catch(error => {
-				console.error('Error joining community:', error);
-				alert('Failed to join community: ' + error.message);
-				this.disabled = false;
-				this.textContent = isPersonalCommunity ? 'Connect' : 'Join';
-			});
-		});
-	});
-});
-</script>

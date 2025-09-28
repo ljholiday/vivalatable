@@ -41,8 +41,42 @@ class VT_Community_Ajax_Handler {
 		return $this->community_manager;
 	}
 
+	/**
+	 * Handle community join via REST API
+	 */
+	public static function handleJoin() {
+		// Get community ID from URL path
+		$path_parts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
+		$community_id = 0;
+
+		foreach ($path_parts as $index => $part) {
+			if ($part === 'communities' && isset($path_parts[$index + 1])) {
+				$community_id = intval($path_parts[$index + 1]);
+				break;
+			}
+		}
+
+		if (!$community_id) {
+			header('Content-Type: application/json');
+			echo json_encode(['success' => false, 'message' => 'Invalid community ID']);
+			exit;
+		}
+
+		// Add community_id to POST for compatibility with existing method
+		$_POST['community_id'] = $community_id;
+
+		// Call existing join logic
+		$handler = new self();
+		$handler->ajaxJoinCommunity();
+	}
+
 	public function ajaxJoinCommunity() {
-		VT_Security::verifyNonce('vt_community_action', 'nonce');
+		// Check nonce from either source (direct AJAX or REST API)
+		$nonce = $_POST['nonce'] ?? '';
+		if (!VT_Security::verifyNonce($nonce, 'vt_nonce')) {
+			VT_Ajax::sendError('Security check failed.');
+			return;
+		}
 
 		if (!VT_Auth::isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in to join a community.');
@@ -776,5 +810,192 @@ class VT_Community_Ajax_Handler {
 				return new VT_Error('upload_failed', 'File upload failed.');
 			}
 		}
+	}
+
+	/**
+	 * AJAX handler for getting communities with circle filtering
+	 */
+	public static function ajaxGetCommunities() {
+		// Verify nonce for security
+		if (!VT_Security::verifyNonce($_POST['nonce'] ?? '', 'vt_nonce')) {
+			header('Content-Type: application/json');
+			echo json_encode(['success' => false, 'message' => 'Security check failed']);
+			exit;
+		}
+
+		$circle = VT_Sanitize::textField($_POST['circle'] ?? 'inner');
+		$page = max(1, intval($_POST['page'] ?? 1));
+		$per_page = 20;
+
+		// Validate circle
+		$allowed_circles = array('inner', 'trusted', 'extended');
+		if (!in_array($circle, $allowed_circles)) {
+			$circle = 'inner';
+		}
+
+		$current_user_id = VT_Auth::getCurrentUserId();
+		$communities = array();
+
+		// Community circle filtering logic
+		if ($current_user_id) {
+			$db = VT_Database::getInstance();
+			$communities_table = $db->prefix . 'communities';
+			$members_table = $db->prefix . 'community_members';
+
+			if ($circle === 'inner') {
+				// Inner: Communities user is a member of
+				$communities = $db->getResults($db->prepare(
+					"SELECT c.* FROM $communities_table c
+					 JOIN $members_table m ON c.id = m.community_id
+					 WHERE m.user_id = %d AND m.status = 'active' AND c.is_active = 1
+					 ORDER BY c.created_at DESC LIMIT %d",
+					$current_user_id, $per_page
+				));
+			} elseif ($circle === 'trusted') {
+				// Trusted: Inner + communities created by members of user's communities
+				$communities = $db->getResults($db->prepare(
+					"SELECT DISTINCT c.* FROM $communities_table c
+					 WHERE c.is_active = 1 AND (
+						 c.id IN (
+							 SELECT community_id FROM $members_table
+							 WHERE user_id = %d AND status = 'active'
+						 )
+						 OR c.creator_id IN (
+							 SELECT DISTINCT m.user_id FROM $members_table m
+							 JOIN $members_table m2 ON m.community_id = m2.community_id
+							 WHERE m2.user_id = %d AND m.status = 'active' AND m2.status = 'active'
+						 )
+					 )
+					 ORDER BY c.created_at DESC LIMIT %d",
+					$current_user_id, $current_user_id, $per_page
+				));
+			} else { // extended
+				// Extended: Trusted + communities created by members of trusted communities
+				$communities = $db->getResults($db->prepare(
+					"SELECT DISTINCT c.* FROM $communities_table c
+					 WHERE c.is_active = 1 AND (
+						 c.id IN (
+							 SELECT community_id FROM $members_table
+							 WHERE user_id = %d AND status = 'active'
+						 )
+						 OR c.creator_id IN (
+							 SELECT DISTINCT m.user_id FROM $members_table m
+							 JOIN $members_table m2 ON m.community_id = m2.community_id
+							 WHERE m2.user_id = %d AND m.status = 'active' AND m2.status = 'active'
+						 )
+						 OR c.creator_id IN (
+							 SELECT DISTINCT m3.user_id FROM $members_table m3
+							 WHERE m3.community_id IN (
+								 SELECT DISTINCT c2.id FROM $communities_table c2
+								 WHERE c2.is_active = 1 AND (
+									 c2.id IN (
+										 SELECT community_id FROM $members_table
+										 WHERE user_id = %d AND status = 'active'
+									 )
+									 OR c2.creator_id IN (
+										 SELECT DISTINCT m4.user_id FROM $members_table m4
+										 JOIN $members_table m5 ON m4.community_id = m5.community_id
+										 WHERE m5.user_id = %d AND m4.status = 'active' AND m5.status = 'active'
+									 )
+								 )
+							 ) AND m3.status = 'active'
+						 )
+					 )
+					 ORDER BY c.created_at DESC LIMIT %d",
+					$current_user_id, $current_user_id, $current_user_id, $current_user_id, $per_page
+				));
+			}
+		}
+
+		// Render HTML for communities
+		$html = '';
+		if (!empty($communities)) {
+			$community_manager = new VT_Community_Manager();
+			$current_user = VT_Auth::getCurrentUser();
+
+			foreach ($communities as $community) {
+				$html .= '<div class="vt-section vt-border vt-p-4">';
+
+				// Featured image
+				if (!empty($community->featured_image)) {
+					$html .= '<div class="vt-mb-4">';
+					$html .= '<img src="' . VT_Sanitize::escUrl($community->featured_image) . '" alt="' . VT_Sanitize::escHtml($community->name) . '" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px;">';
+					$html .= '</div>';
+				}
+
+				$html .= '<div class="vt-flex vt-flex-between vt-mb-4">';
+				$html .= '<div class="vt-flex-1">';
+				$html .= '<h3 class="vt-heading vt-heading-sm vt-mb-2">';
+				$html .= '<a href="/communities/' . VT_Sanitize::escHtml($community->slug) . '" class="vt-text-primary">';
+				$html .= VT_Sanitize::escHtml($community->name);
+				$html .= '</a>';
+				$html .= '</h3>';
+
+				// Badges
+				$html .= '<div class="vt-flex vt-gap vt-flex-wrap vt-mb-2">';
+				if ($community->visibility === 'private') {
+					$html .= '<span class="vt-badge vt-badge-secondary">Private</span>';
+				}
+				$html .= '</div>';
+
+				$html .= '<div class="vt-text-muted">';
+				$html .= sprintf('%s members', intval($community->member_count ?? 0));
+				$html .= '</div>';
+				$html .= '</div>';
+
+				$html .= '<div class="vt-stat vt-text-center">';
+				$html .= '<div class="vt-stat-number vt-text-primary">' . intval($community->event_count ?? 0) . '</div>';
+				$html .= '<div class="vt-stat-label">Events</div>';
+				$html .= '</div>';
+				$html .= '</div>';
+
+				// Description
+				if ($community->description) {
+					$html .= '<div class="vt-mb-4">';
+					$html .= '<p class="vt-text-muted">' . VT_Sanitize::escHtml(VT_Text::truncateWords($community->description, 15)) . '</p>';
+					$html .= '</div>';
+				}
+
+				// Action buttons
+				$html .= '<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap">';
+				$html .= '<div class="vt-flex vt-gap vt-flex-wrap">';
+				$html .= '<div class="vt-stat vt-text-center">';
+				$html .= '<div class="vt-stat-number vt-text-primary">' . intval($community->member_count ?? 0) . '</div>';
+				$html .= '<div class="vt-stat-label">Members</div>';
+				$html .= '</div>';
+				$html .= '</div>';
+
+				$html .= '<div class="vt-flex vt-gap">';
+				$html .= '<a href="/communities/' . VT_Sanitize::escHtml($community->slug) . '" class="vt-btn">';
+				$html .= 'View';
+				$html .= '</a>';
+
+				// Check if user is admin
+				if ($current_user_id && $community_manager->isMember($community->id, $current_user_id)) {
+					$member_role = $community_manager->getMemberRole($community->id, $current_user_id);
+					if ($member_role === 'admin') {
+						$html .= '<a href="/communities/' . $community->slug . '/manage" class="vt-btn">';
+						$html .= 'Manage';
+						$html .= '</a>';
+					}
+				}
+
+				$html .= '</div>';
+				$html .= '</div>';
+				$html .= '</div>';
+			}
+		}
+
+		header('Content-Type: application/json');
+		echo json_encode(array(
+			'success' => true,
+			'html' => $html,
+			'meta' => array(
+				'count' => count($communities),
+				'circle' => $circle,
+				'page' => $page
+			)
+		));
+		exit;
 	}
 }
