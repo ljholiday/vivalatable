@@ -73,8 +73,11 @@ class VT_Auth {
     public static function register($username, $email, $password, $display_name = '') {
         $db = VT_Database::getInstance();
 
-        // Check if user exists
-        $existing = $db->getVar("SELECT id FROM vt_users WHERE email = '$email' OR username = '$username'");
+        // Check if user exists using prepared statement
+        $existing = $db->getVar($db->prepare(
+            "SELECT id FROM vt_users WHERE email = %s OR username = %s",
+            $email, $username
+        ));
         if ($existing) {
             return false;
         }
@@ -87,9 +90,11 @@ class VT_Auth {
             'status' => 'active'
         ];
 
-        $user_id = $db->insert('users', $user_data);
+        $result = $db->insert('users', $user_data);
 
-        if ($user_id) {
+        if ($result) {
+            $user_id = $db->insert_id;
+
             // Create user profile
             $db->insert('user_profiles', [
                 'user_id' => $user_id,
@@ -100,6 +105,11 @@ class VT_Auth {
             if (class_exists('VT_Member_Identity_Manager')) {
                 $identity_manager = new VT_Member_Identity_Manager();
                 $identity_manager->ensureIdentityExists($user_id, $email, $display_name ?: $username);
+            }
+
+            // Create personal community for new user
+            if (class_exists('VT_Personal_Community_Service')) {
+                VT_Personal_Community_Service::ensurePersonalCommunityForUser($user_id);
             }
 
             return $user_id;

@@ -29,9 +29,19 @@ if (!in_array($active_filter, $valid_filters)) {
 // Create conversation manager instance
 $conversation_manager = new VT_Conversation_Manager();
 
-// Load conversations based on filter
+// Load conversations based on filter using VT_Conversation_Feed
 $recent_conversations = array();
-if ($user_logged_in) {
+if ($user_logged_in && class_exists('VT_Conversation_Feed')) {
+	// Use the new circles-aware conversation feed
+	$feed_options = array(
+		'page' => 1,
+		'per_page' => 20,
+		'filter' => $active_filter
+	);
+	$feed_result = VT_Conversation_Feed::list($current_user->id, 'inner', $feed_options);
+	$recent_conversations = $feed_result['conversations'];
+} else {
+	// Fallback for non-logged users or when VT_Conversation_Feed is not available
 	if ($active_filter === 'events') {
 		$recent_conversations = $conversation_manager->getEventConversations(null, 20);
 	} elseif ($active_filter === 'communities') {
@@ -39,8 +49,6 @@ if ($user_logged_in) {
 	} else {
 		$recent_conversations = $conversation_manager->getRecentConversations(20);
 	}
-} else {
-	$recent_conversations = $conversation_manager->getRecentConversations(20);
 }
 
 // Get user's conversations for sidebar

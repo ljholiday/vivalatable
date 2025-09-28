@@ -51,7 +51,7 @@ class VT_Conversation_Manager {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$events_table = $this->db->prefix . 'events';
 
-		$where_clause = $event_id ? 'WHERE c.event_id = %d' : 'WHERE c.event_id IS NOT NULL';
+		$where_clause = $event_id ? 'WHERE c.event_id = %d' : 'WHERE c.event_id IS NOT NULL AND c.event_id > 0';
 		$prepare_values = $event_id ? array($event_id, $limit) : array($limit);
 
 
@@ -75,7 +75,7 @@ class VT_Conversation_Manager {
 		$conversations_table = $this->db->prefix . 'conversations';
 		$communities_table = $this->db->prefix . 'communities';
 
-		$where_clause = $community_id ? 'WHERE c.community_id = %d' : 'WHERE c.community_id IS NOT NULL';
+		$where_clause = $community_id ? 'WHERE c.community_id = %d' : 'WHERE c.community_id IS NOT NULL AND c.community_id > 0';
 		$prepare_values = $community_id ? array($community_id, $limit) : array($limit);
 
 		return $this->db->getResults(

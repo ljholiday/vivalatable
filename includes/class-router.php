@@ -89,6 +89,9 @@ class VT_Router {
 		self::addRoute('POST', '/api/events/{id}/rsvp', array('VT_Event_Ajax_Handler', 'handleRsvp'));
 		self::addRoute('POST', '/api/communities/{id}/join', array('VT_Community_Ajax_Handler', 'handleJoin'));
 		self::addRoute('POST', '/api/conversations', array('VT_Conversation_Ajax_Handler', 'handleCreate'));
+
+		// AJAX routes
+		self::addRoute('POST', '/ajax/conversations', array('VT_Conversation_Ajax_Handler', 'ajaxGetConversations'));
 	}
 
 	/**

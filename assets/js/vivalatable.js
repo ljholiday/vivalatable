@@ -30,10 +30,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const circleButtons = document.querySelectorAll('[data-circle]');
     const conversationList = document.getElementById('vt-convo-list');
 
+    console.log('Circle buttons found:', circleButtons.length);
+    console.log('Conversation list found:', conversationList ? 'yes' : 'no');
+
     if (circleButtons.length > 0 && conversationList) {
+        console.log('Initializing circle button event listeners');
         circleButtons.forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
+                console.log('Circle button clicked:', this.getAttribute('data-circle'));
 
                 // Update active state
                 circleButtons.forEach(btn => {
@@ -48,14 +53,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const filter = urlParams.get('filter') || '';
 
+                console.log('Loading conversations for circle:', circle, 'filter:', filter);
+
                 // Load conversations for this circle
                 loadConversationsByCircle(circle, filter);
             });
         });
+    } else {
+        console.log('Circle filtering not initialized - missing buttons or conversation list');
     }
 
     function loadConversationsByCircle(circle, filter) {
-        if (!conversationList) return;
+        if (!conversationList) {
+            console.log('No conversation list found');
+            return;
+        }
+
+        console.log('Starting AJAX request for circle:', circle, 'filter:', filter);
 
         // Show loading state
         conversationList.innerHTML = '<div class="vt-text-center vt-p-4"><p>Loading conversations...</p></div>';
@@ -70,19 +84,30 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add CSRF token if available
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         if (csrfToken) {
-            formData.append('nonce', csrfToken.getAttribute('content'));
+            const token = csrfToken.getAttribute('content');
+            formData.append('nonce', token);
+            console.log('CSRF token found and added:', token);
+        } else {
+            console.log('No CSRF token found');
         }
 
         // Make AJAX call
+        console.log('Making AJAX request to /ajax/conversations');
         fetch('/ajax/conversations', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('AJAX response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('AJAX response data:', data);
             if (data.success && data.conversations) {
+                console.log('Rendering', data.conversations.length, 'conversations');
                 renderConversations(data.conversations);
             } else {
+                console.log('No conversations returned or request failed');
                 conversationList.innerHTML = '<div class="vt-text-center vt-p-4"><h3 class="vt-heading vt-heading-sm vt-mb-4">No Conversations Found</h3><p class="vt-text-muted">There are no conversations to display for this circle.</p></div>';
             }
         })

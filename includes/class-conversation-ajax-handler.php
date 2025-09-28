@@ -271,8 +271,13 @@ class VT_Conversation_Ajax_Handler {
 		}
 	}
 
-	public function ajaxGetConversations() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+	public static function ajaxGetConversations() {
+		// Verify nonce for security
+		if (!VT_Security::verifyNonce($_POST['nonce'] ?? '', 'vt_nonce')) {
+			header('Content-Type: application/json');
+			echo json_encode(['success' => false, 'message' => 'Security check failed']);
+			exit;
+		}
 
 		$circle = VT_Sanitize::textField($_POST['circle'] ?? 'inner');
 		$filter = VT_Sanitize::textField($_POST['filter'] ?? '');
@@ -292,31 +297,30 @@ class VT_Conversation_Ajax_Handler {
 			$filter = '';
 		}
 
-		$conversation_manager = $this->getConversationManager();
+		$conversation_manager = new VT_Conversation_Manager();
 		$current_user_id = VT_Auth::getCurrentUserId();
 
-		// Handle different filter types
-		if ($filter === 'events') {
-			// Get event conversations
-			$conversations = $conversation_manager->getEventConversations(null, $per_page);
-			$db = VT_Database::getInstance();
-			$total_conversations = $db->getVar("SELECT COUNT(*) FROM {$db->prefix}conversations WHERE event_id IS NOT NULL");
-		} elseif ($filter === 'communities') {
-			// Get community conversations
-			$conversations = $conversation_manager->getCommunityConversations(null, $per_page);
-			$db = VT_Database::getInstance();
-			$total_conversations = $db->getVar("SELECT COUNT(*) FROM {$db->prefix}conversations WHERE community_id IS NOT NULL");
+		// Use VT_Conversation_Feed for all filtering (circles + events/communities)
+		if (class_exists('VT_Conversation_Feed')) {
+			$opts = array(
+				'topic_slug' => $topic_slug,
+				'page' => $page,
+				'per_page' => $per_page,
+				'filter' => $filter // Pass the filter to the conversation feed
+			);
+			$feed_result = VT_Conversation_Feed::list($current_user_id, $circle, $opts);
+			$conversations = $feed_result['conversations'];
+			$total_conversations = $feed_result['meta']['total'];
 		} else {
-			// Use conversation feed with circles integration if available
-			if (class_exists('VT_Conversation_Feed')) {
-				$opts = array(
-					'topic_slug' => $topic_slug,
-					'page' => $page,
-					'per_page' => $per_page
-				);
-				$feed_result = VT_Conversation_Feed::list($current_user_id, $circle, $opts);
-				$conversations = $feed_result['conversations'];
-				$total_conversations = $feed_result['meta']['total'];
+			// Fallback to basic filtering without circles
+			if ($filter === 'events') {
+				$conversations = $conversation_manager->getEventConversations(null, $per_page);
+				$db = VT_Database::getInstance();
+				$total_conversations = $db->getVar("SELECT COUNT(*) FROM {$db->prefix}conversations WHERE event_id IS NOT NULL");
+			} elseif ($filter === 'communities') {
+				$conversations = $conversation_manager->getCommunityConversations(null, $per_page);
+				$db = VT_Database::getInstance();
+				$total_conversations = $db->getVar("SELECT COUNT(*) FROM {$db->prefix}conversations WHERE community_id IS NOT NULL");
 			} else {
 				$conversations = $conversation_manager->getRecentConversations($per_page);
 				$total_conversations = count($conversations);
@@ -346,7 +350,9 @@ class VT_Conversation_Ajax_Handler {
 			}
 		}
 
-		VT_Ajax::sendSuccess(array(
+		header('Content-Type: application/json');
+		echo json_encode(array(
+			'success' => true,
 			'conversations' => $conversations_data,
 			'meta' => array(
 				'count' => $total_conversations,
@@ -356,6 +362,7 @@ class VT_Conversation_Ajax_Handler {
 				'filter' => $filter
 			)
 		));
+		exit;
 	}
 
 	public function ajaxUpdateConversation() {

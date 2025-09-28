@@ -15,7 +15,7 @@ class VT_Circle_Scope {
 	 * Resolve conversation scope for a user and circle level
 	 *
 	 * @param int $user_id The user to resolve scope for
-	 * @param string $circle The circle level: 'close', 'trusted', 'extended'
+	 * @param string $circle The circle level: 'inner', 'trusted', 'extended'
 	 * @return array Array with 'users' and 'communities' that are in scope
 	 */
 	public static function resolveConversationScope($user_id, $circle) {
@@ -32,8 +32,8 @@ class VT_Circle_Scope {
 		);
 
 		switch ($circle) {
-			case 'close':
-				$scope = self::getCloseCircleScope($user_id);
+			case 'inner':
+				$scope = self::getInnerCircleScope($user_id);
 				break;
 			case 'trusted':
 				$scope = self::getTrustedCircleScope($user_id);
@@ -42,17 +42,17 @@ class VT_Circle_Scope {
 				$scope = self::getExtendedCircleScope($user_id);
 				break;
 			default:
-				$scope = self::getCloseCircleScope($user_id);
+				$scope = self::getInnerCircleScope($user_id);
 		}
 
 		return $scope;
 	}
 
 	/**
-	 * Get Close Circle scope
+	 * Get Inner Circle scope
 	 * User's own communities and their direct members
 	 */
-	private static function getCloseCircleScope($user_id) {
+	private static function getInnerCircleScope($user_id) {
 		$db = VT_Database::getInstance();
 		$communities_table = $db->prefix . 'communities';
 		$members_table = $db->prefix . 'community_members';
@@ -89,21 +89,21 @@ class VT_Circle_Scope {
 
 	/**
 	 * Get Trusted Circle scope
-	 * Close circle + members of those communities' other communities
+	 * Inner circle + members of those communities' other communities
 	 */
 	private static function getTrustedCircleScope($user_id) {
 		$db = VT_Database::getInstance();
 		$members_table = $db->prefix . 'community_members';
 
-		// Start with close circle
-		$close_scope = self::getCloseCircleScope($user_id);
-		$scope_users = $close_scope['users'];
-		$scope_communities = $close_scope['communities'];
+		// Start with inner circle
+		$inner_scope = self::getInnerCircleScope($user_id);
+		$scope_users = $inner_scope['users'];
+		$scope_communities = $inner_scope['communities'];
 
-		if (!empty($close_scope['users'])) {
-			$user_ids_in = implode(',', array_map('intval', $close_scope['users']));
+		if (!empty($inner_scope['users'])) {
+			$user_ids_in = implode(',', array_map('intval', $inner_scope['users']));
 
-			// Get all communities that close circle members belong to
+			// Get all communities that inner circle members belong to
 			$trusted_communities = $db->getCol(
 				"SELECT DISTINCT community_id FROM $members_table
 				 WHERE user_id IN ($user_ids_in) AND status = 'active'"
