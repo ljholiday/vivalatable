@@ -326,51 +326,28 @@ class VT_Conversation_Ajax_Handler {
 		$total_pages = ceil($total_conversations / $per_page);
 		$has_more = $page < $total_pages;
 
-		// Generate HTML for conversations list
-		ob_start();
-		?>
-		<div class="conversations-list">
-			<?php if (empty($conversations)): ?>
-				<div class="vt-text-center vt-text-muted">
-					<p>No conversations found.</p>
-				</div>
-			<?php else: ?>
-				<?php foreach ($conversations as $conversation): ?>
-					<div class="conversation-item vt-card vt-mb-4">
-						<div class="vt-card-header vt-flex vt-flex-between">
-							<h3 class="vt-heading vt-heading-sm">
-								<a href="<?php echo VT_Sanitize::escUrl(VT_Config::get('site_url') . '/conversations/' . $conversation->slug); ?>">
-									<?php echo VT_Sanitize::escHtml($conversation->title); ?>
-								</a>
-							</h3>
-							<div class="vt-text-muted vt-text-sm">
-								<?php echo date('M j, Y', strtotime($conversation->created_at)); ?>
-							</div>
-						</div>
-						<div class="vt-card-body">
-							<p><?php echo VT_Text::truncateWords(strip_tags($conversation->content), 30); ?></p>
-							<div class="vt-flex vt-gap-2 vt-text-sm vt-text-muted">
-								<span><?php echo VT_Sanitize::escHtml($conversation->author_name); ?></span>
-								<span>•</span>
-								<span><?php echo intval($conversation->reply_count ?? 0); ?> replies</span>
-								<?php if ($conversation->event_title): ?>
-									<span>•</span>
-									<span>Event: <?php echo VT_Sanitize::escHtml($conversation->event_title); ?></span>
-								<?php elseif ($conversation->community_name): ?>
-									<span>•</span>
-									<span>Community: <?php echo VT_Sanitize::escHtml($conversation->community_name); ?></span>
-								<?php endif; ?>
-							</div>
-						</div>
-					</div>
-				<?php endforeach; ?>
-			<?php endif; ?>
-		</div>
-		<?php
-		$html = ob_get_clean();
+		// Prepare conversations data for JSON response
+		$conversations_data = array();
+		if (!empty($conversations)) {
+			foreach ($conversations as $conversation) {
+				$conversations_data[] = array(
+					'id' => $conversation->id,
+					'title' => $conversation->title,
+					'content' => $conversation->content,
+					'slug' => $conversation->slug,
+					'author_name' => $conversation->author_name,
+					'event_id' => $conversation->event_id ?? null,
+					'community_id' => $conversation->community_id ?? null,
+					'reply_count' => intval($conversation->reply_count ?? 0),
+					'created_at' => $conversation->created_at,
+					'event_title' => $conversation->event_title ?? null,
+					'community_name' => $conversation->community_name ?? null
+				);
+			}
+		}
 
 		VT_Ajax::sendSuccess(array(
-			'html' => $html,
+			'conversations' => $conversations_data,
 			'meta' => array(
 				'count' => $total_conversations,
 				'page' => $page,
