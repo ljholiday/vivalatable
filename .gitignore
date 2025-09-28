@@ -1,3 +1,4 @@
 # Ignore local database credentials
 config/database.php
+dev
 
