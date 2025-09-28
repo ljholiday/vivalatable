@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? htmlspecialchars($page_title) . ' - ' : ''; ?>VivalaTable</title>
-    <link rel="stylesheet" href="/assets/css/vivalatable.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
 
@@ -45,13 +45,13 @@
     <div class="vt-main">
         <!-- Fixed Main Navigation -->
         <div class="vt-main-nav">
-            <a href="/events" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/events') !== false) ? 'active' : ''; ?>">
+            <a href="/events" class="vt-main-nav-item <?php echo (strpos(VT_Router::getCurrentUri(), '/events') !== false) ? 'active' : ''; ?>">
                 Events
             </a>
-            <a href="/conversations" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/conversations') !== false) ? 'active' : ''; ?>">
+            <a href="/conversations" class="vt-main-nav-item <?php echo (strpos(VT_Router::getCurrentUri(), '/conversations') !== false) ? 'active' : ''; ?>">
                 Conversations
             </a>
-            <a href="/communities" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/communities') !== false) ? 'active' : ''; ?>">
+            <a href="/communities" class="vt-main-nav-item <?php echo (strpos(VT_Router::getCurrentUri(), '/communities') !== false) ? 'active' : ''; ?>">
                 Communities
             </a>
         </div>

@@ -19,23 +19,34 @@ if ($conversation_slug) {
 	exit;
 }
 
-// Create conversation manager instance
-$conversation_manager = new VT_Conversation_Manager();
-
-// Let JavaScript handle conversation loading via circle filtering
-$recent_conversations = array();
-
-// Get user's conversations for sidebar
-$user_conversations = array();
-if ($user_logged_in) {
-	$user_conversations = $conversation_manager->getUserConversations($current_user->id, 6);
-}
-
 // Check for filter parameter from URL
 $active_filter = $_GET['filter'] ?? '';
 $valid_filters = array('events', 'communities');
 if (!in_array($active_filter, $valid_filters)) {
 	$active_filter = '';
+}
+
+// Create conversation manager instance
+$conversation_manager = new VT_Conversation_Manager();
+
+// Load conversations based on filter
+$recent_conversations = array();
+if ($user_logged_in) {
+	if ($active_filter === 'events') {
+		$recent_conversations = $conversation_manager->getEventConversations(null, 20);
+	} elseif ($active_filter === 'communities') {
+		$recent_conversations = $conversation_manager->getCommunityConversations(null, 20);
+	} else {
+		$recent_conversations = $conversation_manager->getRecentConversations(20);
+	}
+} else {
+	$recent_conversations = $conversation_manager->getRecentConversations(20);
+}
+
+// Get user's conversations for sidebar
+$user_conversations = array();
+if ($user_logged_in) {
+	$user_conversations = $conversation_manager->getUserConversations($current_user->id, 6);
 }
 
 // Set up template variables
@@ -48,7 +59,7 @@ $breadcrumbs = array();
 <?php if ($user_logged_in) : ?>
 <div class="vt-section vt-mb-4">
 	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
-		<!-- Circle Filters -->
+		<!-- Circle Filters (Circles of Trust) -->
 		<button class="vt-btn is-active" data-circle="inner" role="tab" aria-selected="true" aria-controls="vt-convo-list">
 			Inner
 		</button>
@@ -60,28 +71,23 @@ $breadcrumbs = array();
 		</button>
 
 		<!-- Type Filters -->
-		<button class="vt-btn" data-filter="events" role="tab" aria-selected="false" aria-controls="vt-convo-list">
-			Event
-		</button>
-		<button class="vt-btn" data-filter="communities" role="tab" aria-selected="false" aria-controls="vt-convo-list">
-			Community
-		</button>
+		<a href="/conversations" class="vt-btn <?php echo ($active_filter === '') ? 'is-active' : ''; ?>">
+			All
+		</a>
+		<a href="/conversations?filter=events" class="vt-btn <?php echo ($active_filter === 'events') ? 'is-active' : ''; ?>">
+			Events
+		</a>
+		<a href="/conversations?filter=communities" class="vt-btn <?php echo ($active_filter === 'communities') ? 'is-active' : ''; ?>">
+			Communities
+		</a>
 	</div>
 </div>
 <?php endif; ?>
 
 <div class="vt-section">
 	<div id="vt-convo-list" class="vt-grid vt-grid-2 vt-gap">
-		<?php if ($user_logged_in) : ?>
-			<div class="vt-text-center vt-p-4">
-				<p class="vt-text-muted">Loading conversations...</p>
-			</div>
-		<?php else : ?>
-			<?php
-			// For non-logged in users, show recent public conversations
-			$public_conversations = $conversation_manager->getRecentConversations(20);
-			if (!empty($public_conversations)) :
-				foreach ($public_conversations as $conversation) : ?>
+		<?php if (!empty($recent_conversations)) :
+			foreach ($recent_conversations as $conversation) : ?>
 					<div class="vt-section">
 						<div class="vt-flex vt-flex-between vt-mb-4">
 							<h3 class="vt-heading vt-heading-sm">
@@ -107,7 +113,7 @@ $breadcrumbs = array();
 
 						<?php if ($conversation->content) : ?>
 						<div class="vt-mb-4">
-							<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncateWords($conversation->excerpt ?: $conversation->content, 15)); ?></p>
+							<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncateWords($conversation->content, 15)); ?></p>
 						</div>
 						<?php endif; ?>
 
@@ -124,13 +130,12 @@ $breadcrumbs = array();
 							</a>
 						</div>
 					</div>
-				<?php endforeach;
-			else : ?>
-				<div class="vt-text-center vt-p-4">
-					<h3 class="vt-heading vt-heading-sm vt-mb-4">No Conversations Found</h3>
-					<p class="vt-text-muted">There are no conversations to display.</p>
-				</div>
-			<?php endif; ?>
+			<?php endforeach;
+		else : ?>
+			<div class="vt-text-center vt-p-4">
+				<h3 class="vt-heading vt-heading-sm vt-mb-4">No Conversations Found</h3>
+				<p class="vt-text-muted">There are no conversations to display.</p>
+			</div>
 		<?php endif; ?>
 	</div>
 </div>

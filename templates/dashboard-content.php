@@ -65,26 +65,6 @@ $page_description = 'Your social event hub';
 
 ?>
 
-<!-- Secondary Menu Bar -->
-<div class="vt-section vt-mb-4">
-    <div class="vt-flex vt-gap-4 vt-flex-wrap">
-        <?php if ($user_logged_in): ?>
-            <a href="/conversations/create" class="vt-btn">
-                Start Conversation
-            </a>
-            <a href="/events/create" class="vt-btn">
-                Create Event
-            </a>
-        <?php endif; ?>
-        <a href="/events" class="vt-btn vt-btn-secondary">
-            Browse Events
-        </a>
-        <a href="/communities" class="vt-btn vt-btn-secondary">
-            Communities
-        </a>
-    </div>
-</div>
-
 <!-- Main content starts here -->
 <?php if ($user_logged_in): ?>
     <!-- Welcome Section -->
@@ -112,7 +92,7 @@ $page_description = 'Your social event hub';
                             <div class="vt-card">
                                 <div class="vt-card-body">
                                     <h4 class="vt-heading">
-                                        <a href="/events/<?php echo $event->id; ?>" class="vt-link">
+                                        <a href="/events/<?php echo $event->slug; ?>" class="vt-link">
                                             <?php echo VT_Sanitize::escHtml($event->title); ?>
                                         </a>
                                     </h4>
@@ -154,7 +134,7 @@ $page_description = 'Your social event hub';
                             <div class="vt-card">
                                 <div class="vt-card-body">
                                     <h4 class="vt-heading">
-                                        <a href="/conversations/<?php echo $conversation->id; ?>" class="vt-link">
+                                        <a href="/conversations/<?php echo $conversation->slug; ?>" class="vt-link">
                                             <?php echo VT_Sanitize::escHtml($conversation->title); ?>
                                         </a>
                                     </h4>

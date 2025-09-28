@@ -9,7 +9,12 @@
       "Read(//Users/lonnholiday/Local Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/assets/js/**)",
       "Read(//Users/lonnholiday/Local Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/includes/**)",
       "Read(//Users/lonnholiday/Local Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/**)",
-      "Read(//Users/lonnholiday/**)"
+      "Read(//Users/lonnholiday/**)",
+      "WebSearch",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:github.com)",
+      "Bash(grep:*)",
+      "WebFetch(domain:localhost)"
     ],
     "deny": [],
     "ask": []

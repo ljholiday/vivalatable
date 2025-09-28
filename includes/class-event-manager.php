@@ -292,7 +292,7 @@ class VT_Event_Manager {
             'venue_info' => VT_Sanitize::textField($event_data['venue'] ?? ''),
             'host_email' => VT_Sanitize::email($event_data['host_email'] ?? ''),
             'host_notes' => VT_Sanitize::post($event_data['host_notes'] ?? ''),
-            'privacy' => $this->validateprivacy_setting($event_data['privacy'] ?? 'public'),
+            'privacy' => $this->validatePrivacySetting($event_data['privacy'] ?? 'public'),
             'meta_title' => VT_Sanitize::textField($event_data['title']),
             'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
         ];
@@ -590,7 +590,7 @@ The %s Team',
         $db = VT_Database::getInstance();
 
         $events = $db->getResults("
-            SELECT e.id, e.title, e.slug, e.event_date, e.event_time, e.venue_info
+            SELECT e.id, e.title, e.slug, e.description, e.event_date, e.event_time, e.venue_info
             FROM vt_events e
             WHERE e.author_id = $user_id AND e.event_status = 'active'
             ORDER BY e.event_date ASC
@@ -673,7 +673,7 @@ The %s Team',
         }
 
         // For non-community events, use provided privacy or default to public
-        return $this->validateprivacy_setting($event_data['privacy'] ?? 'public');
+        return $this->validatePrivacySetting($event_data['privacy'] ?? 'public');
     }
 
     public function validateEventPrivacyInheritance($event_data) {

@@ -192,13 +192,9 @@ class VT_Auth {
             return false;
         }
 
-        // Update guest record
+        // Update guest record with converted user ID
         $db = VT_Database::getInstance();
         $db->update('guests', ['converted_user_id' => $user_id], ['id' => $guest->id]);
-
-        // Update any RSVPs or other records
-        $db->update('event_rsvps', ['user_id' => $user_id], ['email' => $guest->email]);
-        $db->update('rsvps', ['user_id' => $user_id], ['guest_email' => $guest->email]);
 
         return $user_id;
     }

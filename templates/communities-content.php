@@ -120,7 +120,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 										View
 									</a>
 									<?php if ($community->role === 'admin') : ?>
-										<a href="/communities/<?php echo intval($community->id); ?>/manage" class="vt-btn">
+										<a href="/communities/<?php echo $community->slug; ?>/manage" class="vt-btn">
 											Manage
 										</a>
 									<?php endif; ?>
@@ -193,7 +193,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 								<?php echo $is_member ? 'Member' : 'Join'; ?>
 							</a>
 						<?php else : ?>
-							<a href="/login?redirect_to=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>" class="vt-btn">
+							<a href="/login?redirect_to=<?php echo urlencode(VT_Router::getCurrentUri()); ?>" class="vt-btn">
 								Login to Join
 							</a>
 						<?php endif; ?>

@@ -97,7 +97,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 								<div class="vt-flex vt-flex-between vt-mb-4">
 									<div class="vt-flex-1">
 										<h3 class="vt-heading vt-heading-md vt-mb-2">
-											<a href="/events/<?php echo $event->id; ?>" class="vt-text-primary">
+											<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
 												<?php echo htmlspecialchars($event->title); ?>
 											</a>
 										</h3>
@@ -134,8 +134,8 @@ $page_description = 'Discover amazing events and manage your gatherings';
 								</div>
 
 								<div class="vt-flex vt-gap-2 vt-mt-4">
-									<a href="/events/<?php echo $event->id; ?>" class="vt-btn vt-btn-sm">View</a>
-									<a href="/events/<?php echo $event->id; ?>/manage" class="vt-btn vt-btn-sm">Manage</a>
+									<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
+									<a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-sm">Manage</a>
 								</div>
 							</div>
 						</div>
@@ -165,7 +165,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 								<div class="vt-flex vt-flex-between vt-mb-4">
 									<div class="vt-flex-1">
 										<h3 class="vt-heading vt-heading-md vt-mb-2">
-											<a href="/events/<?php echo $event->id; ?>" class="vt-text-primary">
+											<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
 												<?php echo htmlspecialchars($event->title); ?>
 											</a>
 										</h3>
@@ -206,7 +206,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 								</div>
 
 								<div class="vt-flex vt-gap-2 vt-mt-4">
-									<a href="/events/<?php echo $event->id; ?>" class="vt-btn vt-btn-sm">View</a>
+									<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
 									<?php if (!$is_past) : ?>
 										<button class="vt-btn vt-btn-sm vt-btn-primary" onclick="openRSVPModal(<?php echo $event->id; ?>)">RSVP</button>
 									<?php endif; ?>
@@ -237,7 +237,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 								<div class="vt-flex vt-flex-between vt-mb-4">
 									<div class="vt-flex-1">
 										<h3 class="vt-heading vt-heading-md vt-mb-2">
-											<a href="/events/<?php echo $event->id; ?>" class="vt-text-primary">
+											<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
 												<?php echo htmlspecialchars($event->title); ?>
 											</a>
 										</h3>
@@ -270,7 +270,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 								</div>
 
 								<div class="vt-flex vt-gap-2 vt-mt-4">
-									<a href="/events/<?php echo $event->id; ?>" class="vt-btn vt-btn-sm">View</a>
+									<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
 									<?php if (!$is_past) : ?>
 										<button class="vt-btn vt-btn-sm" onclick="openRSVPModal(<?php echo $event->id; ?>)">Update RSVP</button>
 									<?php endif; ?>
@@ -302,7 +302,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 							<div class="vt-flex vt-flex-between vt-mb-4">
 								<div class="vt-flex-1">
 									<h3 class="vt-heading vt-heading-md vt-mb-2">
-										<a href="/events/<?php echo $event->id; ?>" class="vt-text-primary">
+										<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
 											<?php echo htmlspecialchars($event->title); ?>
 										</a>
 									</h3>
@@ -324,7 +324,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 							<?php endif; ?>
 
 							<div class="vt-flex vt-gap-2 vt-mt-4">
-								<a href="/events/<?php echo $event->id; ?>" class="vt-btn vt-btn-sm">View Event</a>
+								<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View Event</a>
 								<?php if (!$is_past) : ?>
 									<a href="/login" class="vt-btn vt-btn-sm vt-btn-primary">Sign In to RSVP</a>
 								<?php endif; ?>

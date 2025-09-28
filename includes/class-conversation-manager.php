@@ -132,7 +132,7 @@ class VT_Conversation_Manager {
 		}
 
 		// Generate slug from title
-		$slug = $this->generateconversation_slug($data['title']);
+		$slug = $this->generateConversationSlug($data['title']);
 
 		$insert_data = array(
 			'event_id' => $data['event_id'] ?? null,
@@ -143,7 +143,7 @@ class VT_Conversation_Manager {
 			'author_id' => $data['author_id'] ?? VT_Auth::getCurrentUserId(),
 			'author_name' => VT_Sanitize::textField($data['author_name']),
 			'author_email' => VT_Sanitize::email($data['author_email']),
-			'privacy' => $this->validateconversation_privacy($data['privacy'] ?? 'public', $data),
+			'privacy' => $this->validateConversationPrivacy($data['privacy'] ?? 'public', $data),
 			'is_pinned' => $data['is_pinned'] ?? 0,
 			'created_at' => VT_Time::currentTime('mysql'),
 			'last_reply_date' => VT_Time::currentTime('mysql'),
@@ -160,7 +160,7 @@ class VT_Conversation_Manager {
 
 		// Auto-follow the conversation creator
 		$author_id = $insert_data['author_id'];
-		$this->follow_conversation($conversation_id, $author_id, $data['author_email']);
+		$this->followConversation($conversation_id, $author_id, $data['author_email']);
 
 		return $conversation_id;
 	}
@@ -224,10 +224,10 @@ class VT_Conversation_Manager {
 		$reply_id = $this->db->insert_id;
 
 		// Auto-follow the conversation for reply author
-		$this->follow_conversation($conversation_id, $data['author_id'], $data['author_email']);
+		$this->followConversation($conversation_id, $data['author_id'], $data['author_email']);
 
 		// Mark conversation as updated for activity tracking
-		$this->mark_conversation_updated($conversation_id);
+		$this->markConversationUpdated($conversation_id);
 
 		return $reply_id;
 	}
@@ -248,7 +248,7 @@ class VT_Conversation_Manager {
 
 		if ($conversation && $by_slug === false) {
 			// Get replies if getting by ID
-			$conversation->replies = $this->getconversation_replies($conversation->id);
+			$conversation->replies = $this->getConversationReplies($conversation->id);
 		}
 
 		return $conversation;
@@ -470,11 +470,11 @@ class VT_Conversation_Manager {
 	private function validateConversationPrivacy($privacy, $data) {
 		// If conversation is tied to an event or community, inherit their privacy
 		if (!empty($data['event_id'])) {
-			return $this->getevent_privacy($data['event_id']);
+			return $this->getEventPrivacy($data['event_id']);
 		}
 
 		if (!empty($data['community_id'])) {
-			return $this->getcommunity_privacy($data['community_id']);
+			return $this->getCommunityPrivacy($data['community_id']);
 		}
 
 		// For standalone conversations, validate the provided privacy
@@ -507,7 +507,7 @@ class VT_Conversation_Manager {
 
 		// If event is part of a community, it inherits community privacy
 		if ($event->community_id) {
-			return $this->getcommunity_privacy($event->community_id);
+			return $this->getCommunityPrivacy($event->community_id);
 		}
 
 		return $event->privacy;
@@ -533,11 +533,11 @@ class VT_Conversation_Manager {
 	 */
 	public function getConversationPrivacy($conversation) {
 		if ($conversation->event_id) {
-			return $this->getevent_privacy($conversation->event_id);
+			return $this->getEventPrivacy($conversation->event_id);
 		}
 
 		if ($conversation->community_id) {
-			return $this->getcommunity_privacy($conversation->community_id);
+			return $this->getCommunityPrivacy($conversation->community_id);
 		}
 
 		return $conversation->privacy;
@@ -891,12 +891,12 @@ class VT_Conversation_Manager {
 		$data = array(
 			'title' => VT_Sanitize::textField($update_data['title']),
 			'content' => VT_Security::ksesPost($update_data['content']),
-			'slug' => $this->generateconversation_slug($update_data['title'], $conversation_id),
+			'slug' => $this->generateConversationSlug($update_data['title'], $conversation_id),
 		);
 
 		// Only update privacy if provided (for standalone conversations)
 		if (isset($update_data['privacy'])) {
-			$data['privacy'] = $this->validateprivacy_setting($update_data['privacy']);
+			$data['privacy'] = $this->validatePrivacySetting($update_data['privacy']);
 		}
 
 		$result = $this->db->update(

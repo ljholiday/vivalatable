@@ -199,7 +199,7 @@ class VT_Conversation_Ajax_Handler {
 						'size' => $_FILES['attachments']['size'][$i]
 					);
 
-					$uploaded_file = $this->handlefile_upload($file);
+					$uploaded_file = $this->handleFileUpload($file);
 
 					if ($uploaded_file && !isset($uploaded_file['error'])) {
 						$attachment_url = $uploaded_file['url'];
@@ -303,7 +303,7 @@ class VT_Conversation_Ajax_Handler {
 			$total_conversations = $db->getVar("SELECT COUNT(*) FROM {$db->prefix}conversations WHERE event_id IS NOT NULL");
 		} elseif ($filter === 'communities') {
 			// Get community conversations
-			$conversations = $conversation_manager->getcommunity_conversations(null, $per_page);
+			$conversations = $conversation_manager->getCommunityConversations(null, $per_page);
 			$db = VT_Database::getInstance();
 			$total_conversations = $db->getVar("SELECT COUNT(*) FROM {$db->prefix}conversations WHERE community_id IS NOT NULL");
 		} else {
@@ -564,7 +564,7 @@ class VT_Conversation_Ajax_Handler {
 						'size' => $_FILES['attachments']['size'][$i]
 					);
 
-					$uploaded_file = $this->handlefile_upload($file);
+					$uploaded_file = $this->handleFileUpload($file);
 
 					if ($uploaded_file && !isset($uploaded_file['error'])) {
 						$attachment_url = $uploaded_file['url'];

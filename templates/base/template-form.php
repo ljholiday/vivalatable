@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? htmlspecialchars($page_title) . ' - ' : ''; ?>VivalaTable</title>
-    <link rel="stylesheet" href="/assets/css/vivalatable.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
 
@@ -12,13 +12,13 @@
 <div class="vt-page-form-centered">
     <!-- Persistent Main Navigation -->
     <div class="vt-main-nav">
-        <a href="/events" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/events') !== false || strpos($_SERVER['REQUEST_URI'], '/create-event') !== false) ? 'active' : ''; ?>">
+        <a href="/events" class="vt-main-nav-item <?php echo (strpos(VT_Router::getCurrentUri(), '/events') !== false || strpos(VT_Router::getCurrentUri(), '/create-event') !== false) ? 'active' : ''; ?>">
             Events
         </a>
-        <a href="/conversations" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/conversations') !== false || strpos($_SERVER['REQUEST_URI'], '/create-conversation') !== false) ? 'active' : ''; ?>">
+        <a href="/conversations" class="vt-main-nav-item <?php echo (strpos(VT_Router::getCurrentUri(), '/conversations') !== false || strpos(VT_Router::getCurrentUri(), '/create-conversation') !== false) ? 'active' : ''; ?>">
             Conversations
         </a>
-        <a href="/communities" class="vt-main-nav-item <?php echo (strpos($_SERVER['REQUEST_URI'], '/communities') !== false || strpos($_SERVER['REQUEST_URI'], '/create-community') !== false) ? 'active' : ''; ?>">
+        <a href="/communities" class="vt-main-nav-item <?php echo (strpos(VT_Router::getCurrentUri(), '/communities') !== false || strpos(VT_Router::getCurrentUri(), '/create-community') !== false) ? 'active' : ''; ?>">
             Communities
         </a>
     </div>
@@ -28,13 +28,13 @@
         // Smart back button based on current page
         $back_url = '/';
         $back_text = 'Back';
-        if (strpos($_SERVER['REQUEST_URI'], '/create-event') !== false) {
+        if (strpos(VT_Router::getCurrentUri(), '/create-event') !== false) {
             $back_url = '/events';
             $back_text = 'Back to Events';
-        } elseif (strpos($_SERVER['REQUEST_URI'], '/create-community') !== false) {
+        } elseif (strpos(VT_Router::getCurrentUri(), '/create-community') !== false) {
             $back_url = '/communities';
             $back_text = 'Back to Communities';
-        } elseif (strpos($_SERVER['REQUEST_URI'], '/create-conversation') !== false) {
+        } elseif (strpos(VT_Router::getCurrentUri(), '/create-conversation') !== false) {
             $back_url = '/conversations';
             $back_text = 'Back to Conversations';
         }

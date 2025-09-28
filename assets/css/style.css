@@ -126,12 +126,16 @@ body.admin-bar .vt-page-two-column {
 
 .vt-sidebar {
     flex-shrink: 0;
-    width: 320px;
+    width: 25%;
     overflow-y: auto;
     overscroll-behavior: contain;
     height: 100%;
     scrollbar-width: none;
     -ms-overflow-style: none;
+}
+
+.vt-sidebar-section {
+    width: 80%;
 }
 
 .vt-sidebar::-webkit-scrollbar {
@@ -603,6 +607,42 @@ body.admin-bar .vt-page-two-column {
 }
 
 .vt-nav-item.active {
+    background: var(--vt-primary);
+    color: white;
+}
+
+/* Tab Navigation */
+.vt-tabs {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--vt-surface);
+    border: 2px solid var(--vt-border);
+    border-radius: 0.75rem;
+    padding: 0.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.vt-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: var(--vt-text-muted);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.vt-tab:hover {
+    background: var(--vt-background);
+    color: var(--vt-text);
+    text-decoration: none;
+}
+
+.vt-tab.active {
     background: var(--vt-primary);
     color: white;
 }

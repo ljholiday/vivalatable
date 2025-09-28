@@ -553,6 +553,26 @@ class VT_Community_Manager {
 	}
 
 	/**
+	 * Get member count for a community
+	 */
+	public function getMemberCount($community_id) {
+		$community_id = intval($community_id);
+		if (!$community_id) {
+			return 0;
+		}
+
+		$result = $this->db->getVar(
+			$this->db->prepare(
+				"SELECT COUNT(*) FROM {$this->db->prefix}community_members
+				 WHERE community_id = %d AND status = 'active'",
+				$community_id
+			)
+		);
+
+		return intval($result);
+	}
+
+	/**
 	 * Get community members
 	 */
 	public function getCommunityMembers($community_id, $role = null, $status = 'active') {

@@ -83,8 +83,8 @@ class VT_Member_Identity_Manager {
 		}
 
 		// Generate new DID and handle using user data
-		$did = $this->generatemember_did($user_id, $email);
-		$handle = $this->generatemember_handle($user_id, $vt_user->display_name);
+		$did = $this->generateMemberDid($user_id, $email);
+		$handle = $this->generateMemberHandle($user_id, $vt_user->display_name);
 
 		// Create identity record
 		$insert_data = array(
@@ -93,8 +93,8 @@ class VT_Member_Identity_Manager {
 			'display_name' => VT_Sanitize::textField($vt_user->display_name),
 			'at_protocol_did' => $did,
 			'at_protocol_handle' => $handle,
-			'pds_url' => $this->getdefault_pds(),
-			'profile_data' => json_encode($this->getdefault_at_protocol_data()),
+			'pds_url' => $this->getDefaultPds(),
+			'profile_data' => json_encode($this->getDefaultAtProtocolData()),
 			'is_verified' => 0,
 			'created_at' => VT_Time::currentTime('mysql'),
 		);
@@ -327,7 +327,7 @@ class VT_Member_Identity_Manager {
 		$created_count = 0;
 
 		foreach ($users as $user) {
-			$existing_identity = $this->getmember_identity($user->id);
+			$existing_identity = $this->getMemberIdentity($user->id);
 			if (!$existing_identity) {
 				$did = $this->ensureIdentityExists($user->id, $user->email, $user->display_name);
 				if ($did) {
@@ -418,7 +418,7 @@ class VT_Member_Identity_Manager {
 	 */
 	public function recordSyncError($user_id, $error_message) {
 		// Get current profile data
-		$identity = $this->getmember_identity($user_id);
+		$identity = $this->getMemberIdentity($user_id);
 		if (!$identity) {
 			return false;
 		}
@@ -435,7 +435,7 @@ class VT_Member_Identity_Manager {
 	 */
 	public function clearSyncError($user_id) {
 		// Get current profile data
-		$identity = $this->getmember_identity($user_id);
+		$identity = $this->getMemberIdentity($user_id);
 		if (!$identity) {
 			return false;
 		}
@@ -451,7 +451,7 @@ class VT_Member_Identity_Manager {
 	 * Get identity sync status
 	 */
 	public function getSyncStatus($user_id) {
-		$identity = $this->getmember_identity($user_id);
+		$identity = $this->getMemberIdentity($user_id);
 		if (!$identity) {
 			return null;
 		}
@@ -467,7 +467,7 @@ class VT_Member_Identity_Manager {
 	 * Mark profile as synced
 	 */
 	public function markProfileSynced($user_id) {
-		$identity = $this->getmember_identity($user_id);
+		$identity = $this->getMemberIdentity($user_id);
 		if (!$identity) {
 			return false;
 		}
@@ -483,7 +483,7 @@ class VT_Member_Identity_Manager {
 	 * Mark connections as synced
 	 */
 	public function markConnectionsSynced($user_id) {
-		$identity = $this->getmember_identity($user_id);
+		$identity = $this->getMemberIdentity($user_id);
 		if (!$identity) {
 			return false;
 		}

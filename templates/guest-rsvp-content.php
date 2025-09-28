@@ -1,309 +1,393 @@
 <?php
 /**
- * VivalaTable Guest RSVP Content Template
- * Dedicated RSVP page for invited guests (works without login)
- * Ported from PartyMinder WordPress plugin
+ * VivalaTable Guest RSVP Template
+ * Anonymous RSVP form for guests with tokens
+ * Ported from PartyMinder WordPress plugin - maintains 32-character token system
  */
 
-// Get invitation token from URL
-$invitation_token = $_GET['invitation'] ?? '';
-$event_id = intval($_GET['event'] ?? 0);
-$quick_rsvp = $_GET['quick_rsvp'] ?? '';
+// Get RSVP token from URL
+$rsvp_token = $_GET['token'] ?? '';
+$quick_response = $_GET['response'] ?? '';
 
-if (!$invitation_token || !$event_id) {
-	header('Location: /events');
-	exit;
-}
-
-// Verify invitation token and get event data
-$guest_manager = new VT_Guest_Manager();
-$guest = $guest_manager->getGuestByToken($invitation_token);
-
-if (!$guest || $guest->event_id != $event_id) {
-	$page_title = 'Invitation Not Found';
-	$page_description = 'This invitation link is invalid or has expired.';
-	$breadcrumbs = array();
+if (empty($rsvp_token) || strlen($rsvp_token) !== 32) {
 	?>
-	<div class="vt-text-center vt-p-4">
-		<h2 class="vt-heading vt-heading-lg vt-text-primary vt-mb">Invitation Not Found</h2>
-		<p class="vt-text-muted vt-mb">This invitation link is invalid or has expired.</p>
+	<div class="vt-section vt-text-center">
+		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Invalid RSVP Link</h3>
+		<p class="vt-text-muted vt-mb-4">This RSVP link is invalid or has expired.</p>
 		<a href="/events" class="vt-btn">Browse Events</a>
 	</div>
 	<?php
 	return;
 }
 
-// Get event data
-$event_manager = new VT_Event_Manager();
-$event = $event_manager->getEvent($event_id);
+// Load guest manager and get guest information
+$guest_manager = new VT_Guest_Manager();
+$guest = $guest_manager->getGuestByToken($rsvp_token);
 
-if (!$event) {
-	header('Location: /events');
-	exit;
+if (!$guest) {
+	?>
+	<div class="vt-section vt-text-center">
+		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">RSVP Not Found</h3>
+		<p class="vt-text-muted vt-mb-4">This RSVP invitation could not be found.</p>
+		<a href="/events" class="vt-btn">Browse Events</a>
+	</div>
+	<?php
+	return;
 }
 
-// Handle quick RSVP from email button click
-if ($quick_rsvp && in_array($quick_rsvp, array('confirmed', 'maybe', 'declined'))) {
-	$result = $guest_manager->processAnonymousRsvp($invitation_token, $quick_rsvp, [
-		'name' => $guest->name ?: 'Guest'
-	]);
-
-	if ($result['success']) {
-		// Send confirmation email
-		VT_Mail::sendRSVPConfirmation($guest->email, $event->title, $event->event_date, $quick_rsvp);
-
-		// Redirect to show success
-		$redirect_url = '/guest-rsvp?' . http_build_query([
-			'invitation' => $invitation_token,
-			'event' => $event_id,
-			'quick_response' => $quick_rsvp
-		]);
-		header('Location: ' . $redirect_url);
-		exit;
+// Handle quick response from email links
+if ($quick_response && in_array($quick_response, array('yes', 'no', 'maybe'))) {
+	// Pre-populate form if they haven't RSVPed yet
+	if ($guest->status === 'pending') {
+		$_GET['pre_select'] = $quick_response;
 	}
 }
 
-// Check for quick response confirmation
-$quick_response = $_GET['quick_response'] ?? '';
+// Handle form submission
+$success_message = '';
+$error_message = '';
 
-// Handle RSVP form submission
-$rsvp_submitted = false;
-$rsvp_status = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rsvp_response']) && VT_Security::verifyNonce($_POST['rsvp_nonce'], 'vt_guest_rsvp')) {
-	$rsvp_response = VT_Sanitizer::sanitizeTextField($_POST['rsvp_response']);
-	$guest_name = VT_Sanitizer::sanitizeTextField($_POST['guest_name']);
-	$dietary_restrictions = VT_Sanitizer::sanitizeTextarea($_POST['dietary_restrictions']);
-	$plus_one = isset($_POST['plus_one']) ? 1 : 0;
-	$plus_one_name = $plus_one ? VT_Sanitizer::sanitizeTextField($_POST['plus_one_name']) : '';
-	$guest_notes = VT_Sanitizer::sanitizeTextarea($_POST['guest_notes']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+	if ($_POST['action'] === 'submit_rsvp' && VT_Security::verifyNonce($_POST['nonce'], 'vt_guest_rsvp')) {
+		$rsvp_status = VT_Sanitize::textField($_POST['rsvp_status']);
 
-	$guest_data = [
-		'name' => $guest_name,
-		'dietary_restrictions' => $dietary_restrictions,
-		'plus_one' => $plus_one,
-		'plus_one_name' => $plus_one_name,
-		'notes' => $guest_notes
-	];
+		$guest_data = array(
+			'name' => VT_Sanitize::textField($_POST['guest_name'] ?? ''),
+			'phone' => VT_Sanitize::textField($_POST['guest_phone'] ?? ''),
+			'dietary_restrictions' => VT_Sanitize::textField($_POST['dietary_restrictions'] ?? ''),
+			'plus_one' => intval($_POST['plus_one'] ?? 0),
+			'plus_one_name' => VT_Sanitize::textField($_POST['plus_one_name'] ?? ''),
+			'notes' => VT_Sanitize::textField($_POST['guest_notes'] ?? '')
+		);
 
-	$result = $guest_manager->processAnonymousRsvp($invitation_token, $rsvp_response, $guest_data);
+		$result = $guest_manager->processAnonymousRsvp($rsvp_token, $rsvp_status, $guest_data);
 
-	if ($result['success']) {
-		$rsvp_submitted = true;
-		$rsvp_status = $rsvp_response;
+		if (is_vt_error($result)) {
+			$error_message = $result->get_error_message();
+		} else {
+			$success_message = 'Thank you for your RSVP! A confirmation email has been sent.';
+			// Refresh guest data
+			$guest = $guest_manager->getGuestByToken($rsvp_token);
+		}
+	}
 
-		// Send confirmation email
-		VT_Mail::sendRSVPConfirmation($guest->email, $event->title, $event->event_date, $rsvp_response);
+	// Handle guest-to-user conversion
+	if ($_POST['action'] === 'create_account' && VT_Security::verifyNonce($_POST['nonce'], 'vt_guest_conversion')) {
+		$user_data = array(
+			'username' => VT_Sanitize::textField($_POST['username']),
+			'password' => $_POST['password'],
+			'display_name' => VT_Sanitize::textField($_POST['display_name'] ?? $guest->name)
+		);
+
+		$user_result = $guest_manager->convertGuestToUser($guest->id, $user_data);
+
+		if (is_vt_error($user_result)) {
+			$error_message = $user_result->get_error_message();
+		} else {
+			// Redirect to event page as logged-in user
+			VT_Router::redirect('/events/' . $guest->event_slug . '?converted=1');
+			exit;
+		}
 	}
 }
 
 // Set up template variables
-$is_success_state = $rsvp_submitted || $quick_response;
-$display_status = $rsvp_submitted ? $rsvp_status : $quick_response;
-
-$page_title = $is_success_state
-	? 'RSVP Submitted!'
-	: sprintf('RSVP: %s', $event->title);
-
-$page_description = $is_success_state
-	? 'Thank you for your response. The host has been notified.'
-	: 'Please let us know if you can attend this event';
-
-$breadcrumbs = array();
-
-// Format event date
-$event_day = date('l', strtotime($event->event_date));
-$event_date_formatted = date('F j, Y', strtotime($event->event_date));
-$event_time_formatted = date('g:i A', strtotime($event->event_date));
+$page_title = sprintf('RSVP: %s', htmlspecialchars($guest->event_title));
+$page_description = 'Please confirm your attendance for this event';
+$event_date_formatted = date('l, F j, Y', strtotime($guest->event_date));
+$event_time_formatted = $guest->event_time ? date('g:i A', strtotime($guest->event_time)) : '';
+$pre_select = $_GET['pre_select'] ?? '';
 ?>
 
-<?php if ($is_success_state) : ?>
-	<!-- Success State -->
-	<div class="vt-section vt-text-center">
-		<div class="vt-mb-4">
-			<?php if ($display_status === 'confirmed') : ?>
-				<h2 class="vt-heading vt-heading-lg vt-text-primary vt-mb">Great! See you there!</h2>
-				<p class="vt-text-muted">Your RSVP has been confirmed. The host has been notified that you'll be attending.</p>
-			<?php elseif ($display_status === 'maybe') : ?>
-				<h2 class="vt-heading vt-heading-lg vt-text-primary vt-mb">Thanks for letting us know!</h2>
-				<p class="vt-text-muted">Your maybe response has been recorded. The host has been notified.</p>
-			<?php else : ?>
-				<h2 class="vt-heading vt-heading-lg vt-text-primary vt-mb">Sorry you can't make it!</h2>
-				<p class="vt-text-muted">Your response has been recorded. The host has been notified.</p>
-			<?php endif; ?>
-		</div>
-
-		<!-- Signup Prompt - Critical missing piece from docs -->
-		<div class="vt-card vt-mb-4 signup-prompt">
-			<div class="vt-card-body vt-text-center">
-				<h3 class="vt-heading vt-heading-md vt-mb-2">Want to create more events like this?</h3>
-				<p class="vt-text-muted vt-mb-4">Create a free VivalaTable account to host your own events and join communities.</p>
-
-				<div class="vt-flex vt-gap vt-justify-center vt-flex-wrap">
-					<a href="/register?guest_token=<?php echo urlencode($invitation_token); ?>&email=<?php echo urlencode($guest->email); ?>&name=<?php echo urlencode($guest->name); ?>" class="vt-btn vt-btn-primary">
-						Create Free Account
-					</a>
-					<button type="button" class="vt-btn vt-btn-secondary" onclick="this.closest('.signup-prompt').style.display='none'">
-						Maybe Later
-					</button>
-				</div>
-			</div>
-		</div>
-
-		<div class="vt-flex vt-gap vt-justify-center vt-flex-wrap">
-			<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn">
-				View Event Details
-			</a>
-			<a href="/events" class="vt-btn">
-				Browse Other Events
-			</a>
-		</div>
+<!-- Success/Error Messages -->
+<?php if ($success_message) : ?>
+	<div class="vt-alert vt-alert-success vt-mb-4">
+		<?php echo htmlspecialchars($success_message); ?>
 	</div>
+<?php endif; ?>
 
-<?php else : ?>
-	<!-- RSVP Form -->
-	<div class="vt-section vt-mb">
-		<div class="vt-section-header">
-			<h2 class="vt-heading vt-heading-lg vt-text-primary"><?php echo htmlspecialchars($event->title); ?></h2>
-			<p class="vt-text-muted">You're invited to this event</p>
-		</div>
+<?php if ($error_message) : ?>
+	<div class="vt-alert vt-alert-error vt-mb-4">
+		<?php echo htmlspecialchars($error_message); ?>
+	</div>
+<?php endif; ?>
 
-		<!-- Event Details -->
-		<div class="vt-card vt-mb-4">
-			<div class="vt-card-body">
-				<div class="vt-flex vt-flex-column vt-gap">
-					<div class="vt-flex vt-gap">
-						<div>
-							<strong>When:</strong>
-							<div><?php echo $event_day . ', ' . $event_date_formatted . ' at ' . $event_time_formatted; ?></div>
-						</div>
-					</div>
-					<?php if ($event->venue_info) : ?>
-					<div class="vt-flex vt-gap">
-						<div>
-							<strong>Where:</strong>
-							<div><?php echo htmlspecialchars($event->venue_info); ?></div>
-						</div>
-					</div>
-					<?php endif; ?>
-					<?php if ($event->description) : ?>
-					<div class="vt-flex vt-gap">
-						<div>
-							<strong>Details:</strong>
-							<div><?php echo nl2br(htmlspecialchars($event->description)); ?></div>
-						</div>
-					</div>
-					<?php endif; ?>
-				</div>
-			</div>
-		</div>
-
-		<?php if ($guest->status && $guest->status !== 'pending') : ?>
-		<div class="vt-alert vt-alert-info vt-mb-4">
-			<h4 class="vt-heading vt-heading-sm">You've already responded</h4>
-			<p>Your current response: <strong><?php echo ucfirst($guest->status); ?></strong>. You can update it below if needed.</p>
+<!-- Event Information -->
+<div class="vt-section vt-mb-6">
+	<div class="vt-card">
+		<?php if ($guest->featured_image): ?>
+		<div class="vt-card-image">
+			<img src="<?php echo htmlspecialchars($guest->featured_image); ?>"
+				 alt="<?php echo htmlspecialchars($guest->event_title); ?>"
+				 class="vt-card-image-img">
 		</div>
 		<?php endif; ?>
-	</div>
 
-	<!-- RSVP Form -->
-	<div class="vt-section">
-		<div class="vt-section-header">
-			<h3 class="vt-heading vt-heading-md">Please Respond</h3>
+		<div class="vt-card-header">
+			<h1 class="vt-heading vt-heading-lg vt-text-primary"><?php echo htmlspecialchars($guest->event_title); ?></h1>
 		</div>
 
-		<form method="post" class="vt-form">
-			<?php echo VT_Security::nonceField('vt_guest_rsvp', 'rsvp_nonce'); ?>
+		<div class="vt-card-body">
+			<div class="vt-event-meta vt-mb-4">
+				<div class="vt-flex vt-gap-4 vt-mb-2">
+					<div class="vt-flex vt-items-center vt-gap-2">
+						<strong><?php echo $event_date_formatted; ?></strong>
+					</div>
+					<?php if ($event_time_formatted): ?>
+					<div class="vt-flex vt-items-center vt-gap-2">
+						<span><?php echo $event_time_formatted; ?></span>
+					</div>
+					<?php endif; ?>
+				</div>
 
+				<?php if ($guest->venue_info): ?>
+				<div class="vt-flex vt-items-center vt-gap-2 vt-mb-2">
+					<span><?php echo htmlspecialchars($guest->venue_info); ?></span>
+				</div>
+				<?php endif; ?>
+			</div>
+
+			<?php if ($guest->description): ?>
+			<div class="vt-event-description vt-mb-4">
+				<p><?php echo nl2br(htmlspecialchars($guest->description)); ?></p>
+			</div>
+			<?php endif; ?>
+		</div>
+	</div>
+</div>
+
+<?php if ($guest->status === 'pending' || empty($success_message)): ?>
+<!-- RSVP Form -->
+<div class="vt-section">
+	<div class="vt-section-header">
+		<h2 class="vt-heading vt-heading-md vt-text-primary">Please Respond</h2>
+		<p class="vt-text-muted">Let us know if you can make it!</p>
+	</div>
+
+	<form method="post" class="vt-form" id="rsvp-form">
+		<input type="hidden" name="action" value="submit_rsvp">
+		<input type="hidden" name="nonce" value="<?php echo VT_Security::createNonce('vt_guest_rsvp'); ?>">
+
+		<!-- RSVP Status Selection -->
+		<div class="vt-form-group">
+			<label class="vt-form-label">Will you be attending?</label>
+			<div class="vt-flex vt-gap-4 vt-flex-wrap">
+				<label class="vt-flex-1">
+					<input type="radio" name="rsvp_status" value="yes"
+						   <?php echo ($pre_select === 'yes' || $guest->status === 'yes') ? 'checked' : ''; ?> required>
+					<span class="vt-btn vt-btn-lg">Yes, I'll be there</span>
+				</label>
+				<label class="vt-flex-1">
+					<input type="radio" name="rsvp_status" value="maybe"
+						   <?php echo ($pre_select === 'maybe' || $guest->status === 'maybe') ? 'checked' : ''; ?> required>
+					<span class="vt-btn vt-btn-lg vt-btn-secondary">Maybe</span>
+				</label>
+				<label class="vt-flex-1">
+					<input type="radio" name="rsvp_status" value="no"
+						   <?php echo ($pre_select === 'no' || $guest->status === 'no') ? 'checked' : ''; ?> required>
+					<span class="vt-btn vt-btn-lg vt-btn-danger">Can't make it</span>
+				</label>
+			</div>
+		</div>
+
+		<!-- Guest Details (shown when "Yes" or "Maybe" selected) -->
+		<div class="vt-guest-details vt-mt-4" style="display: none; border-top: 1px solid var(--vt-border); padding-top: 1rem;">
 			<div class="vt-form-group">
-				<label class="vt-form-label">Your Name *</label>
-				<input type="text" name="guest_name" class="vt-form-input"
-						value="<?php echo htmlspecialchars($guest->name ?? ''); ?>" required>
+				<label class="vt-form-label" for="guest_name">
+					Your Name *
+				</label>
+				<input type="text" id="guest_name" name="guest_name" class="vt-form-input"
+					   value="<?php echo htmlspecialchars($guest->name ?? ''); ?>" required>
 			</div>
 
 			<div class="vt-form-group">
-				<label class="vt-form-label">Will you attend? *</label>
-				<div class="vt-form-radio-group">
-					<label class="vt-form-radio">
-						<input type="radio" name="rsvp_response" value="confirmed"
-								<?php echo ($guest->status === 'confirmed') ? 'checked' : ''; ?> required>
-						<span>Yes, I'll be there!</span>
-					</label>
-					<label class="vt-form-radio">
-						<input type="radio" name="rsvp_response" value="maybe"
-								<?php echo ($guest->status === 'maybe') ? 'checked' : ''; ?> required>
-						<span>Maybe, I'm not sure yet</span>
-					</label>
-					<label class="vt-form-radio">
-						<input type="radio" name="rsvp_response" value="declined"
-								<?php echo ($guest->status === 'declined') ? 'checked' : ''; ?> required>
-						<span>Sorry, I can't make it</span>
-					</label>
+				<label class="vt-form-label" for="guest_phone">
+					Phone Number (Optional)
+				</label>
+				<input type="tel" id="guest_phone" name="guest_phone" class="vt-form-input"
+					   value="<?php echo htmlspecialchars($guest->phone ?? ''); ?>">
+			</div>
+
+			<div class="vt-form-group">
+				<label class="vt-form-label" for="dietary_restrictions">
+					Dietary Restrictions or Allergies (Optional)
+				</label>
+				<input type="text" id="dietary_restrictions" name="dietary_restrictions" class="vt-form-input"
+					   value="<?php echo htmlspecialchars($guest->dietary_restrictions ?? ''); ?>"
+					   placeholder="e.g., Vegetarian, Gluten-free, Nut allergy">
+			</div>
+
+			<!-- Plus One Section -->
+			<div class="vt-form-group">
+				<label class="vt-form-label">
+					<input type="checkbox" name="plus_one" value="1" id="plus_one_checkbox"
+						   <?php echo ($guest->plus_one > 0) ? 'checked' : ''; ?>>
+					I'm bringing a plus one
+				</label>
+
+				<div class="vt-plus-one-details vt-mt-2" style="<?php echo ($guest->plus_one > 0) ? '' : 'display: none;'; ?> margin-left: 1.5rem;">
+					<input type="text" name="plus_one_name" class="vt-form-input"
+						   value="<?php echo htmlspecialchars($guest->plus_one_name ?? ''); ?>"
+						   placeholder="Plus one's name (optional)">
 				</div>
 			</div>
 
 			<div class="vt-form-group">
-				<label class="vt-form-label">
-					<input type="checkbox" name="plus_one" value="1"
-							<?php echo ($guest->plus_one_name) ? 'checked' : ''; ?>>
-					I'm bringing a plus one
+				<label class="vt-form-label" for="guest_notes">
+					Special Requests or Comments (Optional)
 				</label>
-				<input type="text" name="plus_one_name" class="vt-form-input vt-mt-2"
-						placeholder="Plus one name (optional)"
-						value="<?php echo htmlspecialchars($guest->plus_one_name ?? ''); ?>">
+				<textarea id="guest_notes" name="guest_notes" class="vt-form-textarea" rows="3"
+						  placeholder="Any special requests or comments for the host..."><?php echo htmlspecialchars($guest->notes ?? ''); ?></textarea>
 			</div>
+		</div>
 
-			<div class="vt-form-group">
-				<label class="vt-form-label">Dietary Restrictions / Allergies</label>
-				<textarea name="dietary_restrictions" class="vt-form-textarea" rows="2"
-							placeholder="Let the host know about any dietary needs..."><?php echo htmlspecialchars($guest->dietary_restrictions ?? ''); ?></textarea>
+		<button type="submit" class="vt-btn vt-btn-primary vt-btn-lg">
+			Submit RSVP
+		</button>
+	</form>
+</div>
+
+<?php else: ?>
+
+<!-- RSVP Confirmation -->
+<div class="vt-section">
+	<div class="vt-card <?php echo $guest->status === 'yes' ? 'vt-card-success' : ($guest->status === 'no' ? 'vt-card-error' : 'vt-card-info'); ?>">
+		<div class="vt-card-header">
+			<h2 class="vt-heading vt-heading-md">RSVP Confirmed</h2>
+		</div>
+		<div class="vt-card-body">
+			<p class="vt-mb-4">
+				<strong>Your Response:</strong>
+				<span class="vt-rsvp-status vt-rsvp-status-<?php echo $guest->status; ?>">
+					<?php
+					$status_labels = array('yes' => 'Yes, I\'ll be there!', 'no' => 'Can\'t make it', 'maybe' => 'Maybe');
+					echo $status_labels[$guest->status] ?? ucfirst($guest->status);
+					?>
+				</span>
+			</p>
+
+			<?php if ($guest->status === 'yes'): ?>
+			<div class="vt-guest-info">
+				<?php if ($guest->name): ?>
+				<p><strong>Name:</strong> <?php echo htmlspecialchars($guest->name); ?></p>
+				<?php endif; ?>
+
+				<?php if ($guest->plus_one > 0): ?>
+				<p><strong>Plus One:</strong> <?php echo htmlspecialchars($guest->plus_one_name ?: 'Yes'); ?></p>
+				<?php endif; ?>
+
+				<?php if ($guest->dietary_restrictions): ?>
+				<p><strong>Dietary Restrictions:</strong> <?php echo htmlspecialchars($guest->dietary_restrictions); ?></p>
+				<?php endif; ?>
+
+				<?php if ($guest->notes): ?>
+				<p><strong>Notes:</strong> <?php echo htmlspecialchars($guest->notes); ?></p>
+				<?php endif; ?>
 			</div>
+			<?php endif; ?>
 
-			<div class="vt-form-group">
-				<label class="vt-form-label">Message to Host</label>
-				<textarea name="guest_notes" class="vt-form-textarea" rows="3"
-							placeholder="Any questions or notes for the host..."><?php echo htmlspecialchars($guest->notes ?? ''); ?></textarea>
-			</div>
-
-			<div class="vt-form-actions">
-				<button type="submit" class="vt-btn vt-btn-lg">
-					Submit RSVP
-				</button>
-				<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn vt-btn-lg">
-					View Event Page
+			<div class="vt-mt-4">
+				<a href="/events/<?php echo htmlspecialchars($guest->event_slug); ?>" class="vt-btn vt-btn-primary">
+					View Event Details
 				</a>
 			</div>
-		</form>
+		</div>
 	</div>
+
+	<!-- Account Creation Option -->
+	<?php if (!$guest->converted_user_id && $guest->status === 'yes'): ?>
+	<div class="vt-section vt-mt-6">
+		<div class="vt-card">
+			<div class="vt-card-header">
+				<h3 class="vt-heading vt-heading-sm">Create an Account</h3>
+			</div>
+			<div class="vt-card-body">
+				<p class="vt-mb-4">
+					Create a VivalaTable account to easily manage your RSVPs, host your own events, and stay connected with the community.
+				</p>
+
+				<form method="post" class="vt-form" id="account-creation-form">
+					<input type="hidden" name="action" value="create_account">
+					<input type="hidden" name="nonce" value="<?php echo VT_Security::createNonce('vt_guest_conversion'); ?>">
+
+					<div class="vt-form-group">
+						<label class="vt-form-label" for="username">
+							Username *
+						</label>
+						<input type="text" id="username" name="username" class="vt-form-input" required
+							   placeholder="Choose a username">
+					</div>
+
+					<div class="vt-form-group">
+						<label class="vt-form-label" for="display_name">
+							Display Name
+						</label>
+						<input type="text" id="display_name" name="display_name" class="vt-form-input"
+							   value="<?php echo htmlspecialchars($guest->name); ?>"
+							   placeholder="How you'd like to be shown to others">
+					</div>
+
+					<div class="vt-form-group">
+						<label class="vt-form-label" for="password">
+							Password *
+						</label>
+						<input type="password" id="password" name="password" class="vt-form-input" required
+							   placeholder="Choose a secure password">
+					</div>
+
+					<button type="submit" class="vt-btn vt-btn-primary">
+						Create Account
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<?php endif; ?>
+</div>
+
 <?php endif; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-	// Quick RSVP button functionality
-	const quickButtons = document.querySelectorAll('.quick-rsvp-btn');
-	const form = document.querySelector('.vt-form');
-	const guestNameInput = form ? form.querySelector('input[name="guest_name"]') : null;
+	const rsvpForm = document.getElementById('rsvp-form');
+	const rsvpOptions = document.querySelectorAll('input[name="rsvp_status"]');
+	const guestDetails = document.querySelector('.vt-guest-details');
+	const plusOneCheckbox = document.getElementById('plus_one_checkbox');
+	const plusOneDetails = document.querySelector('.vt-plus-one-details');
 
-	quickButtons.forEach(button => {
-		button.addEventListener('click', function() {
-			const response = this.dataset.response;
+	// Show/hide guest details based on RSVP selection
+	function toggleGuestDetails() {
+		const selectedStatus = document.querySelector('input[name="rsvp_status"]:checked');
+		if (selectedStatus && (selectedStatus.value === 'yes' || selectedStatus.value === 'maybe')) {
+			guestDetails.style.display = 'block';
+		} else {
+			guestDetails.style.display = 'none';
+		}
+	}
 
-			if (!guestNameInput || !guestNameInput.value.trim()) {
-				alert('Please enter your name first in the form below.');
-				guestNameInput.focus();
-				return;
-			}
+	// Show/hide plus one details
+	function togglePlusOneDetails() {
+		if (plusOneCheckbox && plusOneDetails) {
+			plusOneDetails.style.display = plusOneCheckbox.checked ? 'block' : 'none';
+		}
+	}
 
-			// Set the radio button
-			const radioButton = form.querySelector(`input[name="rsvp_response"][value="${response}"]`);
-			if (radioButton) {
-				radioButton.checked = true;
-
-				// Auto-submit form
-				if (confirm('Submit your RSVP now?')) {
-					form.submit();
-				}
-			}
-		});
+	// Event listeners
+	rsvpOptions.forEach(option => {
+		option.addEventListener('change', toggleGuestDetails);
 	});
+
+	if (plusOneCheckbox) {
+		plusOneCheckbox.addEventListener('change', togglePlusOneDetails);
+	}
+
+	// Initialize visibility
+	toggleGuestDetails();
+	togglePlusOneDetails();
+
+	// Pre-select quick response if provided
+	<?php if ($pre_select): ?>
+	toggleGuestDetails();
+	<?php endif; ?>
 });
 </script>

@@ -5,13 +5,13 @@
  */
 
 // Get event data
-if (!isset($event_id)) {
+if (!isset($event_slug)) {
     echo '<div class="vt-alert vt-alert-error">Event not found.</div>';
     return;
 }
 
 $event_manager = new VT_Event_Manager();
-$event = $event_manager->getEvent($event_id);
+$event = $event_manager->getEventBySlug($event_slug);
 
 if (!$event) {
     echo '<div class="vt-alert vt-alert-error">Event not found.</div>';
@@ -43,7 +43,7 @@ $is_host = $current_user && $current_user->id == $event->author_id;
 
         <?php if ($is_host): ?>
             <div>
-                <a href="/events/<?php echo $event->id; ?>/edit" class="vt-btn vt-btn-secondary vt-btn-sm">Edit Event</a>
+                <a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn vt-btn-secondary vt-btn-sm">Edit Event</a>
             </div>
         <?php endif; ?>
     </div>
@@ -120,9 +120,9 @@ $is_host = $current_user && $current_user->id == $event->author_id;
         <h3 class="vt-heading vt-heading-sm vt-mb-3">Host Actions</h3>
 
         <div class="vt-flex vt-gap-2">
-            <a href="/events/<?php echo $event->id; ?>/edit" class="vt-btn vt-btn-primary">Edit Event</a>
-            <a href="/events/<?php echo $event->id; ?>/invite" class="vt-btn vt-btn-secondary">Invite Guests</a>
-            <a href="/events/<?php echo $event->id; ?>/guests" class="vt-btn vt-btn-outline">Manage RSVPs</a>
+            <a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn vt-btn-primary">Edit Event</a>
+            <a href="/events/<?php echo $event->slug; ?>/invite" class="vt-btn vt-btn-secondary">Invite Guests</a>
+            <a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-outline">Manage RSVPs</a>
         </div>
     </div>
 <?php endif; ?>

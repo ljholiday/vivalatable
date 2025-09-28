@@ -5,8 +5,10 @@
  * Ported from PartyMinder WordPress plugin
  */
 
-// Get community ID from URL parameter
-$community_id = intval($_GET['community_id'] ?? 0);
+// Get community ID from route parameter (passed from VT_Pages::manageCommunity methods)
+if (!isset($community_id)) {
+	$community_id = intval($_GET['community_id'] ?? 0); // Fallback for backward compatibility
+}
 $active_tab = $_GET['tab'] ?? 'settings';
 
 if (!$community_id) {
@@ -140,17 +142,17 @@ $page_description = 'Manage settings, members, and invitations for your communit
 
 <!-- Tab Navigation -->
 <div class="vt-section vt-mb-4">
-	<div class="vt-tabs">
-		<a href="?community_id=<?php echo $community_id; ?>&tab=settings" class="vt-tab <?php echo ($active_tab === 'settings') ? 'active' : ''; ?>">
+	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+		<a href="?community_id=<?php echo $community_id; ?>&tab=settings" class="vt-btn <?php echo ($active_tab === 'settings') ? 'is-active' : ''; ?>">
 			Settings
 		</a>
-		<a href="?community_id=<?php echo $community_id; ?>&tab=members" class="vt-tab <?php echo ($active_tab === 'members') ? 'active' : ''; ?>">
+		<a href="?community_id=<?php echo $community_id; ?>&tab=members" class="vt-btn <?php echo ($active_tab === 'members') ? 'is-active' : ''; ?>">
 			Members
 		</a>
-		<a href="?community_id=<?php echo $community_id; ?>&tab=invitations" class="vt-tab <?php echo ($active_tab === 'invitations') ? 'active' : ''; ?>">
+		<a href="?community_id=<?php echo $community_id; ?>&tab=invitations" class="vt-btn <?php echo ($active_tab === 'invitations') ? 'is-active' : ''; ?>">
 			Invitations
 		</a>
-		<a href="/communities/<?php echo htmlspecialchars($community->slug); ?>" class="vt-tab">
+		<a href="/communities/<?php echo htmlspecialchars($community->slug); ?>" class="vt-btn">
 			View Community
 		</a>
 	</div>

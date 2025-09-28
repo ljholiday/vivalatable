@@ -73,7 +73,7 @@ class VT_Community_Ajax_Handler {
 			'role' => 'member',
 		);
 
-		$result = $community_manager->add_member($community_id, $member_data);
+		$result = $community_manager->addMember($community_id, $member_data);
 
 		if ($result) {
 			VT_Ajax::sendSuccess(array(
@@ -557,7 +557,7 @@ class VT_Community_Ajax_Handler {
 				'role' => 'member',
 			);
 
-			$result = $community_manager->add_member($community_id, $member_data);
+			$result = $community_manager->addMember($community_id, $member_data);
 		} else {
 			VT_Ajax::sendError('Please log in to accept this invitation.');
 		}
@@ -685,7 +685,7 @@ class VT_Community_Ajax_Handler {
 				'role' => 'member',
 			);
 
-			$result = $community_manager->add_member($community_id, $member_data);
+			$result = $community_manager->addMember($community_id, $member_data);
 
 			if (!$result) {
 				VT_Ajax::sendError('Failed to join community. Please try again.');
