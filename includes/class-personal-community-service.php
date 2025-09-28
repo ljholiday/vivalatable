@@ -10,7 +10,7 @@ class VT_Personal_Community_Service {
 	/**
 	 * Create a personal community for a user
 	 * personal_owner_user_id = $user_id, creator_id = $user_id,
-	 * visibility = 'public' (default), slug like pc_{user_id}
+	 * visibility = 'public' (default), slug like pc-{user_id}
 	 */
 	public static function createForUser($user_id) {
 		$db = VT_Database::getInstance();
@@ -49,7 +49,7 @@ class VT_Personal_Community_Service {
 		// Create community with personal_owner_user_id set
 		$community_data = array(
 			'name' => $user->display_name . "'s Personal Community",
-			'slug' => 'pc_' . $user_id,
+			'slug' => 'pc-' . $user_id,
 			'description' => 'Personal social feed for ' . $user->display_name,
 			'type' => 'personal',
 			'personal_owner_user_id' => $user_id,

@@ -25,7 +25,7 @@ $db = VT_Database::getInstance();
 $communities_table = $db->prefix . 'communities';
 $public_communities = $db->getResults(
     $db->prepare(
-        "SELECT * FROM $communities_table WHERE visibility = 'public' AND is_active = 1 ORDER BY created_at DESC LIMIT %d",
+        "SELECT * FROM $communities_table WHERE visibility = 'public' AND is_active = 1 AND personal_owner_user_id IS NULL ORDER BY created_at DESC LIMIT %d",
         20
     )
 );
