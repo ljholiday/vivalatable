@@ -533,6 +533,7 @@ Missing 9 critical methods:
 - [TODO] AI Assistant integration
 - [TODO] AT Protocol/Bluesky integration
 - [TODO] Advanced conversation system
+- [TODO] Create modular invitation/join/RSVP system (unified architecture)
 - [TODO] Migration scripts for production data
 
 ### Phase 4: Production Readiness

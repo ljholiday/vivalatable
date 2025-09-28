@@ -25,7 +25,7 @@ $db = VT_Database::getInstance();
 $communities_table = $db->prefix . 'communities';
 $public_communities = $db->getResults(
     $db->prepare(
-        "SELECT * FROM $communities_table WHERE visibility = 'public' AND is_active = 1 AND personal_owner_user_id IS NULL ORDER BY created_at DESC LIMIT %d",
+        "SELECT * FROM $communities_table WHERE visibility = 'public' AND is_active = 1 ORDER BY created_at DESC LIMIT %d",
         20
     )
 );
@@ -187,11 +187,20 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 						<?php if ($user_logged_in) : ?>
 							<?php
 							$is_member = $community_manager->isMember($community->id, $current_user->id);
+							$is_personal_community = !empty($community->personal_owner_user_id);
+							$join_text = $is_personal_community ? 'Connect' : 'Join';
 							?>
-							<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>"
-								class="vt-btn <?php echo $is_member ? 'vt-btn' : ''; ?>">
-								<?php echo $is_member ? 'Member' : 'Join'; ?>
-							</a>
+							<?php if ($is_member) : ?>
+								<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>" class="vt-btn">
+									Member
+								</a>
+							<?php else : ?>
+								<button class="vt-btn join-community-btn"
+									data-community-id="<?php echo $community->id; ?>"
+									data-community-name="<?php echo VT_Sanitize::escAttr($community->name); ?>">
+									<?php echo $join_text; ?>
+								</button>
+							<?php endif; ?>
 						<?php else : ?>
 							<a href="/login?redirect_to=<?php echo urlencode(VT_Router::getCurrentUri()); ?>" class="vt-btn">
 								Login to Join
@@ -245,35 +254,51 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 
 	// Join community functionality
-	const joinBtns = document.querySelectorAll('.join-btn');
+	const joinBtns = document.querySelectorAll('.join-community-btn');
 	joinBtns.forEach(btn => {
 		btn.addEventListener('click', function(e) {
-			if (this.classList.contains('member')) {
-				return; // Already a member, just redirect
-			}
-
 			e.preventDefault();
 
-			// Check if user is logged in
-			if (!window.vt_user || !window.vt_user.id) {
-				return; // Let the login redirect happen
-			}
+			const communityId = this.getAttribute('data-community-id');
+			const communityName = this.getAttribute('data-community-name');
+			const isPersonalCommunity = this.textContent.trim() === 'Connect';
 
-			const communityCard = this.closest('.community-card');
-			const communityName = communityCard.querySelector('h3 a').textContent;
-
-			if (!confirm('Join community "' + communityName + '"?')) {
+			const action = isPersonalCommunity ? 'Connect to' : 'Join';
+			if (!confirm(`${action} community "${communityName}"?`)) {
 				return;
 			}
 
-			// Get community ID from URL
-			const communityUrl = communityCard.querySelector('h3 a').href;
-			const urlParts = communityUrl.split('/');
-			const communitySlug = urlParts[urlParts.length - 2] || urlParts[urlParts.length - 1];
+			// Disable button to prevent double-clicks
+			this.disabled = true;
+			this.textContent = 'Joining...';
 
-			// For now, we'll redirect to the community page
-			// In Phase 3, this will be proper AJAX
-			window.location.href = communityUrl;
+			// Make AJAX request to join community
+			fetch('/api/communities/' + communityId + '/join', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: 'community_id=' + communityId + '&nonce=' + (window.vt_nonce || '')
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					this.textContent = 'Member';
+					this.disabled = false;
+					this.onclick = () => window.location.href = '/communities/' + data.community_slug;
+
+					// Show success message
+					alert(`Welcome to ${communityName}!`);
+				} else {
+					throw new Error(data.message || 'Failed to join community');
+				}
+			})
+			.catch(error => {
+				console.error('Error joining community:', error);
+				alert('Failed to join community: ' + error.message);
+				this.disabled = false;
+				this.textContent = isPersonalCommunity ? 'Connect' : 'Join';
+			});
 		});
 	});
 });

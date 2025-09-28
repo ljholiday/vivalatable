@@ -79,6 +79,7 @@ class VT_Community_Ajax_Handler {
 			VT_Ajax::sendSuccess(array(
 				'message' => sprintf('Welcome to %s!', $community->name),
 				'redirect_url' => VT_Config::get('site_url') . '/communities/' . $community->slug,
+				'community_slug' => $community->slug
 			));
 		} else {
 			VT_Ajax::sendError('Failed to join community. Please try again.');
