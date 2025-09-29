@@ -1,4 +1,6 @@
 # Ignore local database credentials
 config/database.php
 dev
+users
+error.log
 
