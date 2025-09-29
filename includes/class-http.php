@@ -77,7 +77,7 @@ class VT_Http {
                     background: #f1f1f1;
                     color: #333;
                 }
-                .error-container {
+                .vt-error-container {
                     max-width: 600px;
                     margin: 0 auto;
                     background: white;
@@ -115,7 +115,7 @@ class VT_Http {
             </style>
         </head>
         <body>
-            <div class="error-container">
+            <div class="vt-error-container">
                 <h1><?php echo VT_Sanitize::escHtml($code); ?></h1>
                 <h2><?php echo VT_Sanitize::escHtml($title); ?></h2>
                 <?php if ($message): ?>
