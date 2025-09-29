@@ -30,6 +30,7 @@ class VT_Personal_Community_Service {
 
 		// Check if user already has a personal community
 		$existing = self::getPersonalCommunityForUser($user_id);
+		error_log("VT_Personal_Community_Service::createForUser - Existing community check for user $user_id: " . ($existing ? 'FOUND' : 'NONE'));
 		if ($existing) {
 			return $existing->id;
 		}
