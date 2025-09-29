@@ -15,540 +15,219 @@ VivalaTable is a professional event management and community platform that repli
 - **AT Protocol/Bluesky Integration** - Social media connectivity
 
 ## Project Status: ACTIVE MIGRATION
-**Last Updated:** 2025-09-27
-**Current Phase:** Discovery and gap analysis
+**Last Updated:** 2025-09-28
+**Current Phase:** Community System Integration Issues
 
-## Quick Reference Commands
+## Understanding Circles of Trust
 
-### Database Comparison
+### Core Concept
+**Anti-algorithm social filtering system** that replaces traditional algorithmic feeds with relationship-based content visibility:
+
+1. **Inner Circle** - Content from communities you're a member of (direct relationships)
+2. **Trusted Circle** - Inner + content from communities created by members of your communities (friend-of-friend)
+3. **Extended Circle** - Trusted + content from the broader network (friend-of-friend-of-friend)
+
+### Implementation Status
+- **Conversations**: Circles of Trust filtering working correctly
+- **Communities**: Discovery system partially functional, membership sync broken
+- **Events**: Privacy system exists but needs validation
+
+### Critical Business Logic
+The Circles of Trust system is the **core differentiator** from traditional social platforms. It ensures users see content based on real social relationships rather than algorithmic manipulation.
+
+## Current Status Assessment
+
+### What's Working ✅
+- **Basic Infrastructure**: Database, routing, authentication, templates
+- **Event Management**: Core creation, listing, RSVP functionality
+- **User Management**: Registration, login, profiles
+- **Conversation System**: Circle filtering working properly
+- **Guest Token System**: 32-character tokens validated and working
+- **JavaScript Modularization**: Separated into focused files per code standards
+
+### Critical Issues Identified ❌
+
+#### 1. Community Membership System Broken
+**PROBLEM:** Community membership state is inconsistent across the platform
+- Joined communities don't appear in "My Communities" tab
+- Cross-user community visibility broken
+- Member status not properly synchronized
+- Community growth mechanism fails
+
+**ROOT CAUSE:** Incomplete integration between:
+- Community joining AJAX endpoint
+- Template membership queries
+- Cross-user visibility logic
+
+#### 2. Missing Community Management Methods
+**PROBLEM:** VT_Community_Manager missing 9 critical methods from PartyMinder
+- `getAdminCount()` - Admin validation
+- `removeMember()` - Member removal
+- `updateMemberRole()` - Role management
+- `getCommunityInvitations()` - Invitation system
+- `cancelInvitation()` - Invitation management
+- `getCommunityStats()` - Analytics
+- `generateUniqueSlug()` - URL generation
+- `ensureMemberHasDid()` - Identity management
+- `generateCommunityDid()` - Community identity
+
+**IMPACT:** Community administration and growth features non-functional
+
+#### 3. Personal Community Visibility Issues
+**PROBLEM:** Personal communities (user's own communities) not appearing in discovery
+- Personal communities should be visible to others in "All Communities"
+- Privacy/visibility logic not properly implemented
+- Community creation may not be setting proper visibility flags
+
+#### 4. Conversation Navigation Broken
+**PROBLEM:** Clicking community conversations redirects to wrong page
+- Community conversations should stay within community context
+- Instead redirects to general conversations page
+- Breaks community-specific discussion flow
+
+### Architecture Issues Discovered
+
+#### Community Discovery Logic Gap
+PartyMinder has sophisticated two-layer community system:
+1. **My Communities** - User's memberships with role badges and management options
+2. **All Communities** - Public discovery with join functionality
+
+VivalaTable implementation:
+- ✅ UI tabs exist and switch properly
+- ❌ Backend membership queries incomplete
+- ❌ Cross-user visibility broken
+- ❌ Join workflow partially functional
+
+#### Missing Integration Points
+- Community joining doesn't update "My Communities" view
+- Member status changes don't propagate across UI
+- Personal communities don't appear in public discovery
+- Community privacy/visibility settings incomplete
+
+## Phase Status: Community System Integration
+
+### Completed This Phase ✅
+- [DONE] Fixed JavaScript tab switching functionality
+- [DONE] Created community discovery template structure
+- [DONE] Implemented basic AJAX join endpoint
+- [DONE] Added missing Community Manager scaffolding methods
+- [DONE] Resolved JavaScript syntax errors
+
+### Current Issues Blocking Progress ❌
+- [CRITICAL] Community membership state synchronization broken
+- [CRITICAL] Cross-user community visibility not working
+- [CRITICAL] Personal community discovery broken
+- [CRITICAL] Missing core Community Manager methods
+- [CRITICAL] Conversation navigation redirects incorrectly
+
+### What We Learned About the Problem
+The community system requires **deep integration** across multiple layers:
+1. **Database Layer** - Membership queries and visibility logic
+2. **Business Logic** - Community Manager methods and privacy rules
+3. **UI Layer** - Template membership state and cross-user views
+4. **Navigation** - Proper routing and context preservation
+
+The current implementation addressed only the UI layer. The backend integration is incomplete.
+
+## Next Steps: Community System Deep Integration
+
+### Immediate Priority (Next Session)
+**Focus:** Fix community membership synchronization and cross-user visibility
+
+#### Step 1: Audit Community Membership Queries
 ```bash
-# Compare table structures
-mysql -u root -proot partyminder_db -e "SHOW TABLES LIKE 'wp_pm_%';"
-mysql -u root -proot vivalatable -e "SHOW TABLES LIKE 'vt_%';"
+# Test current membership detection
+curl -b /tmp/cookies.txt "http://localhost:8081/communities" | grep -A 10 "My Communities"
 
-# Check for missing tables
-mysql -u root -proot partyminder_db -e "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'wp_pm_%';" | sed 's/wp_pm_/vt_/' > expected_tables.txt
-mysql -u root -proot vivalatable -e "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'vt_%';" > actual_tables.txt
-diff expected_tables.txt actual_tables.txt
+# Check database state
+mysql -u vivalatable -p'ZNJnGg7GvJxYFPqM' -h 127.0.0.1 vivalatable -e "
+SELECT c.name, cm.user_id, cm.role, cm.status
+FROM vt_communities c
+JOIN vt_community_members cm ON c.id = cm.community_id
+WHERE cm.status = 'active'"
 ```
 
-### Route Coverage Analysis
+#### Step 2: Fix Community Manager Integration
+1. **Complete missing methods** - Implement all 9 missing Community Manager methods
+2. **Fix membership queries** - Ensure "My Communities" shows all user memberships
+3. **Fix visibility logic** - Ensure personal communities appear in "All Communities"
+4. **Test cross-user scenarios** - Verify user A can see user B's public communities
+
+#### Step 3: Fix Conversation Navigation
+1. **Audit conversation routing** - Fix community conversation redirects
+2. **Preserve community context** - Keep users within community discussion flow
+3. **Test conversation filtering** - Verify circle filtering still works
+
+#### Step 4: End-to-End Validation
+1. **Test complete user journey** - Create community → invite member → join → view content
+2. **Test circle filtering** - Verify content appears in correct circles
+3. **Test privacy controls** - Ensure private communities respect visibility rules
+
+### Success Criteria
+- User joins community → appears in "My Communities" immediately
+- Personal communities visible in other users' "All Communities" tab
+- Community conversations stay within community context
+- Member status updates propagate across all UI elements
+- Circle filtering shows correct content based on membership relationships
+
+### After Community System Fixed
+1. **Complete missing class implementations** (AI Assistant, AT Protocol)
+2. **Advanced privacy system validation**
+3. **Performance optimization**
+4. **Production readiness**
+
+## Key Architectural Decisions
+
+### Community System Architecture
+- **Two-Layer Discovery** - Personal membership vs public discovery
+- **Real-time Membership** - AJAX joining with immediate UI updates
+- **Privacy-First Design** - Circles of Trust determine visibility
+- **Context Preservation** - Community discussions stay in community context
+
+### Integration Requirements
+- Community joining must update both database and UI state
+- Membership queries must be consistent across all templates
+- Privacy rules must be enforced at database query level
+- Cross-user visibility must respect community privacy settings
+
+## Testing Strategy
+
+### Community System Tests
 ```bash
-# Find all route definitions
-grep -r "route\|path\|url" config/ includes/ | grep -E "(=>|->)"
-
-# Check for missing PartyMinder shortcodes
-grep -r "\[partyminder_" ~/Documents/partyminder/ | cut -d: -f2 | sort -u
-
-# Compare to VivalaTable routes
-grep -r "case.*:" includes/ | grep -E "(events|communities|dashboard|profile)"
+# Test 1: Join community and verify membership
+# Test 2: Check cross-user community visibility
+# Test 3: Verify personal community discovery
+# Test 4: Test conversation navigation context
+# Test 5: Validate circle filtering integration
 ```
 
-### Class Method Comparison
-```bash
-# List all PartyMinder class methods
-find ~/Documents/partyminder/includes -name "class-*.php" -exec grep -H "public function\|private function\|protected function" {} \;
-
-# List VivalaTable class methods
-find includes/ -name "class-*.php" -exec grep -H "public function\|private function\|protected function" {} \;
-
-# Compare specific classes
-diff <(grep "function " ~/Documents/partyminder/includes/class-event-manager.php) <(grep "function " includes/class-event-manager.php)
-```
-
-### AJAX Endpoint Discovery
-```bash
-# Find PartyMinder AJAX handlers
-grep -r "wp_ajax\|ajax_" ~/Documents/partyminder/
-
-# Find VivalaTable AJAX handlers
-grep -r "ajax\|xhr" includes/ templates/
-
-# Check for missing endpoints
-grep -r "action.*:" ~/Local\ Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/assets/js/ | cut -d: -f2 | sort -u
-```
-
-### Template/Page Completeness
-```bash
-# List PartyMinder template files
-find ~/Documents/partyminder/ -name "*content*.php" -o -name "*template*.php"
-
-# Compare to VivalaTable templates
-ls templates/ | sort
-```
-
-### CSS Class Coverage
-```bash
-# Extract all pm- classes from PartyMinder
-grep -ro "pm-[a-zA-Z0-9_-]*" ~/Local\ Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/ | sort -u > pm_classes.txt
-
-# Check if they exist as vt- classes in VivalaTable
-sed 's/pm-/vt-/' pm_classes.txt | while read class; do
-    if ! grep -q "$class" assets/css/vivalatable.css; then
-        echo "Missing: $class"
-    fi
-done
-```
-
-### Critical Feature Testing
-```bash
-# Guest system - 32-character tokens
-mysql -u root -proot vivalatable -e "SELECT LENGTH(token) FROM vt_guests LIMIT 5;"
-
-# Circles of Trust privacy system
-mysql -u root -proot vivalatable -e "SELECT DISTINCT privacy FROM vt_events;"
-mysql -u root -proot vivalatable -e "SELECT DISTINCT privacy FROM vt_communities;"
-
-# Community membership system
-mysql -u root -proot vivalatable -e "DESCRIBE vt_community_members;"
-```
-
-### Error Log Analysis
-```bash
-# Check for undefined methods/properties
-tail -f /var/log/apache2/error.log | grep -E "(undefined|fatal|notice)"
-
-# Look for missing files
-grep -r "include\|require" includes/ | while read line; do
-    file=$(echo "$line" | sed -n "s/.*['\"]([^'\"]*)['\"].*/\1/p")
-    [ ! -f "$file" ] && echo "Missing: $file"
-done
-```
-
-## Database Schema Analysis Results
-
-### PartyMinder Tables (Source):
-- [PASS] wp_partyminder_events → vt_events (EXISTS)
-- [PASS] wp_partyminder_guests → vt_guests (EXISTS)
-- [PASS] wp_partyminder_ai_interactions → vt_ai_interactions (EXISTS)
-- [PASS] wp_partyminder_conversation_topics → vt_conversation_topics (EXISTS)
-- [PASS] wp_partyminder_conversations → vt_conversations (EXISTS)
-- [PASS] wp_partyminder_conversation_replies → vt_conversation_replies (EXISTS)
-- [PASS] wp_partyminder_conversation_follows → vt_conversation_follows (EXISTS)
-- [PASS] wp_partyminder_event_invitations → vt_event_invitations (EXISTS)
-- [PASS] wp_partyminder_user_profiles → vt_user_profiles (EXISTS)
-- [PASS] wp_partyminder_communities → vt_communities (EXISTS)
-
-### Additional VivalaTable Tables (Not in PartyMinder):
-- [NEW] vt_analytics (tracking system)
-- [NEW] vt_at_protocol_sync (Bluesky integration)
-- [NEW] vt_at_protocol_sync_log (Bluesky sync logs)
-- [NEW] vt_community_events (community-specific events)
-- [NEW] vt_community_invitations (community invites)
-- [NEW] vt_community_members (membership system)
-- [NEW] vt_config (configuration system)
-- [REMOVED] vt_event_rsvps (DUPLICATE - Removed, using vt_guests)
-- [NEW] vt_member_identities (identity management)
-- [NEW] vt_post_images (image handling)
-- [REMOVED] vt_rsvps (DUPLICATE - Removed, using vt_guests)
-- [NEW] vt_search (search functionality)
-- [NEW] vt_sessions (session management)
-- [NEW] vt_social (social features)
-- [NEW] vt_user_activity_tracking (user analytics)
-- [NEW] vt_users (user management, replaces wp_users)
-
-### Schema Analysis Summary:
-- [PASS] **All core PartyMinder tables exist in VivalaTable**
-- [UPDATED] **VivalaTable has 14 additional tables** (PartyMinder: 10, VivalaTable: 24)
-- [TODO] **Need to verify column mappings** in existing tables
-- [FIXED] **Duplicate RSVP functionality resolved** - using vt_guests only
-
-## Discovered Issues
-
-### Fixed Issues
-- [FIXED] 2025-09-27: Added missing `description` field to getUserEvents() SELECT statement in class-event-manager.php:593
-- [FIXED] 2025-09-27: Completed database table comparison - all core tables exist
-- [FIXED] 2025-09-27: RSVP table redundancy resolved - dropped vt_rsvps and vt_event_rsvps, updated class-auth.php to use vt_guests only
-- [FIXED] 2025-09-27: Guest token system validated - 32-character tokens generated correctly, validation works properly
-- [FIXED] 2025-09-27: Class method coverage analysis complete - identified 2 missing classes and 10 missing methods
-- [FIXED] 2025-09-27: Fixed 25 naming convention violations across 4 class files - core functionality should now work
-- [FIXED] 2025-09-27: Fixed conversation listing functionality - community conversations now display properly on /conversations?filter=communities
-- [FIXED] 2025-09-27: Fixed undefined variable $active_filter warnings in conversations template
-- [FIXED] 2025-09-27: Fixed undefined property $excerpt in conversations template - using $content instead
-- [FIXED] 2025-09-27: Restored Circles of Trust navigation (Inner/Trusted/Extended) - core privacy filtering system
-
-### Critical Issues Found - RSVP Table Redundancy
-**PROBLEM:** Three duplicate RSVP tables exist with overlapping functionality:
-
-1. **vt_guests** (2 records) - PartyMinder equivalent, has 32-char tokens
-   - Columns: rsvp_token, temporary_guest_id, converted_user_id, event_id, name, email, status, etc.
-   - **PRIMARY TABLE** - Used by existing code
-
-2. **vt_rsvps** (0 records) - Duplicate functionality
-   - Similar columns but different structure
-   - **UNUSED** - No code references found
-
-3. **vt_event_rsvps** (0 records) - Another duplicate
-   - Similar columns, referenced in class-auth.php:200
-   - **PARTIALLY USED** - Only guest-to-user conversion
-
-**SOLUTION NEEDED:** Consolidate to vt_guests table only, update code references
-
-### Events Table Analysis
-**STATUS:** VivalaTable events table has ALL PartyMinder columns PLUS many additional features:
-- [PASS] Core columns match (id, title, slug, description, etc.)
-- [ENHANCED] Added features: recurring events, privacy controls, community linking
-- [REVIEW] Duplicate status columns: `event_status` vs `status`, `privacy` vs `visibility`
-
-## Guest Token System Test Results
-
-**VALIDATION COMPLETE - PASSING ALL REQUIREMENTS**
-
-### Token Generation Testing:
-- [PASS] VT_Security::generateToken(32) generates exactly 32-character tokens
-- [PASS] VT_Auth::generateGuestToken() generates exactly 32-character tokens
-- [PASS] All tokens use cryptographically secure random_bytes() function
-- [PASS] Tokens are properly hex-encoded (bin2hex format)
-
-### Token Storage Testing:
-- [PASS] Existing guest records have 32-character rsvp_token fields
-- [PASS] Existing guest records have 32-character temporary_guest_id fields
-- [PASS] Database schema supports varchar(32) for token fields
-
-### Token Validation Testing:
-- [PASS] VT_Guest_Manager::getGuestByToken() correctly validates existing tokens
-- [PASS] VT_Guest_Manager::processAnonymousRsvp() rejects tokens < 32 characters
-- [PASS] VT_Guest_Manager::processAnonymousRsvp() rejects tokens > 32 characters
-- [PASS] VT_Error class properly handles and reports validation failures
-- [PASS] Non-existent 32-character tokens are properly rejected
-
-### Integration Testing:
-- [PASS] Guest invitation system generates proper 32-character tokens
-- [PASS] Guest-to-user conversion system works with converted_user_id field
-- [PASS] Token-based RSVP URLs are properly constructed
-
-**CONCLUSION: Guest token system fully compliant with PartyMinder specifications**
-
-## Class Method Coverage Analysis Results
-
-### Core Class Mapping Status:
-- [PASS] event-manager → event-manager (all methods ported, camelCase naming)
-- [PASS] guest-manager → guest-manager (all core methods ported, enhanced functionality)
-- [PASS] community-manager → community-manager (core methods ported, some missing)
-- [PASS] conversation-manager → conversation-manager (exists)
-- [PASS] feature-flags → feature-flags (exists)
-- [PASS] profile-manager → profile-manager (exists)
-- [PASS] member-identity-manager → member-identity-manager (exists)
-- [MISSING] ai-assistant → **NO EQUIVALENT CLASS** (critical missing functionality)
-- [MISSING] at-protocol-manager → **NO EQUIVALENT CLASS** (Bluesky integration missing)
-
-### Event Manager - FULLY COVERED
-All 14 PartyMinder methods have VivalaTable equivalents (converted to camelCase):
-- accept_event_invitation → acceptEventInvitation
-- cancel_event_invitation → cancelEventInvitation
-- create_event → createEvent
-- Plus 9 additional enhanced methods for privacy and community features
-
-### Guest Manager - MOSTLY COVERED
-6/7 PartyMinder methods have equivalents, 1 missing:
-- [MISSING] get_rsvp_success_message (confirmation messaging)
-- All other core RSVP functionality present and working
-
-### Community Manager - PARTIALLY COVERED
-Missing 9 critical methods:
-- [MISSING] cancel_invitation
-- [MISSING] ensure_member_has_did
-- [MISSING] generate_community_did
-- [MISSING] generate_unique_slug
-- [MISSING] get_admin_count
-- [MISSING] get_community_invitations
-- [MISSING] get_community_stats
-- [MISSING] get_public_communities
-- [MISSING] remove_member
-- [MISSING] update_member_role
-
-### CRITICAL MISSING FUNCTIONALITY
-1. **AI Assistant Class** - Complete absence of AI planning features
-2. **AT Protocol Manager** - Complete absence of Bluesky integration
-3. **Community Management Gaps** - 9 missing methods affecting community functionality
-
-## Naming Convention Violation Fix
-
-**PROBLEM IDENTIFIED:** Fatal error due to snake_case method calls in class-conversation-manager.php
-**ROOT CAUSE:** Mixed naming conventions - methods defined as camelCase but called as snake_case
-
-## Naming Convention Fixes Summary
-
-### FIXED: class-conversation-manager.php (11 violations):
-- [FIXED] `getconversation_replies()` → `getConversationReplies()`
-- [FIXED] `generateconversation_slug()` → `generateConversationSlug()`
-- [FIXED] `validateconversation_privacy()` → `validateConversationPrivacy()`
-- [FIXED] `follow_conversation()` → `followConversation()`
-- [FIXED] `mark_conversation_updated()` → `markConversationUpdated()`
-- [FIXED] `getcommunity_privacy()` → `getCommunityPrivacy()`
-- [FIXED] `getevent_privacy()` → `getEventPrivacy()`
-- [FIXED] `validateprivacy_setting()` → `validatePrivacySetting()`
-
-### FIXED: class-member-identity-manager.php (9 violations):
-- [FIXED] `generatemember_did()` → `generateMemberDid()`
-- [FIXED] `generatemember_handle()` → `generateMemberHandle()`
-- [FIXED] `getdefault_pds()` → `getDefaultPds()`
-- [FIXED] `getmember_identity()` → `getMemberIdentity()` (5 instances)
-- [FIXED] `getdefault_at_protocol_data()` → `getDefaultAtProtocolData()`
-
-### FIXED: class-conversation-ajax-handler.php (3 violations):
-- [FIXED] `handlefile_upload()` → `handleFileUpload()`
-- [FIXED] `getcommunity_conversations()` → `getCommunityConversations()`
-
-### FIXED: class-event-manager.php (2 violations):
-- [FIXED] `validateprivacy_setting()` → `validatePrivacySetting()`
-
-### REMAINING: class-community-ajax-handler.php (5 violations):
-**These are calls to MISSING METHODS that need to be implemented:**
-- [MISSING] `getadmin_count()` → needs `getAdminCount()` method
-- [MISSING] `remove_member()` → needs `removeMember()` method
-- [MISSING] `updatemember_role()` → needs `updateMemberRole()` method
-
-### Fixed Method Calls in class-conversation-manager.php:
-**TOTAL FIXED:** 25 naming convention violations across 4 class files
-**REMAINING:** 5 violations in community-ajax-handler.php (require missing method implementation)
-
-## Conversation Display Fix
-
-**PROBLEM:** Conversations created in communities weren't visible on the main conversations page, even under the "Communities" filter tab.
-
-**ROOT CAUSE:**
-1. Template was showing "Loading conversations..." for logged-in users instead of actual content
-2. Filter buttons were JavaScript-based instead of direct links
-3. No actual conversation loading logic for filtered views
-
-**FIXES APPLIED:**
-1. **Added conversation loading logic** - Now properly loads conversations based on filter parameter
-2. **Replaced placeholder content** - Removed "Loading..." message, now shows actual conversations
-3. **Converted filter buttons to links** - Changed from JavaScript buttons to direct URL links (/conversations?filter=communities)
-4. **Added active state highlighting** - Filter tabs now show active state based on current filter
-
-**RESULT:** Community conversations now properly display when visiting `/conversations?filter=communities`
-
-### Remaining Pending Issues
-- [CRITICAL] Create class-ai-assistant.php with all PartyMinder AI methods
-- [CRITICAL] Create class-at-protocol-manager.php for Bluesky integration
-- [CRITICAL] Add missing Community Manager methods
-- [CRITICAL] Add JavaScript functionality for Circles of Trust filtering (Inner/Trusted/Extended)
-- [TODO] Add missing Guest Manager get_rsvp_success_message method
-- [TODO] Scan entire codebase for additional naming convention violations
-- [TODO] Validate privacy system implementation
-- [TODO] Verify all CSS classes have proper vt- prefixes
-- [TODO] Check other tables for similar redundancy issues
-- [TODO] Verify events table duplicate columns (event_status vs status, privacy vs visibility)
-
-## Core Features to Validate
-
-### 1. Guest System (CRITICAL)
-- [ ] 32-character token generation
-- [ ] Guest invitation emails
-- [ ] Guest RSVP without registration
-- [ ] Guest-to-user conversion process
-- [ ] Session management for guests
-
-### 2. Circles of Trust Privacy System (CRITICAL)
-- [ ] Event privacy levels
-- [ ] Community privacy controls
-- [ ] Conversation filtering
-- [ ] Access permission validation
-
-### 3. Event Management
-- [ ] Event creation
-- [ ] Event editing
-- [ ] RSVP system
-- [ ] Guest limits
-- [ ] Recurring events
-- [ ] Event cancellation
-
-### 4. Community Management
-- [ ] Community creation
-- [ ] Member invitations
-- [ ] Community events
-- [ ] Member management
-- [ ] Community privacy
-
-### 5. User Management
-- [ ] User registration
-- [ ] User authentication
-- [ ] Profile management
-- [ ] User stats tracking
-
-### 6. Conversation System
-- [ ] Discussion creation
-- [ ] Reply functionality
-- [ ] Privacy controls
-- [ ] Filtering by trust levels
-
-### 7. AI Assistant Integration
-- [ ] AI features availability
-- [ ] Integration points
-- [ ] Configuration
-
-### 8. AT Protocol/Bluesky Integration
-- [ ] Integration status
-- [ ] Configuration requirements
-
-## Migration Methodology Reminders
-
-### CRITICAL RULES
-1. NO FEATURE FLAGS - All functionality must be enabled and working
-2. Port each class methodically - copy method signatures exactly
-3. Map WordPress fields to VT database schema properly - DO NOT DELETE
-4. Understand what each removed piece of functionality was supposed to do
-5. Keep a record of what needs proper replacement vs. removal
-6. Replace WordPress database calls with PDO
-7. Replace WordPress functions with custom equivalents
-8. Test that migrated functionality actually works, not just that it doesn't throw errors
-
-### NEVER
-- Simply delete WordPress-specific fields without understanding their purpose
-- Remove functionality just because it references WordPress
-- Mark something "complete" when only syntax errors are fixed
-- Assume unused classes don't need to work
-- Use feature flags for anything
-
-## Testing Workflows
-
-### Guest Invitation Flow
-```php
-// 1. Create event
-// 2. Send guest invitation
-// 3. Guest RSVP without registration
-// 4. Convert guest to user (optional)
-```
-
-### Community Workflow
-```php
-// 1. Create community
-// 2. Invite members
-// 3. Create community event
-// 4. Member RSVP
-```
-
-### Privacy System Test
-```php
-// 1. Create private event
-// 2. Verify non-members can't see
-// 3. Test access levels
-// 4. Test conversation filtering
-```
-
-## Key File Locations
-
-### PartyMinder Source
-- Classes: `~/Documents/partyminder/includes/class-*.php`
-- Templates: `~/Documents/partyminder/templates/`
-- Assets: `~/Local Sites/socialpartyminderlocal/app/public/wp-content/plugins/partyminder/assets/`
-
-### VivalaTable Target
-- Classes: `includes/class-*.php`
-- Templates: `templates/`
-- Assets: `assets/`
-- Database: `vivalatable` database
-
-### Documentation
-- Migration docs: `~/Repositories/vivalatable-docs/`
-- Instructions: `INSTRUCTIONS.md`
-- Standards: `docs/CLAUDE.md`
-
-## What's Been Done
-
-### Infrastructure & Core Systems
-- [DONE] Database schema created with all required tables (vt_events, vt_communities, vt_guests, vt_users, etc.)
-- [DONE] Basic LAMP routing system implemented
-- [DONE] Core authentication system (VT_Auth class)
-- [DONE] Database singleton class with PDO
-- [DONE] Basic template system with layout inheritance
-- [DONE] CSS framework with vt- prefixed classes
-- [DONE] Configuration system replacing WordPress get_option/update_option
-
-### Event Management
-- [DONE] Event creation functionality (VT_Event_Manager)
-- [DONE] Event listing pages (/events)
-- [DONE] Basic RSVP system
-- [DONE] Event privacy controls
-- [DONE] Event templates and forms
-- [DONE] Fixed missing description field in getUserEvents()
-
-### Community Management
-- [DONE] Community creation functionality (VT_Community_Manager)
-- [DONE] Community listing pages (/communities)
-- [DONE] Basic membership system
-- [DONE] Community templates
-
-### User Management
-- [DONE] User registration and login
-- [DONE] Basic profile system
-- [DONE] User dashboard
-- [DONE] Authentication middleware
-
-## What's In Progress
-
-### Current Focus: Gap Analysis & Testing
-- [ACTIVE] Discovering missing functionality through systematic comparison
-- [ACTIVE] Testing existing features for completeness
-- [ACTIVE] Identifying broken or incomplete workflows
-- [ACTIVE] Validating database field mappings
-
-### Immediate Tasks
-- [ACTIVE] Running discovery scripts to find missing methods/features
-- [ACTIVE] Testing guest token system (32-character requirement)
-- [ACTIVE] Validating Circles of Trust privacy implementation
-
-## Key Decisions Made
-
-**NOTE: No emojis used in documentation per CLAUDE.md standards**
-
-### Architecture Decisions
-- [DECIDED] **No WordPress Dependencies** - Complete standalone LAMP application
-- [DECIDED] **No Feature Flags** - All functionality must be enabled and working
-- [DECIDED] **Preserve All PartyMinder Features** - Nothing gets removed, everything ported
-- [DECIDED] **CSS Prefix Strategy** - All classes use vt- prefix instead of pm-
-- [DECIDED] **Database Naming** - vt_ prefix for all tables
-- [DECIDED] **camelCase Methods** - All PHP methods use camelCase (not snake_case)
-
-### Security Decisions
-- [DECIDED] **CSRF Protection** - All forms require CSRF tokens
-- [DECIDED] **Output Escaping** - All output escaped with htmlspecialchars()
-- [DECIDED] **PDO Prepared Statements** - No direct SQL injection vulnerabilities
-- [DECIDED] **Session Management** - Custom session handling for guests and users
-
-### Migration Methodology
-- [DECIDED] **Methodical Class Porting** - Copy method signatures exactly, map fields properly
-- [DECIDED] **Test Each Method** - Ensure functionality works, not just syntax
-- [DECIDED] **Preserve Guest System** - 32-character tokens, RSVP without registration
-- [DECIDED] **Maintain Privacy System** - Circles of Trust anti-algorithm filtering
-
-## What's Next 🎯
-
-### Immediate Next Steps (This Session)
-1. [DONE] **Database Comparison Complete** - All core tables exist, found redundancy issues
-2. [DONE] **RSVP Table Redundancy Fixed** - Consolidated to vt_guests, removed duplicates
-3. [DONE] **Guest Token System Validated** - 32-character tokens working perfectly
-4. [DONE] **Class Method Analysis Complete** - Found missing classes and methods
-
-### Phase 2: Complete Feature Validation
-- [TODO] Validate all 8 core feature areas
-- [TODO] Test guest-to-user conversion process
-- [TODO] Verify privacy system filtering
-- [TODO] Ensure all AJAX endpoints work
-- [TODO] Validate all template rendering
-
-### Phase 3: Advanced Features
-- [TODO] AI Assistant integration
-- [TODO] AT Protocol/Bluesky integration
-- [TODO] Advanced conversation system
-- [TODO] Create modular invitation/join/RSVP system (unified architecture)
-- [TODO] Migration scripts for production data
-
-### Phase 4: Production Readiness
-- [TODO] Performance optimization
-- [TODO] Security audit
-- [TODO] Production deployment scripts
-- [TODO] Data migration validation
+### Critical User Journeys
+1. **New User Journey** - Register → discover communities → join → participate
+2. **Community Creator Journey** - Create community → invite members → manage discussions
+3. **Cross-User Discovery** - Browse public communities → join → access content
+4. **Privacy Validation** - Create private community → verify access controls
+
+## Critical Discovery: Personal Community Creation Broken
+
+**NEW FINDING (2025-09-28):** Created new user account - no communities visible including missing default personal community.
+
+**IMPLICATIONS:**
+- Personal community auto-creation during registration is broken
+- This explains why personal communities don't appear in "All Communities"
+- New users have no starting point for community participation
+- Registration workflow incomplete
+
+**ROOT CAUSE ANALYSIS NEEDED:**
+- Check if personal communities are created during user registration
+- Verify community creation sets proper visibility flags
+- Audit user registration workflow for missing community setup
+
+**PRIORITY ESCALATION:** This is now a **registration system bug** not just a discovery bug.
 
 ## Notes
 
-Update this file with:
-- New discovered issues
-- Fixed problems
-- Test results
-- Migration progress
-- Important findings
+This script reflects our current understanding after discovering the community system integration issues. The focus has shifted from basic functionality to deep system integration across multiple architectural layers.
 
-Keep this file current so we can resume work at any time.
+The Circles of Trust system is working for conversations but needs proper integration with the community membership and discovery system to function as intended.
+
+**Critical Finding:** New user registration does not create personal communities, breaking the fundamental user onboarding experience.

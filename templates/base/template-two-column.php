@@ -72,5 +72,11 @@
 </div>
 
 <script src="/assets/js/vivalatable.js"></script>
+<?php if (strpos(VT_Router::getCurrentUri(), '/conversations') !== false) : ?>
+<script src="/assets/js/conversations.js"></script>
+<?php endif; ?>
+<?php if (strpos(VT_Router::getCurrentUri(), '/communities') !== false) : ?>
+<script src="/assets/js/communities.js"></script>
+<?php endif; ?>
 </body>
 </html>

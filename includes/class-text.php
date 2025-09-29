@@ -58,6 +58,9 @@ class VT_Text {
 	 * Format time ago
 	 */
 	public static function timeAgo($datetime) {
+		if (empty($datetime)) {
+			return 'unknown';
+		}
 		$time = time() - strtotime($datetime);
 
 		if ($time < 60) {

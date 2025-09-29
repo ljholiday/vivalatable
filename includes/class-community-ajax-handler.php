@@ -105,18 +105,19 @@ class VT_Community_Ajax_Handler {
 			'email' => $current_user->email,
 			'display_name' => $current_user->display_name,
 			'role' => 'member',
+			'status' => 'active',
 		);
 
-		$result = $community_manager->addMember($community_id, $member_data);
+		$result = $community_manager->addMember($community_id, $member_data, true);
 
-		if ($result) {
+		if (is_vt_error($result)) {
+			VT_Ajax::sendError($result->getErrorMessage());
+		} else {
 			VT_Ajax::sendSuccess(array(
 				'message' => sprintf('Welcome to %s!', $community->name),
 				'redirect_url' => VT_Config::get('site_url') . '/communities/' . $community->slug,
 				'community_slug' => $community->slug
 			));
-		} else {
-			VT_Ajax::sendError('Failed to join community. Please try again.');
 		}
 	}
 

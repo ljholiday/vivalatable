@@ -14,7 +14,8 @@
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:github.com)",
       "Bash(grep:*)",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Read(//private/var/log/**)"
     ],
     "deny": [],
     "ask": []

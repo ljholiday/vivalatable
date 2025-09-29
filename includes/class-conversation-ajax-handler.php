@@ -330,30 +330,54 @@ class VT_Conversation_Ajax_Handler {
 		$total_pages = ceil($total_conversations / $per_page);
 		$has_more = $page < $total_pages;
 
-		// Prepare conversations data for JSON response
-		$conversations_data = array();
+		// Render conversations as HTML
+		$html = '';
 		if (!empty($conversations)) {
 			foreach ($conversations as $conversation) {
-				$conversations_data[] = array(
-					'id' => $conversation->id,
-					'title' => $conversation->title,
-					'content' => $conversation->content,
-					'slug' => $conversation->slug,
-					'author_name' => $conversation->author_name,
-					'event_id' => $conversation->event_id ?? null,
-					'community_id' => $conversation->community_id ?? null,
-					'reply_count' => intval($conversation->reply_count ?? 0),
-					'created_at' => $conversation->created_at,
-					'event_title' => $conversation->event_title ?? null,
-					'community_name' => $conversation->community_name ?? null
-				);
+				$html .= '<div class="vt-section">';
+				$html .= '<div class="vt-flex vt-flex-between vt-mb-4">';
+				$html .= '<h3 class="vt-heading vt-heading-sm">';
+				$html .= '<a href="/conversations/' . htmlspecialchars($conversation->slug) . '" class="vt-text-primary">';
+				$html .= htmlspecialchars($conversation_manager->getDisplayTitle($conversation));
+				$html .= '</a>';
+				$html .= '</h3>';
+				$html .= '</div>';
+
+				$html .= '<div class="vt-mb-4">';
+				$html .= '<div class="vt-flex vt-gap vt-mb-4">';
+				$html .= '<span class="vt-text-muted">';
+				if ($conversation->event_id) {
+					$html .= 'Event Discussion';
+				} elseif ($conversation->community_id) {
+					$html .= 'Community Discussion';
+				} else {
+					$html .= 'General Discussion';
+				}
+				$html .= '</span>';
+				$html .= '</div>';
+				$html .= '</div>';
+
+				if ($conversation->content) {
+					$html .= '<div class="vt-mb-4">';
+					$html .= '<p class="vt-text-muted">' . htmlspecialchars(VT_Text::truncateWords($conversation->content, 15)) . '</p>';
+					$html .= '</div>';
+				}
+
+				$html .= '<div class="vt-flex vt-flex-between">';
+				$html .= '<div class="vt-stat">';
+				$html .= '<div class="vt-stat-number vt-text-primary">' . intval($conversation->reply_count ?? 0) . '</div>';
+				$html .= '<div class="vt-stat-label">Replies</div>';
+				$html .= '</div>';
+				$html .= '<a href="/conversations/' . htmlspecialchars($conversation->slug) . '" class="vt-btn">View Details</a>';
+				$html .= '</div>';
+				$html .= '</div>';
 			}
 		}
 
 		header('Content-Type: application/json');
 		echo json_encode(array(
 			'success' => true,
-			'conversations' => $conversations_data,
+			'html' => $html,
 			'meta' => array(
 				'count' => $total_conversations,
 				'page' => $page,

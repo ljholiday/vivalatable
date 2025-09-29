@@ -86,6 +86,7 @@ $active_tab = $_GET['tab'] ?? 'events';
 $member_count = $community_manager->getMemberCount($community->id);
 $recent_events = $event_manager->getCommunityEvents($community->id, 10);
 $recent_conversations = $conversation_manager->getCommunityConversations($community->id, 10);
+$community_members = $community_manager->getCommunityMembers($community->id);
 
 // Set up template variables
 $page_title = htmlspecialchars($community->name);
@@ -264,10 +265,49 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 <?php elseif ($active_tab === 'members') : ?>
 	<!-- Members Tab -->
 	<div class="vt-section">
-		<h3 class="vt-heading vt-heading-md vt-mb-4">Community Members</h3>
-
-		<div class="vt-text-center vt-p-4">
-			<p class="vt-text-muted">Member management functionality coming soon!</p>
+		<div class="vt-flex vt-flex-between vt-mb-4">
+			<h3 class="vt-heading vt-heading-md">Community Members</h3>
+			<?php if ($is_member && $user_role === 'admin') : ?>
+				<button class="vt-btn" onclick="alert('Invite functionality coming soon!')">
+					Invite Members
+				</button>
+			<?php endif; ?>
 		</div>
+
+		<?php if (!empty($community_members)) : ?>
+			<div class="vt-grid vt-grid-2 vt-gap">
+				<?php foreach ($community_members as $member) : ?>
+					<div class="vt-section vt-border vt-p-4">
+						<div class="vt-flex vt-flex-between vt-mb-2">
+							<div class="vt-flex-1">
+								<h4 class="vt-heading vt-heading-sm vt-mb-1">
+									<?php echo htmlspecialchars($member->display_name ?: $member->email); ?>
+								</h4>
+								<p class="vt-text-muted vt-text-sm">
+									<?php echo htmlspecialchars($member->email); ?>
+								</p>
+							</div>
+							<div class="vt-text-right">
+								<span class="vt-badge vt-badge-<?php echo $member->role === 'admin' ? 'primary' : 'secondary'; ?>">
+									<?php echo htmlspecialchars(ucfirst($member->role)); ?>
+								</span>
+							</div>
+						</div>
+						<div class="vt-text-muted vt-text-sm">
+							Joined <?php echo date('M j, Y', strtotime($member->joined_at)); ?>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		<?php else : ?>
+			<div class="vt-text-center vt-p-4">
+				<p class="vt-text-muted vt-mb-4">No members found.</p>
+				<?php if ($is_member && $user_role === 'admin') : ?>
+					<button class="vt-btn" onclick="alert('Invite functionality coming soon!')">
+						Invite First Member
+					</button>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
 	</div>
 <?php endif; ?>

@@ -64,63 +64,71 @@ class VT_Conversation_Feed {
 	}
 
 	/**
-	 * Get circles data for a viewer (simplified version of PartyMinder's circles resolver)
+	 * Get circles data for a viewer (correct implementation based on PartyMinder)
 	 */
 	private static function getCirclesData($viewer_id) {
 		$db = VT_Database::getInstance();
 		$communities_table = $db->prefix . 'communities';
 		$members_table = $db->prefix . 'community_members';
 
-		// Inner: Communities created by the viewer
+		// Inner: Communities the user belongs to + all members of those communities
 		$inner_communities = $db->getCol(
 			$db->prepare(
-				"SELECT id FROM $communities_table
-				 WHERE creator_id = %d AND is_active = 1",
+				"SELECT community_id FROM $members_table
+				 WHERE user_id = %d AND status = 'active'",
 				$viewer_id
 			)
 		);
 		$inner_creators = array($viewer_id);
 
-		// Trusted: Get all members of inner communities, then get communities they created
-		$trusted_member_ids = array();
 		if (!empty($inner_communities)) {
 			$community_ids_in = implode(',', array_map('intval', $inner_communities));
-			$trusted_member_ids = $db->getCol(
+			$inner_creators = $db->getCol(
 				"SELECT DISTINCT user_id FROM $members_table
 				 WHERE community_id IN ($community_ids_in) AND status = 'active'"
 			);
 		}
 
-		$trusted_communities = array();
-		$trusted_creators = array();
-		if (!empty($trusted_member_ids)) {
-			$user_ids_in = implode(',', array_map('intval', $trusted_member_ids));
-			$trusted_communities = $db->getCol(
-				"SELECT id FROM $communities_table
-				 WHERE creator_id IN ($user_ids_in) AND is_active = 1"
+		// Trusted: Inner + communities that inner circle members belong to + their members
+		$trusted_communities = $inner_communities;
+		$trusted_creators = $inner_creators;
+
+		if (!empty($inner_creators)) {
+			$user_ids_in = implode(',', array_map('intval', $inner_creators));
+			$additional_communities = $db->getCol(
+				"SELECT DISTINCT community_id FROM $members_table
+				 WHERE user_id IN ($user_ids_in) AND status = 'active'"
 			);
-			$trusted_creators = $trusted_member_ids;
+			$trusted_communities = array_unique(array_merge($trusted_communities, $additional_communities));
+
+			if (!empty($trusted_communities)) {
+				$community_ids_in = implode(',', array_map('intval', $trusted_communities));
+				$trusted_creators = $db->getCol(
+					"SELECT DISTINCT user_id FROM $members_table
+					 WHERE community_id IN ($community_ids_in) AND status = 'active'"
+				);
+			}
 		}
 
-		// Extended: Get all members of trusted communities, then get communities they created
-		$extended_member_ids = array();
-		if (!empty($trusted_communities)) {
-			$community_ids_in = implode(',', array_map('intval', $trusted_communities));
-			$extended_member_ids = $db->getCol(
-				"SELECT DISTINCT user_id FROM $members_table
-				 WHERE community_id IN ($community_ids_in) AND status = 'active'"
-			);
-		}
+		// Extended: Trusted + communities that trusted circle members belong to + their members
+		$extended_communities = $trusted_communities;
+		$extended_creators = $trusted_creators;
 
-		$extended_communities = array();
-		$extended_creators = array();
-		if (!empty($extended_member_ids)) {
-			$user_ids_in = implode(',', array_map('intval', $extended_member_ids));
-			$extended_communities = $db->getCol(
-				"SELECT id FROM $communities_table
-				 WHERE creator_id IN ($user_ids_in) AND is_active = 1"
+		if (!empty($trusted_creators)) {
+			$user_ids_in = implode(',', array_map('intval', $trusted_creators));
+			$additional_communities = $db->getCol(
+				"SELECT DISTINCT community_id FROM $members_table
+				 WHERE user_id IN ($user_ids_in) AND status = 'active'"
 			);
-			$extended_creators = $extended_member_ids;
+			$extended_communities = array_unique(array_merge($extended_communities, $additional_communities));
+
+			if (!empty($extended_communities)) {
+				$community_ids_in = implode(',', array_map('intval', $extended_communities));
+				$extended_creators = $db->getCol(
+					"SELECT DISTINCT user_id FROM $members_table
+					 WHERE community_id IN ($community_ids_in) AND status = 'active'"
+				);
+			}
 		}
 
 		return array(

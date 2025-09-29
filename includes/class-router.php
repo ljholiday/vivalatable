@@ -92,6 +92,7 @@ class VT_Router {
 
 		// AJAX routes
 		self::addRoute('POST', '/ajax/conversations', array('VT_Conversation_Ajax_Handler', 'ajaxGetConversations'));
+		self::addRoute('POST', '/ajax/communities', array('VT_Community_Ajax_Handler', 'ajaxGetCommunities'));
 	}
 
 	/**
