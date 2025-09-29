@@ -90,9 +90,9 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 											<?php echo VT_Sanitize::escHtml(ucfirst($community->role)); ?>
 										</span>
 										<?php endif; ?>
-										<?php if ($community->visibility === 'private') : ?>
-											<span class="vt-badge vt-badge-secondary">Private</span>
-										<?php endif; ?>
+										<span class="vt-badge vt-badge-<?php echo $community->visibility === 'private' ? 'secondary' : 'success'; ?>">
+											<?php echo VT_Sanitize::escHtml(ucfirst($community->visibility)); ?>
+										</span>
 									</div>
 									<div class="vt-text-muted">
 										<?php if (!empty($community->joined_at)) : ?>

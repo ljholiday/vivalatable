@@ -33,11 +33,14 @@ $is_host = $current_user && $current_user->id == $event->author_id;
     <div class="vt-flex vt-justify-between vt-align-center vt-mb-4">
         <div>
             <h1 class="vt-heading vt-heading-lg vt-mb-2"><?php echo VT_Sanitize::html($event->title); ?></h1>
-            <div class="vt-text-muted">
-                <span><?php echo date('F j, Y', strtotime($event->event_date)); ?></span>
+            <div class="vt-flex vt-gap vt-items-center vt-mb-2">
+                <span class="vt-text-muted"><?php echo date('F j, Y', strtotime($event->event_date)); ?></span>
                 <?php if ($event->event_time): ?>
-                    <span class="vt-ml-4">at <?php echo VT_Sanitize::html($event->event_time); ?></span>
+                    <span class="vt-text-muted">at <?php echo VT_Sanitize::html($event->event_time); ?></span>
                 <?php endif; ?>
+                <span class="vt-badge vt-badge-<?php echo $event->privacy === 'private' ? 'secondary' : 'success'; ?>">
+                    <?php echo VT_Sanitize::escHtml(ucfirst($event->privacy)); ?>
+                </span>
             </div>
         </div>
 

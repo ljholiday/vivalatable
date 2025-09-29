@@ -116,6 +116,9 @@ $breadcrumbs = array();
 									}
 									?>
 								</span>
+								<span class="vt-badge vt-badge-<?php echo $conversation->privacy === 'private' ? 'secondary' : 'success'; ?>">
+									<?php echo VT_Sanitize::escHtml(ucfirst($conversation->privacy)); ?>
+								</span>
 							</div>
 						</div>
 
