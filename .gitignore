@@ -1,6 +1,14 @@
-# Ignore local database credentials
+# Local database credentials
 config/database.php
+
+# Local development ducumentation
 dev
-users
+.claude
+
+# Logs
 error.log
+
+# Uploaded files 
+upload/
+
 
