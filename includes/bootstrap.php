@@ -27,7 +27,19 @@ if (file_exists(VT_PLUGIN_DIR . '/.env')) {
     }
 }
 
-// Load core classes
+// Load modern architecture classes
+require_once __DIR__ . '/Container.php';
+require_once __DIR__ . '/Database/Connection.php';
+require_once __DIR__ . '/Database/QueryBuilder.php';
+require_once __DIR__ . '/Http/Request.php';
+require_once __DIR__ . '/Http/Response.php';
+require_once __DIR__ . '/Auth/UserRepository.php';
+require_once __DIR__ . '/Auth/AuthenticationService.php';
+require_once __DIR__ . '/Validation/InputSanitizer.php';
+require_once __DIR__ . '/Validation/ValidatorService.php';
+require_once __DIR__ . '/Security/SecurityService.php';
+
+// Load legacy VT classes (for gradual migration)
 require_once __DIR__ . '/class-config.php';
 require_once __DIR__ . '/class-database.php';
 require_once __DIR__ . '/class-auth.php';
@@ -37,8 +49,12 @@ require_once __DIR__ . '/class-mail.php';
 require_once __DIR__ . '/class-time.php';
 require_once __DIR__ . '/class-http.php';
 
+// Initialize modern dependency injection container
+$container = new Container();
+$container->createCompatibilityLayer();
+
 // WordPress functions have been replaced with native VT class methods
-// No translation layer needed
+// Phase 1: Modern architecture foundation added alongside legacy system
 
 // Load all business logic classes
 $class_files = glob(__DIR__ . '/class-*.php');
