@@ -68,7 +68,7 @@ class VT_Http {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title><?php echo VT_Sanitize::escHtml($title); ?> - VivalaTable</title>
+            <title><?php echo vt_service('validation.validator')->escHtml($title); ?> - VivalaTable</title>
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -116,10 +116,10 @@ class VT_Http {
         </head>
         <body>
             <div class="vt-error-container">
-                <h1><?php echo VT_Sanitize::escHtml($code); ?></h1>
-                <h2><?php echo VT_Sanitize::escHtml($title); ?></h2>
+                <h1><?php echo vt_service('validation.validator')->escHtml($code); ?></h1>
+                <h2><?php echo vt_service('validation.validator')->escHtml($title); ?></h2>
                 <?php if ($message): ?>
-                    <p><?php echo VT_Sanitize::escHtml($message); ?></p>
+                    <p><?php echo vt_service('validation.validator')->escHtml($message); ?></p>
                 <?php endif; ?>
                 <a href="/" class="btn">Go Home</a>
             </div>
@@ -213,7 +213,7 @@ class VT_Http {
             return array_map([self::class, 'sanitizeInput'], $input);
         }
 
-        return VT_Sanitize::textField($input);
+        return vt_service('validation.validator')->textField($input);
     }
 
     public static function validateReferer() {

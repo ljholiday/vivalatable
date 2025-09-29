@@ -51,20 +51,20 @@ class VT_Conversation_Ajax_Handler {
 	}
 
 	public function ajaxCreateConversation() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
-		$current_user = VT_Auth::getCurrentUser();
+		$current_user = vt_service('auth.service')->getCurrentUser();
 		$user_email = '';
 		$user_name = '';
 		$user_id = 0;
 
-		if (VT_Auth::isLoggedIn()) {
+		if (vt_service('auth.service')->isLoggedIn()) {
 			$user_email = $current_user->email;
 			$user_name = $current_user->display_name;
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		} else {
-			$user_email = VT_Sanitize::email($_POST['guest_email'] ?? '');
-			$user_name = VT_Sanitize::textField($_POST['guest_name'] ?? '');
+			$user_email = vt_service('validation.validator')->email($_POST['guest_email'] ?? '');
+			$user_name = vt_service('validation.validator')->textField($_POST['guest_name'] ?? '');
 			if (empty($user_email) || empty($user_name)) {
 				VT_Ajax::sendError('Please provide your name and email to start a conversation.');
 			}
@@ -72,8 +72,8 @@ class VT_Conversation_Ajax_Handler {
 
 		$event_id = intval($_POST['event_id'] ?? 0);
 		$community_id = intval($_POST['community_id'] ?? 0);
-		$title = VT_Sanitize::textField($_POST['title'] ?? '');
-		$content = VT_Security::ksesPost($_POST['content'] ?? '');
+		$title = vt_service('validation.validator')->textField($_POST['title'] ?? '');
+		$content = vt_service('validation.sanitizer')->richText($_POST['content'] ?? '');
 
 		if (empty($title) || empty($content)) {
 			VT_Ajax::sendError('Please fill in all required fields.');
@@ -143,7 +143,7 @@ class VT_Conversation_Ajax_Handler {
 			}
 
 			// Store success data in transient for non-AJAX fallback
-			$session_id = VT_Auth::isLoggedIn() ? VT_Auth::getCurrentUserId() : session_id();
+			$session_id = vt_service('auth.service')->isLoggedIn() ? vt_service('auth.service')->getCurrentUserId() : session_id();
 			$transient_key = 'vt_conversation_created_' . $session_id;
 
 			VT_Transient::set($transient_key, array(
@@ -159,20 +159,20 @@ class VT_Conversation_Ajax_Handler {
 	}
 
 	public function ajaxAddReply() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
-		$current_user = VT_Auth::getCurrentUser();
+		$current_user = vt_service('auth.service')->getCurrentUser();
 		$user_email = '';
 		$user_name = '';
 		$user_id = 0;
 
-		if (VT_Auth::isLoggedIn()) {
+		if (vt_service('auth.service')->isLoggedIn()) {
 			$user_email = $current_user->email;
 			$user_name = $current_user->display_name;
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		} else {
-			$user_email = VT_Sanitize::email($_POST['guest_email'] ?? '');
-			$user_name = VT_Sanitize::textField($_POST['guest_name'] ?? '');
+			$user_email = vt_service('validation.validator')->email($_POST['guest_email'] ?? '');
+			$user_name = vt_service('validation.validator')->textField($_POST['guest_name'] ?? '');
 			if (empty($user_email) || empty($user_name)) {
 				VT_Ajax::sendError('Please provide your name and email to reply.');
 			}
@@ -180,7 +180,7 @@ class VT_Conversation_Ajax_Handler {
 
 		$conversation_id = intval($_POST['conversation_id'] ?? 0);
 		$parent_reply_id = intval($_POST['parent_reply_id'] ?? 0) ?: null;
-		$content = VT_Security::ksesPost($_POST['content'] ?? '');
+		$content = vt_service('validation.sanitizer')->richText($_POST['content'] ?? '');
 
 		if (empty($conversation_id) || empty($content)) {
 			VT_Ajax::sendError('Please provide a message to reply.');
@@ -206,11 +206,11 @@ class VT_Conversation_Ajax_Handler {
 
 						// Add image to content if it's an image file
 						if (strpos($file['type'], 'image/') === 0) {
-							$content .= "\n\n<img src=\"" . VT_Sanitize::escUrl($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
+							$content .= "\n\n<img src=\"" . vt_service('validation.validator')->escUrl($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
 						} else {
 							// For non-images, add as a download link
-							$filename = VT_Sanitize::fileName($file['name']);
-							$content .= "\n\n<a href=\"" . VT_Sanitize::escUrl($attachment_url) . "\" target=\"_blank\">📎 " . VT_Sanitize::escHtml($filename) . "</a>";
+							$filename = vt_service('validation.sanitizer')->filename($file['name']);
+							$content .= "\n\n<a href=\"" . vt_service('validation.validator')->escUrl($attachment_url) . "\" target=\"_blank\">📎 " . vt_service('validation.validator')->escHtml($filename) . "</a>";
 						}
 					}
 				}
@@ -248,9 +248,9 @@ class VT_Conversation_Ajax_Handler {
 	}
 
 	public function ajaxDeleteReply() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in to delete replies.');
 		}
 
@@ -273,15 +273,15 @@ class VT_Conversation_Ajax_Handler {
 
 	public static function ajaxGetConversations() {
 		// Verify nonce for security
-		if (!VT_Security::verifyNonce($_POST['nonce'] ?? '', 'vt_nonce')) {
+		if (!vt_service('security.service')->verifyNonce($_POST['nonce'] ?? '', 'vt_nonce')) {
 			header('Content-Type: application/json');
 			echo json_encode(['success' => false, 'message' => 'Security check failed']);
 			exit;
 		}
 
-		$circle = VT_Sanitize::textField($_POST['circle'] ?? 'inner');
-		$filter = VT_Sanitize::textField($_POST['filter'] ?? '');
-		$topic_slug = VT_Sanitize::slug($_POST['topic_slug'] ?? '');
+		$circle = vt_service('validation.validator')->textField($_POST['circle'] ?? 'inner');
+		$filter = vt_service('validation.validator')->textField($_POST['filter'] ?? '');
+		$topic_slug = vt_service('validation.sanitizer')->slug($_POST['topic_slug'] ?? '');
 		$page = max(1, intval($_POST['page'] ?? 1));
 		$per_page = 20;
 
@@ -298,7 +298,7 @@ class VT_Conversation_Ajax_Handler {
 		}
 
 		$conversation_manager = new VT_Conversation_Manager();
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 
 		// Use VT_Conversation_Feed for all filtering (circles + events/communities)
 		if (class_exists('VT_Conversation_Feed')) {
@@ -390,16 +390,16 @@ class VT_Conversation_Ajax_Handler {
 	}
 
 	public function ajaxUpdateConversation() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in to edit conversations.');
 		}
 
 		$conversation_id = intval($_POST['conversation_id'] ?? 0);
-		$title = VT_Sanitize::textField($_POST['title'] ?? '');
-		$content = VT_Security::ksesPost($_POST['content'] ?? '');
-		$privacy = VT_Sanitize::textField($_POST['privacy'] ?? 'public');
+		$title = vt_service('validation.validator')->textField($_POST['title'] ?? '');
+		$content = vt_service('validation.sanitizer')->richText($_POST['content'] ?? '');
+		$privacy = vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public');
 
 		if (!$conversation_id || !$title || !$content) {
 			VT_Ajax::sendError('All fields are required.');
@@ -413,8 +413,8 @@ class VT_Conversation_Ajax_Handler {
 		}
 
 		// Check permissions
-		$current_user_id = VT_Auth::getCurrentUserId();
-		$can_edit = ($current_user_id == $conversation->author_id) || VT_Auth::currentUserCan('manage_options');
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		$can_edit = ($current_user_id == $conversation->author_id) || vt_service('auth.service')->currentUserCan('manage_options');
 
 		if (!$can_edit) {
 			VT_Ajax::sendError('You do not have permission to edit this conversation.');
@@ -450,7 +450,7 @@ class VT_Conversation_Ajax_Handler {
 		}
 
 		// Store success message
-		VT_Transient::set('vt_conversation_updated_' . VT_Auth::getCurrentUserId(), array(
+		VT_Transient::set('vt_conversation_updated_' . vt_service('auth.service')->getCurrentUserId(), array(
 			'conversation_id' => $conversation_id,
 			'message' => 'Conversation updated successfully!'
 		), 300);
@@ -466,9 +466,9 @@ class VT_Conversation_Ajax_Handler {
 	}
 
 	public function ajaxDeleteConversation() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in to delete conversations.');
 		}
 
@@ -486,8 +486,8 @@ class VT_Conversation_Ajax_Handler {
 		}
 
 		// Check permissions
-		$current_user_id = VT_Auth::getCurrentUserId();
-		$can_delete = ($current_user_id == $conversation->author_id) || VT_Auth::currentUserCan('manage_options');
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		$can_delete = ($current_user_id == $conversation->author_id) || vt_service('auth.service')->currentUserCan('manage_options');
 
 		if (!$can_delete) {
 			VT_Ajax::sendError('You do not have permission to delete this conversation.');
@@ -505,14 +505,14 @@ class VT_Conversation_Ajax_Handler {
 	}
 
 	public function ajaxUpdateReply() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in to edit replies.');
 		}
 
 		$reply_id = intval($_POST['reply_id'] ?? 0);
-		$content = VT_Security::sanitizeTextarea($_POST['content'] ?? '');
+		$content = vt_service('validation.validator')->textarea($_POST['content'] ?? '');
 
 		if (!$reply_id || empty($content)) {
 			VT_Ajax::sendError('Reply ID and content are required.');
@@ -526,7 +526,7 @@ class VT_Conversation_Ajax_Handler {
 			VT_Ajax::sendError('Reply not found.');
 		}
 
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 
 		// Check if user owns this reply
 		if ($reply->author_id != $current_user_id) {
@@ -579,11 +579,11 @@ class VT_Conversation_Ajax_Handler {
 
 						// Add image to content if it's an image file
 						if (strpos($file['type'], 'image/') === 0) {
-							$content .= "\n\n<img src=\"" . VT_Sanitize::escUrl($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
+							$content .= "\n\n<img src=\"" . vt_service('validation.validator')->escUrl($attachment_url) . "\" alt=\"Attached image\" style=\"max-width: 100%; height: auto; border-radius: 0.375rem;\">";
 						} else {
 							// For non-images, add as a download link
-							$filename = VT_Sanitize::fileName($file['name']);
-							$content .= "\n\n<a href=\"" . VT_Sanitize::escUrl($attachment_url) . "\" target=\"_blank\">📎 " . VT_Sanitize::escHtml($filename) . "</a>";
+							$filename = vt_service('validation.sanitizer')->filename($file['name']);
+							$content .= "\n\n<a href=\"" . vt_service('validation.validator')->escUrl($attachment_url) . "\" target=\"_blank\">📎 " . vt_service('validation.validator')->escHtml($filename) . "</a>";
 						}
 					}
 				}

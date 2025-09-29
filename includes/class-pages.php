@@ -18,7 +18,7 @@ class VT_Pages {
 	 * Login page
 	 */
 	public static function login() {
-		if (VT_Auth::isLoggedIn()) {
+		if (vt_service('auth.service')->isLoggedIn()) {
 			VT_Router::redirect('/');
 		}
 		self::renderPage('login', 'Login', 'Sign in to your account', 'form');
@@ -28,7 +28,7 @@ class VT_Pages {
 	 * Register page
 	 */
 	public static function register() {
-		if (VT_Auth::isLoggedIn()) {
+		if (vt_service('auth.service')->isLoggedIn()) {
 			VT_Router::redirect('/');
 		}
 		self::renderPage('register', 'Create Account', 'Join VivalaTable', 'form');
@@ -253,11 +253,11 @@ class VT_Pages {
 	 * User profile page
 	 */
 	public static function profile($params = array()) {
-		$user_id = isset($params['id']) ? $params['id'] : VT_Auth::getCurrentUserId();
+		$user_id = isset($params['id']) ? $params['id'] : vt_service('auth.service')->getCurrentUserId();
 
 		if (!$user_id && !isset($params['id'])) {
 			self::requireAuth();
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		}
 
 		self::renderPage('profile', 'Profile', null, 'two-column', compact('user_id'));
@@ -427,7 +427,7 @@ class VT_Pages {
 	 * Require user authentication
 	 */
 	private static function requireAuth() {
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Router::redirect('/login');
 		}
 	}

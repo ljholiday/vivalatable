@@ -79,18 +79,18 @@ class VT_Event_Form_Handler {
 		}
 
 		$event_data = array(
-			'title' => VT_Sanitize::text($post_data['event_title']),
-			'description' => VT_Sanitize::html($post_data['event_description'] ?? ''),
-			'event_date' => VT_Sanitize::text($event_datetime),
-			'venue_info' => VT_Sanitize::text($post_data['venue_info'] ?? ''),
+			'title' => vt_service('validation.sanitizer')->textField($post_data['event_title']),
+			'description' => vt_service('validation.sanitizer')->richText($post_data['event_description'] ?? ''),
+			'event_date' => vt_service('validation.sanitizer')->textField($event_datetime),
+			'venue_info' => vt_service('validation.sanitizer')->textField($post_data['venue_info'] ?? ''),
 			'guest_limit' => intval($post_data['guest_limit'] ?? 10),
-			'host_email' => VT_Sanitize::email($post_data['host_email']),
-			'host_notes' => VT_Sanitize::html($post_data['host_notes'] ?? ''),
-			'author_id' => VT_Auth::getCurrentUserId(),
+			'host_email' => vt_service('validation.validator')->email($post_data['host_email']),
+			'host_notes' => vt_service('validation.sanitizer')->richText($post_data['host_notes'] ?? ''),
+			'author_id' => vt_service('auth.service')->getCurrentUserId(),
 			'all_day' => !empty($post_data['all_day']) ? 1 : 0,
-			'end_date' => $end_datetime ? VT_Sanitize::text($end_datetime) : null,
-			'recurrence_type' => VT_Sanitize::text($post_data['recurrence_type'] ?? 'none'),
-			'privacy' => VT_Sanitize::text($post_data['privacy'] ?? 'public'),
+			'end_date' => $end_datetime ? vt_service('validation.sanitizer')->textField($end_datetime) : null,
+			'recurrence_type' => vt_service('validation.sanitizer')->textField($post_data['recurrence_type'] ?? 'none'),
+			'privacy' => vt_service('validation.sanitizer')->textField($post_data['privacy'] ?? 'public'),
 		);
 
 		// Add recurrence data if specified
@@ -98,19 +98,19 @@ class VT_Event_Form_Handler {
 			$event_data['recurrence_interval'] = intval($post_data['recurrence_interval'] ?? 1);
 
 			if ($post_data['recurrence_type'] === 'weekly' && !empty($post_data['weekly_days'])) {
-				$event_data['recurrence_days'] = implode(',', array_map('VT_Sanitize::text', $post_data['weekly_days']));
+				$event_data['recurrence_days'] = implode(',', array_map([vt_service('validation.sanitizer'), 'textField'], $post_data['weekly_days']));
 			}
 
 			if ($post_data['recurrence_type'] === 'monthly') {
-				$event_data['monthly_type'] = VT_Sanitize::text($post_data['monthly_type'] ?? 'date');
+				$event_data['monthly_type'] = vt_service('validation.sanitizer')->textField($post_data['monthly_type'] ?? 'date');
 				if ($post_data['monthly_type'] === 'weekday') {
-					$event_data['monthly_week'] = VT_Sanitize::text($post_data['monthly_week'] ?? '');
-					$event_data['monthly_day'] = VT_Sanitize::text($post_data['monthly_day'] ?? '');
+					$event_data['monthly_week'] = vt_service('validation.sanitizer')->textField($post_data['monthly_week'] ?? '');
+					$event_data['monthly_day'] = vt_service('validation.sanitizer')->textField($post_data['monthly_day'] ?? '');
 				}
 			}
 
 			if ($post_data['recurrence_type'] === 'custom' && !empty($post_data['custom_days'])) {
-				$event_data['recurrence_days'] = implode(',', array_map('VT_Sanitize::text', $post_data['custom_days']));
+				$event_data['recurrence_days'] = implode(',', array_map([vt_service('validation.sanitizer'), 'textField'], $post_data['custom_days']));
 				$event_data['recurrence_interval'] = intval($post_data['custom_interval'] ?? 1);
 			}
 		}

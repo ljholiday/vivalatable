@@ -38,8 +38,8 @@ if (!$community) {
 }
 
 // Check user permissions
-$current_user = VT_Auth::getCurrentUser();
-$is_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$is_logged_in = vt_service('auth.service')->isLoggedIn();
 
 if (!$is_logged_in) {
 	?>
@@ -69,11 +69,11 @@ $success_message = '';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-	if ($_POST['action'] === 'update_community_settings' && VT_Security::verifyNonce($_POST['nonce'], 'vt_community_management')) {
+	if ($_POST['action'] === 'update_community_settings' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_community_management')) {
 		$update_data = array(
-			'name' => VT_Sanitize::textField($_POST['community_name']),
-			'description' => VT_Sanitize::textarea($_POST['description']),
-			'visibility' => VT_Sanitize::textField($_POST['visibility']),
+			'name' => vt_service('validation.validator')->textField($_POST['community_name']),
+			'description' => vt_service('validation.validator')->textarea($_POST['description']),
+			'visibility' => vt_service('validation.validator')->textField($_POST['visibility']),
 		);
 
 		// Handle cover image removal
@@ -104,8 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	}
 
 	// Handle community deletion
-	if ($_POST['action'] === 'delete_community' && VT_Security::verifyNonce($_POST['nonce'], 'vt_community_management')) {
-		$confirm_name = VT_Sanitize::textField($_POST['confirm_name']);
+	if ($_POST['action'] === 'delete_community' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_community_management')) {
+		$confirm_name = vt_service('validation.validator')->textField($_POST['confirm_name']);
 
 		if ($confirm_name === $community->name) {
 			$result = $community_manager->deleteCommunity($community_id);
@@ -167,7 +167,7 @@ $page_description = 'Manage settings, members, and invitations for your communit
 
 	<form method="post" class="vt-form" enctype="multipart/form-data">
 		<input type="hidden" name="action" value="update_community_settings">
-		<input type="hidden" name="nonce" value="<?php echo VT_Security::createNonce('vt_community_management'); ?>">
+		<input type="hidden" name="nonce" value="<?php echo vt_service('security.service')->createNonce('vt_community_management'); ?>">
 
 		<div class="vt-form-group">
 			<label class="vt-form-label" for="community_name">
@@ -231,7 +231,7 @@ $page_description = 'Manage settings, members, and invitations for your communit
 
 		<form method="post" class="vt-form" id="delete-community-form" onsubmit="return confirmCommunityDeletion(event)">
 			<input type="hidden" name="action" value="delete_community">
-			<input type="hidden" name="nonce" value="<?php echo VT_Security::createNonce('vt_community_management'); ?>">
+			<input type="hidden" name="nonce" value="<?php echo vt_service('security.service')->createNonce('vt_community_management'); ?>">
 
 			<div class="vt-form-group">
 				<label class="vt-form-label" for="confirm_name" style="color: #dc2626;">

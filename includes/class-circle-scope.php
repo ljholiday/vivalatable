@@ -21,7 +21,7 @@ class VT_Circle_Scope {
 	public static function resolveConversationScope($user_id, $circle) {
 		$db = VT_Database::getInstance();
 
-		if (!$user_id || !VT_Auth::isLoggedIn()) {
+		if (!$user_id || !vt_service('auth.service')->isLoggedIn()) {
 			// Non-logged users only see public content
 			return self::getPublicScope();
 		}

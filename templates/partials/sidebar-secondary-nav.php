@@ -10,8 +10,8 @@ if (!defined('VT_VERSION')) {
     exit;
 }
 
-$current_user = VT_Auth::getCurrentUser();
-$is_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$is_logged_in = vt_service('auth.service')->isLoggedIn();
 ?>
 
 <div class="vt-sidebar-section vt-mb-4">
@@ -82,7 +82,7 @@ $is_logged_in = VT_Auth::isLoggedIn();
             ?>
             <div class="vt-flex-1">
                 <?php if ($profile_data && $profile_data['location']) : ?>
-                <div class="vt-text-muted"><?php echo VT_Sanitize::escHtml($profile_data['location']); ?></div>
+                <div class="vt-text-muted"><?php echo vt_service('validation.validator')->escHtml($profile_data['location']); ?></div>
                 <?php endif; ?>
             </div>
         </div>

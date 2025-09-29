@@ -228,5 +228,4 @@ class VT_Auth {
     }
 }
 
-// Initialize authentication on load
-VT_Auth::init();
+// Initialize authentication on load - now handled in bootstrap.php

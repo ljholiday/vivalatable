@@ -6,12 +6,12 @@
  */
 
 // Require authentication
-if (!VT_Auth::isLoggedIn()) {
+if (!vt_service('auth.service')->isLoggedIn()) {
 	VT_Router::redirect('/login');
 	exit;
 }
 
-$current_user = VT_Auth::getCurrentUser();
+$current_user = vt_service('auth.service')->getCurrentUser();
 
 // Get optional community or event context
 $community_id = intval($_GET['community_id'] ?? 0);
@@ -38,13 +38,13 @@ if ($event_id) {
 $errors = array();
 $messages = array();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && VT_Security::verifyNonce($_POST['create_conversation_nonce'], 'vt_create_conversation')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && vt_service('security.service')->verifyNonce($_POST['create_conversation_nonce'], 'vt_create_conversation')) {
 	$conversation_data = array(
-		'title' => VT_Sanitize::textField($_POST['title'] ?? ''),
-		'content' => VT_Sanitize::post($_POST['content'] ?? ''),
-		'community_id' => VT_Sanitize::int($_POST['community_id'] ?? 0),
-		'event_id' => VT_Sanitize::int($_POST['event_id'] ?? 0),
-		'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
+		'title' => vt_service('validation.validator')->textField($_POST['title'] ?? ''),
+		'content' => vt_service('validation.sanitizer')->richText($_POST['content'] ?? ''),
+		'community_id' => vt_service('validation.validator')->integer($_POST['community_id'] ?? 0),
+		'event_id' => vt_service('validation.validator')->integer($_POST['event_id'] ?? 0),
+		'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
 		'author_id' => $current_user->id,
 		'author_name' => $current_user->display_name ?: $current_user->username,
 		'author_email' => $current_user->email
@@ -99,7 +99,7 @@ $page_description = 'Share your thoughts and start a discussion';
 <!-- Create Conversation Form -->
 <div class="vt-section">
 	<form method="post" class="vt-form">
-		<?php echo VT_Security::nonceField('vt_create_conversation', 'create_conversation_nonce'); ?>
+		<?php echo vt_service('security.service')->nonceField('vt_create_conversation', 'create_conversation_nonce'); ?>
 
 		<div class="vt-form-group">
 			<label for="title" class="vt-form-label">Conversation Title</label>

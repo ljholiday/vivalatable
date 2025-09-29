@@ -39,18 +39,18 @@ $args = isset($args) ? array_merge($defaults, $args) : $defaults;
 // Get user object
 $user_obj = null;
 if (is_numeric($user_id)) {
-    $user_obj = VT_Auth::getUserById($user_id);
+    $user_obj = vt_service('auth.user_repository')->getUserById($user_id);
 } elseif (is_string($user_id) && filter_var($user_id, FILTER_VALIDATE_EMAIL)) {
-    $user_obj = VT_Auth::getUserByEmail($user_id);
+    $user_obj = vt_service('auth.user_repository')->getUserByEmail($user_id);
 }
 
 if (!$user_obj) {
     // Fallback for email-only cases
     if ($args['fallback_email'] && filter_var($user_id, FILTER_VALIDATE_EMAIL)) {
-        echo '<span class="' . VT_Sanitize::escHtml($args['class']) . '">' . VT_Sanitize::escHtml($user_id) . '</span>';
+        echo '<span class="' . vt_service('validation.validator')->escHtml($args['class']) . '">' . vt_service('validation.validator')->escHtml($user_id) . '</span>';
         return;
     }
-    echo '<span class="' . VT_Sanitize::escHtml($args['class']) . '">Unknown User</span>';
+    echo '<span class="' . vt_service('validation.validator')->escHtml($args['class']) . '">Unknown User</span>';
     return;
 }
 
@@ -66,10 +66,10 @@ $avatar_html = '<div class="vt-avatar vt-avatar-sm vt-rounded-full vt-bg-gray-30
                '</div>';
 ?>
 
-<div class="<?php echo VT_Sanitize::escHtml($args['class']); ?> vt-flex vt-items-center vt-gap">
+<div class="<?php echo vt_service('validation.validator')->escHtml($args['class']); ?> vt-flex vt-items-center vt-gap">
     <?php if ($args['show_avatar']) : ?>
         <?php if ($args['link_profile'] && $profile_url) : ?>
-            <a href="<?php echo VT_Sanitize::escUrl($profile_url); ?>" class="vt-avatar-link"><?php echo $avatar_html; ?></a>
+            <a href="<?php echo vt_service('validation.validator')->escUrl($profile_url); ?>" class="vt-avatar-link"><?php echo $avatar_html; ?></a>
         <?php else : ?>
             <?php echo $avatar_html; ?>
         <?php endif; ?>
@@ -77,9 +77,9 @@ $avatar_html = '<div class="vt-avatar vt-avatar-sm vt-rounded-full vt-bg-gray-30
 
     <?php if ($args['show_name']) : ?>
         <?php if ($args['link_profile'] && $profile_url) : ?>
-            <a href="<?php echo VT_Sanitize::escUrl($profile_url); ?>" class="vt-member-name vt-link"><?php echo VT_Sanitize::escHtml($display_name); ?></a>
+            <a href="<?php echo vt_service('validation.validator')->escUrl($profile_url); ?>" class="vt-member-name vt-link"><?php echo vt_service('validation.validator')->escHtml($display_name); ?></a>
         <?php else : ?>
-            <span class="vt-member-name"><?php echo VT_Sanitize::escHtml($display_name); ?></span>
+            <span class="vt-member-name"><?php echo vt_service('validation.validator')->escHtml($display_name); ?></span>
         <?php endif; ?>
     <?php endif; ?>
 </div>

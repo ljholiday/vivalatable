@@ -6,8 +6,8 @@
  */
 
 // Get current user info
-$current_user = VT_Auth::getCurrentUser();
-$user_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$user_logged_in = vt_service('auth.service')->isLoggedIn();
 $user_email = $user_logged_in ? $current_user->email : '';
 
 // Get data for all tabs

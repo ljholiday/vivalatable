@@ -29,23 +29,23 @@ class VT_Event_Manager {
 
         // Insert event data
         $result = $db->insert('events', [
-            'title' => VT_Sanitize::textField($event_data['title']),
+            'title' => vt_service('validation.validator')->textField($event_data['title']),
             'slug' => $slug,
-            'description' => VT_Sanitize::post($event_data['description'] ?? ''),
-            'excerpt' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 250)),
-            'event_date' => VT_Sanitize::textField($event_data['event_date']),
-            'event_time' => VT_Sanitize::textField($event_data['event_time'] ?? ''),
-            'guest_limit' => VT_Sanitize::int($event_data['guest_limit'] ?? 0),
-            'venue_info' => VT_Sanitize::textField($event_data['venue'] ?? ''),
-            'host_email' => VT_Sanitize::email($event_data['host_email'] ?? ''),
-            'host_notes' => VT_Sanitize::post($event_data['host_notes'] ?? ''),
+            'description' => vt_service('validation.sanitizer')->richText($event_data['description'] ?? ''),
+            'excerpt' => vt_service('validation.validator')->textField(substr(strip_tags($event_data['description'] ?? ''), 0, 250)),
+            'event_date' => vt_service('validation.validator')->textField($event_data['event_date']),
+            'event_time' => vt_service('validation.validator')->textField($event_data['event_time'] ?? ''),
+            'guest_limit' => vt_service('validation.validator')->integer($event_data['guest_limit'] ?? 0),
+            'venue_info' => vt_service('validation.validator')->textField($event_data['venue'] ?? ''),
+            'host_email' => vt_service('validation.validator')->email($event_data['host_email'] ?? ''),
+            'host_notes' => vt_service('validation.sanitizer')->richText($event_data['host_notes'] ?? ''),
             'privacy' => $privacy,
             'event_status' => 'active',
-            'author_id' => VT_Auth::getCurrentUserId() ?: 1,
-            'community_id' => VT_Sanitize::int($event_data['community_id'] ?? 0),
-            'meta_title' => VT_Sanitize::textField($event_data['title']),
-            'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
-            'created_by' => VT_Auth::getCurrentUserId() ?: 1,
+            'author_id' => vt_service('auth.service')->getCurrentUserId() ?: 1,
+            'community_id' => vt_service('validation.validator')->integer($event_data['community_id'] ?? 0),
+            'meta_title' => vt_service('validation.validator')->textField($event_data['title']),
+            'meta_description' => vt_service('validation.validator')->textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
+            'created_by' => vt_service('auth.service')->getCurrentUserId() ?: 1,
         ]);
 
         if ($result === false) {
@@ -56,7 +56,7 @@ class VT_Event_Manager {
 
         // Update profile stats for event creation
         if (class_exists('VT_Profile_Manager')) {
-            $author_id = VT_Sanitize::int($event_data['author_id'] ?? VT_Auth::getCurrentUserId());
+            $author_id = vt_service('validation.validator')->integer($event_data['author_id'] ?? vt_service('auth.service')->getCurrentUserId());
             VT_Profile_Manager::incrementEventsHosted($author_id);
         }
 
@@ -82,23 +82,23 @@ class VT_Event_Manager {
 
         // Insert event data
         $result = $db->insert('events', [
-            'title' => VT_Sanitize::textField($event_data['title']),
+            'title' => vt_service('validation.validator')->textField($event_data['title']),
             'slug' => $slug,
-            'description' => VT_Sanitize::post($event_data['description'] ?? ''),
-            'excerpt' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 250)),
-            'event_date' => VT_Sanitize::textField($event_data['event_date']),
-            'event_time' => VT_Sanitize::textField($event_data['event_time'] ?? ''),
-            'guest_limit' => VT_Sanitize::int($event_data['guest_limit'] ?? 0),
-            'venue_info' => VT_Sanitize::textField($event_data['venue'] ?? ''),
-            'host_email' => VT_Sanitize::email($event_data['host_email'] ?? ''),
-            'host_notes' => VT_Sanitize::post($event_data['host_notes'] ?? ''),
+            'description' => vt_service('validation.sanitizer')->richText($event_data['description'] ?? ''),
+            'excerpt' => vt_service('validation.validator')->textField(substr(strip_tags($event_data['description'] ?? ''), 0, 250)),
+            'event_date' => vt_service('validation.validator')->textField($event_data['event_date']),
+            'event_time' => vt_service('validation.validator')->textField($event_data['event_time'] ?? ''),
+            'guest_limit' => vt_service('validation.validator')->integer($event_data['guest_limit'] ?? 0),
+            'venue_info' => vt_service('validation.validator')->textField($event_data['venue'] ?? ''),
+            'host_email' => vt_service('validation.validator')->email($event_data['host_email'] ?? ''),
+            'host_notes' => vt_service('validation.sanitizer')->richText($event_data['host_notes'] ?? ''),
             'privacy' => $privacy,
             'event_status' => 'active',
-            'author_id' => VT_Auth::getCurrentUserId() ?: 1,
-            'community_id' => VT_Sanitize::int($event_data['community_id'] ?? 0),
-            'meta_title' => VT_Sanitize::textField($event_data['title']),
-            'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
-            'created_by' => VT_Auth::getCurrentUserId() ?: 1,
+            'author_id' => vt_service('auth.service')->getCurrentUserId() ?: 1,
+            'community_id' => vt_service('validation.validator')->integer($event_data['community_id'] ?? 0),
+            'meta_title' => vt_service('validation.validator')->textField($event_data['title']),
+            'meta_description' => vt_service('validation.validator')->textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
+            'created_by' => vt_service('auth.service')->getCurrentUserId() ?: 1,
         ]);
 
         if ($result === false) {
@@ -109,7 +109,7 @@ class VT_Event_Manager {
 
         // Update profile stats for event creation
         if (class_exists('VT_Profile_Manager')) {
-            $author_id = VT_Sanitize::int($event_data['author_id'] ?? VT_Auth::getCurrentUserId());
+            $author_id = vt_service('validation.validator')->integer($event_data['author_id'] ?? vt_service('auth.service')->getCurrentUserId());
             VT_Profile_Manager::incrementEventsHosted($author_id);
         }
 
@@ -119,7 +119,7 @@ class VT_Event_Manager {
     private function generateUniqueSlug($title) {
         $db = VT_Database::getInstance();
 
-        $base_slug = VT_Sanitize::slug($title);
+        $base_slug = vt_service('validation.sanitizer')->slug($title);
         $slug = $base_slug;
         $counter = 1;
 
@@ -172,14 +172,14 @@ class VT_Event_Manager {
         }
 
         // Private events can only be viewed by the creator
-        $current_user_id = VT_Auth::getCurrentUserId();
+        $current_user_id = vt_service('auth.service')->getCurrentUserId();
         if ($current_user_id && $event->author_id == $current_user_id) {
             return true;
         }
 
         // Check if current user is an invited guest (RSVP'd)
-        if (VT_Auth::isLoggedIn()) {
-            $current_user = VT_Auth::getCurrentUser();
+        if (vt_service('auth.service')->isLoggedIn()) {
+            $current_user = vt_service('auth.service')->getCurrentUser();
             $user_email = $current_user->email;
 
             $db = VT_Database::getInstance();
@@ -210,10 +210,10 @@ class VT_Event_Manager {
 
     public function getUpcomingEvents($limit = 10) {
         $db = VT_Database::getInstance();
-        $current_user_id = VT_Auth::getCurrentUserId();
+        $current_user_id = vt_service('auth.service')->getCurrentUserId();
 
         // Restore proper conditional logic but fix the SQL
-        if ($current_user_id && VT_Auth::isLoggedIn()) {
+        if ($current_user_id && vt_service('auth.service')->isLoggedIn()) {
             // For logged-in users: show their events + public events
             $query = "SELECT DISTINCT e.* FROM {$db->prefix}events e
                      WHERE e.event_status = 'active'
@@ -269,8 +269,8 @@ class VT_Event_Manager {
         }
 
         // Check permissions - only event host (author) can update events
-        $current_user_id = VT_Auth::getCurrentUserId();
-        if ($current_event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
+        $current_user_id = vt_service('auth.service')->getCurrentUserId();
+        if ($current_event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
             return VT_Http::jsonError('Only the event host can update this event', 'permission_denied');
         }
 
@@ -282,19 +282,19 @@ class VT_Event_Manager {
 
         // Update event data
         $update_data = [
-            'title' => VT_Sanitize::textField($event_data['title']),
+            'title' => vt_service('validation.validator')->textField($event_data['title']),
             'slug' => $slug,
-            'description' => VT_Sanitize::post($event_data['description'] ?? ''),
-            'excerpt' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 250)),
-            'event_date' => VT_Sanitize::textField($event_data['event_date']),
-            'event_time' => VT_Sanitize::textField($event_data['event_time'] ?? ''),
-            'guest_limit' => VT_Sanitize::int($event_data['guest_limit'] ?? 0),
-            'venue_info' => VT_Sanitize::textField($event_data['venue'] ?? ''),
-            'host_email' => VT_Sanitize::email($event_data['host_email'] ?? ''),
-            'host_notes' => VT_Sanitize::post($event_data['host_notes'] ?? ''),
+            'description' => vt_service('validation.sanitizer')->richText($event_data['description'] ?? ''),
+            'excerpt' => vt_service('validation.validator')->textField(substr(strip_tags($event_data['description'] ?? ''), 0, 250)),
+            'event_date' => vt_service('validation.validator')->textField($event_data['event_date']),
+            'event_time' => vt_service('validation.validator')->textField($event_data['event_time'] ?? ''),
+            'guest_limit' => vt_service('validation.validator')->integer($event_data['guest_limit'] ?? 0),
+            'venue_info' => vt_service('validation.validator')->textField($event_data['venue'] ?? ''),
+            'host_email' => vt_service('validation.validator')->email($event_data['host_email'] ?? ''),
+            'host_notes' => vt_service('validation.sanitizer')->richText($event_data['host_notes'] ?? ''),
             'privacy' => $this->validatePrivacySetting($event_data['privacy'] ?? 'public'),
-            'meta_title' => VT_Sanitize::textField($event_data['title']),
-            'meta_description' => VT_Sanitize::textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
+            'meta_title' => vt_service('validation.validator')->textField($event_data['title']),
+            'meta_description' => vt_service('validation.validator')->textField(substr(strip_tags($event_data['description'] ?? ''), 0, 160)),
         ];
 
         $result = $db->update('events', $update_data, ['id' => $event_id]);
@@ -316,12 +316,12 @@ class VT_Event_Manager {
         }
 
         // Check permissions - only event host can send invitations
-        $current_user = VT_Auth::getCurrentUser();
+        $current_user = vt_service('auth.service')->getCurrentUser();
         if (!$current_user) {
             return VT_Http::jsonError('You must be logged in', 'user_required');
         }
 
-        if ($event->author_id != $current_user->id && !VT_Auth::currentUserCan('edit_others_posts')) {
+        if ($event->author_id != $current_user->id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
             return VT_Http::jsonError('Only the event host can send invitations', 'permission_denied');
         }
 
@@ -341,7 +341,7 @@ class VT_Event_Manager {
         }
 
         // Generate invitation token
-        $token = VT_Security::generateToken();
+        $token = vt_service('security.service')->generateToken();
 
         // Set expiration (event date or 30 days, whichever is sooner)
         $event_date = strtotime($event->event_date);
@@ -355,7 +355,7 @@ class VT_Event_Manager {
             'invited_email' => $email,
             'invited_user_id' => $this->getUserIdByEmail($email),
             'invitation_token' => $token,
-            'message' => VT_Sanitize::post($message),
+            'message' => vt_service('validation.sanitizer')->richText($message),
             'status' => 'pending',
             'expires_at' => $expires_at,
         ]);
@@ -447,12 +447,12 @@ The %s Team',
         }
 
         // Check permissions - only event host can cancel invitations
-        $current_user = VT_Auth::getCurrentUser();
+        $current_user = vt_service('auth.service')->getCurrentUser();
         if (!$current_user) {
             return VT_Http::jsonError('You must be logged in', 'user_required');
         }
 
-        if ($event->author_id != $current_user->id && !VT_Auth::currentUserCan('edit_others_posts')) {
+        if ($event->author_id != $current_user->id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
             return VT_Http::jsonError('Only the event host can cancel invitations', 'permission_denied');
         }
 
@@ -549,12 +549,12 @@ The %s Team',
         }
 
         // Check permissions - only event creator or admin can delete
-        $current_user_id = VT_Auth::getCurrentUserId();
+        $current_user_id = vt_service('auth.service')->getCurrentUserId();
         if (!$current_user_id) {
             return VT_Http::jsonError('You must be logged in', 'user_required');
         }
 
-        if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('delete_others_posts')) {
+        if ($event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('delete_others_posts')) {
             return VT_Http::jsonError('Only the event host or admin can delete this event', 'permission_denied');
         }
 
@@ -607,7 +607,7 @@ The %s Team',
 
     public function getCommunityEvents($community_id, $limit = 20) {
         $db = VT_Database::getInstance();
-        $current_user_id = VT_Auth::getCurrentUserId();
+        $current_user_id = vt_service('auth.service')->getCurrentUserId();
 
         // Get community to check privacy
         if (class_exists('VT_Community_Manager')) {
@@ -623,7 +623,7 @@ The %s Team',
 
             if ($community->visibility === 'public') {
                 $can_access_community = true;
-            } elseif ($current_user_id && VT_Auth::isLoggedIn()) {
+            } elseif ($current_user_id && vt_service('auth.service')->isLoggedIn()) {
                 if ($community->creator_id == $current_user_id ||
                     $community_manager->isMember($community_id, $current_user_id)) {
                     $can_access_community = true;
@@ -656,7 +656,7 @@ The %s Team',
     }
 
     private function determineEventPrivacy($event_data) {
-        $community_id = VT_Sanitize::int($event_data['community_id'] ?? 0);
+        $community_id = vt_service('validation.validator')->integer($event_data['community_id'] ?? 0);
 
         // For community events, inherit privacy from community
         if ($community_id) {
@@ -677,7 +677,7 @@ The %s Team',
     }
 
     public function validateEventPrivacyInheritance($event_data) {
-        $community_id = VT_Sanitize::int($event_data['community_id'] ?? 0);
+        $community_id = vt_service('validation.validator')->integer($event_data['community_id'] ?? 0);
         $provided_privacy = $event_data['privacy'] ?? null;
 
         if ($community_id && $provided_privacy) {
@@ -716,7 +716,7 @@ The %s Team',
     private function validatePrivacySetting($privacy) {
         $allowed_privacy_settings = ['public', 'private'];
 
-        $privacy = VT_Sanitize::textField($privacy);
+        $privacy = vt_service('validation.validator')->textField($privacy);
 
         if (!in_array($privacy, $allowed_privacy_settings)) {
             return 'public';

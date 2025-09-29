@@ -37,7 +37,7 @@ if (!$event) {
 }
 
 // Check if current user can manage this event
-$current_user = VT_Auth::getCurrentUser();
+$current_user = vt_service('auth.service')->getCurrentUser();
 if (!$current_user || $event->author_id != $current_user->id) {
 	?>
 	<div class="vt-section vt-text-center">
@@ -118,14 +118,14 @@ $page_description = 'Manage your event settings, guests, and invitations';
 					<div class="vt-flex vt-gap">
 						<?php if ($event->event_status === 'active') : ?>
 							<form method="post" style="display: inline;">
-								<?php echo VT_Security::nonceField('vt_update_event_status', 'status_nonce'); ?>
+								<?php echo vt_service('security.service')->nonceField('vt_update_event_status', 'status_nonce'); ?>
 								<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
 								<input type="hidden" name="status" value="cancelled">
 								<button type="submit" class="vt-btn vt-btn-danger">Cancel Event</button>
 							</form>
 						<?php elseif ($event->event_status === 'cancelled') : ?>
 							<form method="post" style="display: inline;">
-								<?php echo VT_Security::nonceField('vt_update_event_status', 'status_nonce'); ?>
+								<?php echo vt_service('security.service')->nonceField('vt_update_event_status', 'status_nonce'); ?>
 								<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
 								<input type="hidden" name="status" value="active">
 								<button type="submit" class="vt-btn vt-btn-success">Reactivate Event</button>
@@ -236,7 +236,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 		<h3 class="vt-heading vt-heading-md vt-mb-4">Send Invitations</h3>
 
 		<form method="post" class="vt-form">
-			<?php echo VT_Security::nonceField('vt_send_invitations', 'invite_nonce'); ?>
+			<?php echo vt_service('security.service')->nonceField('vt_send_invitations', 'invite_nonce'); ?>
 			<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
 
 			<div class="vt-form-group">

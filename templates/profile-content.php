@@ -7,7 +7,7 @@
 
 // Get user ID from query parameter or default to current user
 $user_id = $_GET['user'] ?? null;
-$current_user = VT_Auth::getCurrentUser();
+$current_user = vt_service('auth.service')->getCurrentUser();
 $current_user_id = $current_user ? $current_user->id : null;
 
 if (!$user_id && $current_user_id) {
@@ -18,7 +18,7 @@ $is_own_profile = ($user_id == $current_user_id);
 $is_editing = $is_own_profile && isset($_GET['edit']);
 
 // Get user data
-$user_data = VT_Auth::getUserById($user_id);
+$user_data = vt_service('auth.user_repository')->getUserById($user_id);
 if (!$user_data) {
 	echo '<div class="vt-section vt-text-center">';
 	echo '<h3 class="vt-heading vt-heading-md">Profile Not Found</h3>';
@@ -49,7 +49,7 @@ $profile_updated = false;
 $form_errors = array();
 
 if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_profile_nonce'])) {
-	if (VT_Security::verifyNonce($_POST['vt_profile_nonce'], 'vt_profile_update')) {
+	if (vt_service('security.service')->verifyNonce($_POST['vt_profile_nonce'], 'vt_profile_update')) {
 		$result = VT_Profile_Manager::updateProfile($user_id, $_POST);
 		if ($result['success']) {
 			$profile_updated = true;
@@ -107,7 +107,7 @@ if ($is_editing) {
 	?>
 
 	<form method="post" class="vt-form" enctype="multipart/form-data">
-		<?php echo VT_Security::nonceField('vt_profile_update', 'vt_profile_nonce'); ?>
+		<?php echo vt_service('security.service')->nonceField('vt_profile_update', 'vt_profile_nonce'); ?>
 
 		<div class="vt-mb-4">
 			<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Basic Information</h3>

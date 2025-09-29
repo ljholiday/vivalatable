@@ -31,8 +31,8 @@ if (!$conversation) {
 }
 
 // Check user permissions
-$current_user = VT_Auth::getCurrentUser();
-$is_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$is_logged_in = vt_service('auth.service')->isLoggedIn();
 $can_view = true;
 $can_reply = $is_logged_in;
 
@@ -68,9 +68,9 @@ if (!$can_view) {
 $errors = array();
 $messages = array();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_reply && VT_Security::verifyNonce($_POST['reply_nonce'], 'vt_conversation_reply')) {
-	$reply_content = VT_Sanitize::post($_POST['reply_content'] ?? '');
-	$parent_reply_id = VT_Sanitize::int($_POST['parent_reply_id'] ?? 0);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_reply && vt_service('security.service')->verifyNonce($_POST['reply_nonce'], 'vt_conversation_reply')) {
+	$reply_content = vt_service('validation.sanitizer')->richText($_POST['reply_content'] ?? '');
+	$parent_reply_id = vt_service('validation.validator')->integer($_POST['parent_reply_id'] ?? 0);
 
 	if (empty($reply_content)) {
 		$errors[] = 'Reply content is required.';
@@ -178,7 +178,7 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 	<div class="vt-section vt-mb-6">
 		<h3 class="vt-heading vt-heading-md vt-mb-4">Join the Conversation</h3>
 		<form method="post" class="vt-form">
-			<?php echo VT_Security::nonceField('vt_conversation_reply', 'reply_nonce'); ?>
+			<?php echo vt_service('security.service')->nonceField('vt_conversation_reply', 'reply_nonce'); ?>
 			<input type="hidden" name="parent_reply_id" value="0">
 
 			<div class="vt-form-group">

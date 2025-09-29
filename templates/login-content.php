@@ -6,7 +6,7 @@
  */
 
 // Check if user is already logged in
-if (VT_Auth::isLoggedIn()) {
+if (vt_service('auth.service')->isLoggedIn()) {
 	header('Location: /dashboard');
 	exit;
 }
@@ -18,7 +18,7 @@ $messages = array();
 
 // Handle registration
 if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_register_nonce'])) {
-	if (VT_Security::verifyNonce($_POST['vt_register_nonce'], 'vt_register')) {
+	if (vt_service('security.service')->verifyNonce($_POST['vt_register_nonce'], 'vt_register')) {
 		$username = VT_Sanitizer::sanitizeUsername($_POST['username']);
 		$email = VT_Sanitizer::sanitizeEmail($_POST['email']);
 		$password = $_POST['password'];
@@ -34,11 +34,11 @@ if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_P
 			$errors[] = 'Please enter a valid email address.';
 		}
 
-		if (VT_Auth::usernameExists($username)) {
+		if (vt_service('auth.user_repository')->existsByUsername($username)) {
 			$errors[] = 'Username already exists.';
 		}
 
-		if (VT_Auth::emailExists($email)) {
+		if (vt_service('auth.user_repository')->existsByEmail($email)) {
 			$errors[] = 'Email address is already registered.';
 		}
 
@@ -52,14 +52,14 @@ if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_P
 
 		// Create user if no errors
 		if (empty($errors)) {
-			$user_id = VT_Auth::createUser($username, $password, $email, $display_name);
+			$user_id = vt_service('auth.service')->register($username, $password, $email, $display_name);
 
 			if ($user_id) {
 				// Create profile
 				VT_Profile_Manager::createDefaultProfile($user_id);
 
 				// Auto-login the user
-				VT_Auth::loginUser($user_id);
+				vt_service('auth.service')->loginById($user_id);
 
 				// Redirect to profile setup
 				header('Location: /profile?setup=1');
@@ -80,7 +80,7 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (empty($username) || empty($password)) {
 			$errors[] = 'Username and password are required.';
 		} else {
-			$user = VT_Auth::login($username, $password);
+			$user = vt_service('auth.service')->login($username, $password);
 
 			if ($user) {
 				$redirect_to = $_GET['redirect_to'] ?? '/dashboard';
@@ -134,7 +134,7 @@ $breadcrumbs = array(
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Create Account</h2>
 
 	<form method="post" class="vt-form">
-		<?php echo VT_Security::nonceField('vt_register', 'vt_register_nonce'); ?>
+		<?php echo vt_service('security.service')->nonceField('vt_register', 'vt_register_nonce'); ?>
 
 		<div class="vt-form-group">
 			<label for="display_name" class="vt-form-label">Your Name</label>

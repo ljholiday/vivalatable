@@ -31,8 +31,8 @@ if (!$community) {
 }
 
 // Get current user info
-$current_user = VT_Auth::getCurrentUser();
-$is_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$is_logged_in = vt_service('auth.service')->isLoggedIn();
 $is_member = false;
 $user_role = null;
 
@@ -58,7 +58,7 @@ $messages = array();
 $errors = array();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_logged_in) {
-	if (isset($_POST['action']) && VT_Security::verifyNonce($_POST['community_nonce'], 'vt_community_action')) {
+	if (isset($_POST['action']) && vt_service('security.service')->verifyNonce($_POST['community_nonce'], 'vt_community_action')) {
 		$action = $_POST['action'];
 
 		if ($action === 'join' && !$is_member) {

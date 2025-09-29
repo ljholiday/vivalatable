@@ -10,7 +10,7 @@ class VT_Transient {
      * Set a transient value
      */
     public static function set($key, $value, $expiration = 3600) {
-        $key = VT_Sanitize::textField($key);
+        $key = vt_service('validation.validator')->textField($key);
         $data = array(
             'value' => $value,
             'expires' => time() + $expiration
@@ -29,7 +29,7 @@ class VT_Transient {
      * Get a transient value
      */
     public static function get($key) {
-        $key = VT_Sanitize::textField($key);
+        $key = vt_service('validation.validator')->textField($key);
 
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
@@ -54,7 +54,7 @@ class VT_Transient {
      * Delete a transient
      */
     public static function delete($key) {
-        $key = VT_Sanitize::textField($key);
+        $key = vt_service('validation.validator')->textField($key);
 
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

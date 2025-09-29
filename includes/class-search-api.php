@@ -60,7 +60,7 @@ class VT_Search_API {
 	private static function performSearch($query, $entity_types = array(), $limit = 20) {
 		$db = VT_Database::getInstance();
 		$search_table = $db->prefix . 'search';
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 
 		// Create search terms
 		$search_terms = self::prepareSearchTerms($query);
@@ -167,7 +167,7 @@ class VT_Search_API {
 		$params = array($search_pattern, $search_pattern, $search_pattern);
 
 		// Add privacy filter for non-logged users
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 		if (!$current_user_id) {
 			$sql .= " AND privacy = 'public'";
 		}
@@ -199,7 +199,7 @@ class VT_Search_API {
 		$params = array($search_pattern, $search_pattern);
 
 		// Add visibility filter for non-logged users
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 		if (!$current_user_id) {
 			$sql .= " AND visibility = 'public'";
 		}

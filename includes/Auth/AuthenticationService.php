@@ -279,6 +279,20 @@ class VT_Auth_AuthenticationService {
     }
 
     /**
+     * Login user by ID
+     */
+    public function loginById(int $userId): bool {
+        $user = $this->userRepository->findById($userId);
+        if ($user) {
+            $_SESSION['user_id'] = $user->id;
+            $this->currentUserId = $user->id;
+            $this->currentUser = $user;
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Load current user from session
      */
     private function loadCurrentUser(): void {

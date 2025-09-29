@@ -35,7 +35,7 @@ if (!$event) {
 }
 
 // Check if current user can edit this event
-$current_user = VT_Auth::getCurrentUser();
+$current_user = vt_service('auth.service')->getCurrentUser();
 if (!$current_user || $event->author_id != $current_user->id) {
 	?>
 	<div class="vt-section vt-text-center">
@@ -51,15 +51,15 @@ if (!$current_user || $event->author_id != $current_user->id) {
 $errors = array();
 $messages = array();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && VT_Security::verifyNonce($_POST['edit_event_nonce'], 'vt_edit_event')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && vt_service('security.service')->verifyNonce($_POST['edit_event_nonce'], 'vt_edit_event')) {
 	$event_data = array(
-		'title' => VT_Sanitize::textField($_POST['title'] ?? ''),
-		'description' => VT_Sanitize::post($_POST['description'] ?? ''),
-		'event_date' => VT_Sanitize::textField($_POST['event_date'] ?? ''),
-		'venue_info' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
-		'guest_limit' => VT_Sanitize::int($_POST['guest_limit'] ?? 0),
-		'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
-		'community_id' => VT_Sanitize::int($_POST['community_id'] ?? 0)
+		'title' => vt_service('validation.validator')->textField($_POST['title'] ?? ''),
+		'description' => vt_service('validation.sanitizer')->richText($_POST['description'] ?? ''),
+		'event_date' => vt_service('validation.validator')->textField($_POST['event_date'] ?? ''),
+		'venue_info' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
+		'guest_limit' => vt_service('validation.validator')->integer($_POST['guest_limit'] ?? 0),
+		'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
+		'community_id' => vt_service('validation.validator')->integer($_POST['community_id'] ?? 0)
 	);
 
 	// Basic validation
@@ -113,7 +113,7 @@ $page_description = 'Update your event details and settings';
 <!-- Edit Event Form -->
 <div class="vt-section">
 	<form method="post" class="vt-form">
-		<?php echo VT_Security::nonceField('vt_edit_event', 'edit_event_nonce'); ?>
+		<?php echo vt_service('security.service')->nonceField('vt_edit_event', 'edit_event_nonce'); ?>
 
 		<div class="vt-form-group">
 			<label for="title" class="vt-form-label">Event Title</label>

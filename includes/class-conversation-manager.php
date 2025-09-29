@@ -25,7 +25,7 @@ class VT_Conversation_Manager {
 
 		$event_clause = $exclude_event_conversations ? 'AND c.event_id IS NULL' : '';
 		$community_clause = $exclude_community_conversations ? 'AND c.community_id IS NULL' : '';
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 
 		// Build privacy filter for conversations
 		$privacy_filter = $this->buildConversationPrivacyFilter($current_user_id);
@@ -96,7 +96,7 @@ class VT_Conversation_Manager {
 	 */
 	public function getGeneralConversations($limit = 10) {
 		$conversations_table = $this->db->prefix . 'conversations';
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 
 		// Build privacy filter for conversations
 		$privacy_filter = $this->buildConversationPrivacyFilter($current_user_id);
@@ -137,17 +137,17 @@ class VT_Conversation_Manager {
 		$insert_data = array(
 			'event_id' => $data['event_id'] ?? null,
 			'community_id' => $community_id,
-			'title' => VT_Sanitize::textField($data['title']),
+			'title' => vt_service('validation.validator')->textField($data['title']),
 			'slug' => $slug,
-			'content' => VT_Security::ksesPost($data['content']),
-			'author_id' => $data['author_id'] ?? VT_Auth::getCurrentUserId(),
-			'author_name' => VT_Sanitize::textField($data['author_name']),
-			'author_email' => VT_Sanitize::email($data['author_email']),
+			'content' => vt_service('validation.sanitizer')->richText($data['content']),
+			'author_id' => $data['author_id'] ?? vt_service('auth.service')->getCurrentUserId(),
+			'author_name' => vt_service('validation.validator')->textField($data['author_name']),
+			'author_email' => vt_service('validation.validator')->email($data['author_email']),
 			'privacy' => $this->validateConversationPrivacy($data['privacy'] ?? 'public', $data),
 			'is_pinned' => $data['is_pinned'] ?? 0,
 			'created_at' => VT_Time::currentTime('mysql'),
 			'last_reply_date' => VT_Time::currentTime('mysql'),
-			'last_reply_author' => VT_Sanitize::textField($data['author_name']),
+			'last_reply_author' => vt_service('validation.validator')->textField($data['author_name']),
 		);
 
 		$result = $this->db->insert('conversations', $insert_data);
@@ -189,10 +189,10 @@ class VT_Conversation_Manager {
 		$insert_data = array(
 			'conversation_id' => $conversation_id,
 			'parent_reply_id' => $data['parent_reply_id'] ?? null,
-			'content' => VT_Security::ksesPost($data['content']),
-			'author_id' => $data['author_id'] ?? VT_Auth::getCurrentUserId(),
-			'author_name' => VT_Sanitize::textField($data['author_name']),
-			'author_email' => VT_Sanitize::email($data['author_email']),
+			'content' => vt_service('validation.sanitizer')->richText($data['content']),
+			'author_id' => $data['author_id'] ?? vt_service('auth.service')->getCurrentUserId(),
+			'author_name' => vt_service('validation.validator')->textField($data['author_name']),
+			'author_email' => vt_service('validation.validator')->email($data['author_email']),
 			'depth_level' => $depth,
 			'created_at' => VT_Time::currentTime('mysql'),
 		);
@@ -216,7 +216,7 @@ class VT_Conversation_Manager {
 			array(
 				'reply_count' => $reply_count,
 				'last_reply_date' => VT_Time::currentTime('mysql'),
-				'last_reply_author' => VT_Sanitize::textField($data['author_name']),
+				'last_reply_author' => vt_service('validation.validator')->textField($data['author_name']),
 			),
 			array('id' => $conversation_id)
 		);
@@ -339,7 +339,7 @@ class VT_Conversation_Manager {
 	 */
 	private function generateConversationSlug($title, $exclude_id = null) {
 		$conversations_table = $this->db->prefix . 'conversations';
-		$base_slug = VT_Sanitize::slug($title);
+		$base_slug = vt_service('validation.sanitizer')->slug($title);
 		$slug = $base_slug;
 		$counter = 1;
 
@@ -427,7 +427,7 @@ class VT_Conversation_Manager {
 		$guests_table = $this->db->prefix . 'guests';
 		// $invitations_table = $this->db->prefix . 'invitations'; // TODO: Phase 3.5
 
-		if (!$current_user_id || !VT_Auth::isLoggedIn()) {
+		if (!$current_user_id || !vt_service('auth.service')->isLoggedIn()) {
 			// Non-logged in users can only see conversations from public events/communities
 			return "(
 				(c.event_id IS NULL AND c.community_id IS NULL AND c.privacy = 'public') OR
@@ -436,7 +436,7 @@ class VT_Conversation_Manager {
 			)";
 		}
 
-		$current_user = VT_Auth::getCurrentUser();
+		$current_user = vt_service('auth.service')->getCurrentUser();
 		$user_email = $current_user->email;
 
 		return "(
@@ -480,7 +480,7 @@ class VT_Conversation_Manager {
 		// For standalone conversations, validate the provided privacy
 		$allowed_privacy_settings = array('public', 'friends', 'members');
 
-		$privacy = VT_Sanitize::textField($privacy);
+		$privacy = vt_service('validation.validator')->textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid
@@ -692,7 +692,7 @@ class VT_Conversation_Manager {
 		}
 
 		// Sanitize content but allow embeds
-		$allowed_html = VT_Security::getAllowedHtml();
+		$allowed_html = vt_service('validation.sanitizer')->getAllowedHtml();
 
 		// Add iframe support for embeds
 		$allowed_html['iframe'] = array(
@@ -731,7 +731,7 @@ class VT_Conversation_Manager {
 		// Prepare update data
 		$update_data = array();
 		if (isset($data['content'])) {
-			$update_data['content'] = VT_Security::ksesPost($data['content']);
+			$update_data['content'] = vt_service('validation.sanitizer')->richText($data['content']);
 		}
 
 		if (empty($update_data)) {
@@ -784,13 +784,13 @@ class VT_Conversation_Manager {
 		}
 
 		// Check permissions
-		$current_user = VT_Auth::getCurrentUser();
-		if (!VT_Auth::isLoggedIn()) {
+		$current_user = vt_service('auth.service')->getCurrentUser();
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			return false; // Must be logged in
 		}
 
 		// User can delete if they are the author or an admin
-		$can_delete = (VT_Auth::getCurrentUserId() == $reply->author_id) || VT_Auth::currentUserCan('manage_options');
+		$can_delete = (vt_service('auth.service')->getCurrentUserId() == $reply->author_id) || vt_service('auth.service')->currentUserCan('manage_options');
 		if (!$can_delete) {
 			return false; // Not authorized
 		}
@@ -889,8 +889,8 @@ class VT_Conversation_Manager {
 
 		// Prepare update data
 		$data = array(
-			'title' => VT_Sanitize::textField($update_data['title']),
-			'content' => VT_Security::ksesPost($update_data['content']),
+			'title' => vt_service('validation.validator')->textField($update_data['title']),
+			'content' => vt_service('validation.sanitizer')->richText($update_data['content']),
 			'slug' => $this->generateConversationSlug($update_data['title'], $conversation_id),
 		);
 
@@ -963,7 +963,7 @@ class VT_Conversation_Manager {
 	private function validatePrivacySetting($privacy) {
 		$allowed_privacy_settings = array('public', 'friends', 'members');
 
-		$privacy = VT_Sanitize::textField($privacy);
+		$privacy = vt_service('validation.validator')->textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid

@@ -6,8 +6,8 @@
  */
 
 // Get current user info
-$current_user = VT_Auth::getCurrentUser();
-$user_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$user_logged_in = vt_service('auth.service')->isLoggedIn();
 
 // Check if we're viewing a single conversation
 $conversation_slug = $_GET['conversation_slug'] ?? '';
@@ -117,7 +117,7 @@ $breadcrumbs = array();
 									?>
 								</span>
 								<span class="vt-badge vt-badge-<?php echo $conversation->privacy === 'private' ? 'secondary' : 'success'; ?>">
-									<?php echo VT_Sanitize::escHtml(ucfirst($conversation->privacy)); ?>
+									<?php echo vt_service('validation.validator')->escHtml(ucfirst($conversation->privacy)); ?>
 								</span>
 							</div>
 						</div>

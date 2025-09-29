@@ -37,6 +37,27 @@ class VT_Auth_UserRepository {
     }
 
     /**
+     * Compatibility methods for legacy VT_Auth calls
+     */
+    public function getUserById(int $userId): ?object {
+        return $this->findById($userId);
+    }
+
+    public function getUserByEmail(string $email): ?object {
+        return $this->findByEmail($email);
+    }
+
+    public function existsByUsername(string $username): bool {
+        $query = "SELECT COUNT(*) FROM vt_users WHERE username = ?";
+        return $this->connection->fetchColumn($query, [$username]) > 0;
+    }
+
+    public function existsByEmail(string $email): bool {
+        $query = "SELECT COUNT(*) FROM vt_users WHERE email = ?";
+        return $this->connection->fetchColumn($query, [$email]) > 0;
+    }
+
+    /**
      * Find user by username
      */
     public function findByUsername(string $username): ?object {

@@ -40,7 +40,7 @@ class VT_Feature_Flags {
 	 */
 	public static function canUserCreateCommunity($user_id = null) {
 		if (!$user_id) {
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		}
 
 		if (!$user_id) {
@@ -65,7 +65,7 @@ class VT_Feature_Flags {
 	 */
 	public static function canUserJoinCommunity($user_id = null) {
 		if (!$user_id) {
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		}
 
 		return $user_id > 0; // Must be registered user
@@ -75,14 +75,14 @@ class VT_Feature_Flags {
 	 * Check if communities feature should show in admin
 	 */
 	public static function showCommunitiesInAdmin() {
-		return VT_Auth::currentUserCan('manage_options');
+		return vt_service('auth.service')->currentUserCan('manage_options');
 	}
 
 	/**
 	 * Check if AT Protocol features should show in admin
 	 */
 	public static function showAtProtocolInAdmin() {
-		return VT_Auth::currentUserCan('manage_options') && self::isAtProtocolEnabled();
+		return vt_service('auth.service')->currentUserCan('manage_options') && self::isAtProtocolEnabled();
 	}
 
 	/**
@@ -102,14 +102,14 @@ class VT_Feature_Flags {
 	 * Enable communities feature (admin only)
 	 */
 	public static function enableCommunities() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 
 		VT_Config::set('enable_communities', true);
 
 		// Log the feature activation
-		error_log('[VivalaTable] Communities feature enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Communities feature enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 
 		return true;
 	}
@@ -118,14 +118,14 @@ class VT_Feature_Flags {
 	 * Disable communities feature (admin only)
 	 */
 	public static function disableCommunities() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 
 		VT_Config::set('enable_communities', false);
 
 		// Log the feature deactivation
-		error_log('[VivalaTable] Communities feature disabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Communities feature disabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 
 		return true;
 	}
@@ -134,14 +134,14 @@ class VT_Feature_Flags {
 	 * Enable AT Protocol feature (admin only)
 	 */
 	public static function enableAtProtocol() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 
 		VT_Config::set('at_protocol_enabled', true);
 
 		// Log the feature activation
-		error_log('[VivalaTable] AT Protocol feature enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] AT Protocol feature enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 
 		return true;
 	}
@@ -150,14 +150,14 @@ class VT_Feature_Flags {
 	 * Disable AT Protocol feature (admin only)
 	 */
 	public static function disableAtProtocol() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 
 		VT_Config::set('at_protocol_enabled', false);
 
 		// Log the feature deactivation
-		error_log('[VivalaTable] AT Protocol feature disabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] AT Protocol feature disabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 
 		return true;
 	}
@@ -237,74 +237,74 @@ class VT_Feature_Flags {
 	 * Admin methods to enable/disable circles flags
 	 */
 	public static function enableCirclesSchema() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('circles_schema', true);
-		error_log('[VivalaTable] Circles schema enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Circles schema enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
 	public static function enablePersonalCommunityNewUsers() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('personal_community_new_users', true);
-		error_log('[VivalaTable] Personal communities for new users enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Personal communities for new users enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
 	public static function enablePersonalCommunityBackfill() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('personal_community_backfill', true);
-		error_log('[VivalaTable] Personal communities backfill enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Personal communities backfill enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
 	public static function enableGeneralConvoDefaultToPersonal() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('general_convo_default_to_personal', true);
-		error_log('[VivalaTable] General conversations default to personal enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] General conversations default to personal enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
 	public static function enableReplyJoinFlow() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('reply_join_flow', true);
-		error_log('[VivalaTable] Reply join flow enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Reply join flow enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
 	public static function enableCirclesResolver() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('circles_resolver', true);
-		error_log('[VivalaTable] Circles resolver enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Circles resolver enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
 	public static function enableConvoFeedByCircle() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('convo_feed_by_circle', true);
-		error_log('[VivalaTable] Conversation feed by circle enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Conversation feed by circle enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
 	public static function enableCirclesNavUi() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return false;
 		}
 		VT_Config::set('circles_nav_ui', true);
-		error_log('[VivalaTable] Circles navigation UI enabled by user ID: ' . VT_Auth::getCurrentUserId());
+		error_log('[VivalaTable] Circles navigation UI enabled by user ID: ' . vt_service('auth.service')->getCurrentUserId());
 		return true;
 	}
 
@@ -312,7 +312,7 @@ class VT_Feature_Flags {
 	 * Get all feature flags for debugging
 	 */
 	public static function getAllFlags() {
-		if (!VT_Auth::currentUserCan('manage_options')) {
+		if (!vt_service('auth.service')->currentUserCan('manage_options')) {
 			return array();
 		}
 

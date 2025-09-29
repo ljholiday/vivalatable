@@ -82,8 +82,8 @@ VT_Config::initializeDefaults();
 VT_Config::loadAutoloadOptions();
 
 // Initialize systems
-VT_Security::init();
-VT_Auth::init();
+vt_service('security.service')->init();
+vt_service('auth.service')->init();
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
@@ -91,4 +91,4 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Generate CSRF token
-VT_Security::generateCSRFToken();
+vt_service('security.service')->generateCSRFToken();

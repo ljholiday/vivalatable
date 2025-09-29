@@ -21,8 +21,8 @@ $guest_manager = new VT_Guest_Manager();
 $conversation_manager = new VT_Conversation_Manager();
 
 // Get current user info
-$current_user = VT_Auth::getCurrentUser();
-$user_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$user_logged_in = vt_service('auth.service')->isLoggedIn();
 
 // Get user profile data if logged in
 $profile_data = null;
@@ -71,7 +71,7 @@ $page_description = 'Your social event hub';
     <div class="vt-section vt-mb">
         <div class="vt-card">
             <div class="vt-card-header">
-                <h2 class="vt-heading">Welcome back, <?php echo VT_Sanitize::escHtml($profile_data['display_name'] ?: $current_user->display_name); ?>!</h2>
+                <h2 class="vt-heading">Welcome back, <?php echo vt_service('validation.validator')->escHtml($profile_data['display_name'] ?: $current_user->display_name); ?>!</h2>
             </div>
             <div class="vt-card-body">
                 <p class="vt-text-muted">Here's what's happening in your social circle</p>
@@ -93,7 +93,7 @@ $page_description = 'Your social event hub';
                                 <div class="vt-card-body">
                                     <h4 class="vt-heading">
                                         <a href="/events/<?php echo $event->slug; ?>" class="vt-link">
-                                            <?php echo VT_Sanitize::escHtml($event->title); ?>
+                                            <?php echo vt_service('validation.validator')->escHtml($event->title); ?>
                                         </a>
                                     </h4>
                                     <p class="vt-text-muted">
@@ -135,11 +135,11 @@ $page_description = 'Your social event hub';
                                 <div class="vt-card-body">
                                     <h4 class="vt-heading">
                                         <a href="/conversations/<?php echo $conversation->slug; ?>" class="vt-link">
-                                            <?php echo VT_Sanitize::escHtml($conversation->title); ?>
+                                            <?php echo vt_service('validation.validator')->escHtml($conversation->title); ?>
                                         </a>
                                     </h4>
                                     <p class="vt-text-muted">
-                                        <?php echo VT_Sanitize::escHtml(substr($conversation->content, 0, 100)) . '...'; ?>
+                                        <?php echo vt_service('validation.validator')->escHtml(substr($conversation->content, 0, 100)) . '...'; ?>
                                     </p>
                                 </div>
                             </div>

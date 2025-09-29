@@ -36,7 +36,7 @@ class VT_Permission_Test {
             $password = 'testpass123';
             $display_name = 'Test User';
 
-            $user_id = VT_Auth::register($username, $email, $password, $display_name);
+            $user_id = vt_service('auth.service')->register($username, $email, $password, $display_name);
 
             if ($user_id) {
                 // Verify user was created
@@ -68,7 +68,7 @@ class VT_Permission_Test {
             $email = 'test' . time() . '@example.com';
             $password = 'testpass123';
 
-            $user_id = VT_Auth::register($username, $email, $password, 'Test User');
+            $user_id = vt_service('auth.service')->register($username, $email, $password, 'Test User');
 
             if (!$user_id) {
                 $this->fail("Could not create test user for login test");
@@ -80,11 +80,11 @@ class VT_Permission_Test {
             session_start();
 
             // Test login
-            $login_success = VT_Auth::login($email, $password);
+            $login_success = vt_service('auth.service')->login($email, $password);
 
             if ($login_success) {
-                $current_user_id = VT_Auth::getCurrentUserId();
-                $current_user = VT_Auth::getCurrentUser();
+                $current_user_id = vt_service('auth.service')->getCurrentUserId();
+                $current_user = vt_service('auth.service')->getCurrentUser();
 
                 if ($current_user_id == $user_id && $current_user->email === $email) {
                     $this->pass("User login successful");
@@ -108,8 +108,8 @@ class VT_Permission_Test {
 
         try {
             // Test token generation
-            $token1 = VT_Auth::generateGuestToken();
-            $token2 = VT_Auth::generateGuestToken();
+            $token1 = vt_service('auth.service')->generateGuestToken();
+            $token2 = vt_service('auth.service')->generateGuestToken();
 
             if (strlen($token1) === 32 && strlen($token2) === 32 && $token1 !== $token2) {
                 $this->pass("Guest token generation successful (32-char unique tokens)");
@@ -131,17 +131,17 @@ class VT_Permission_Test {
 
             // Simulate login
             $_SESSION['user_id'] = $user_id;
-            VT_Auth::init(); // Reload current user
+            vt_service('auth.service')->init(); // Reload current user
 
             // Test basic permissions
-            $can_edit_posts = VT_Auth::currentUserCan('edit_posts');
-            $cannot_manage_options = !VT_Auth::currentUserCan('manage_options');
-            $cannot_delete_others = !VT_Auth::currentUserCan('delete_others_posts');
+            $can_edit_posts = vt_service('auth.service')->currentUserCan('edit_posts');
+            $cannot_manage_options = !vt_service('auth.service')->currentUserCan('manage_options');
+            $cannot_delete_others = !vt_service('auth.service')->currentUserCan('delete_others_posts');
 
             if ($can_edit_posts && $cannot_manage_options && $cannot_delete_others) {
                 $this->pass("Permission levels working correctly for regular user");
             } else {
-                $this->fail("Permission levels incorrect (edit_posts: $can_edit_posts, manage_options: " . VT_Auth::currentUserCan('manage_options') . ", delete_others: " . VT_Auth::currentUserCan('delete_others_posts') . ")");
+                $this->fail("Permission levels incorrect (edit_posts: $can_edit_posts, manage_options: " . vt_service('auth.service')->currentUserCan('manage_options') . ", delete_others: " . vt_service('auth.service')->currentUserCan('delete_others_posts') . ")");
             }
 
             // Clean up
@@ -174,7 +174,7 @@ class VT_Permission_Test {
 
             // Simulate login
             $_SESSION['user_id'] = $user_id;
-            VT_Auth::init();
+            vt_service('auth.service')->init();
 
             // Test admin capabilities
             $is_admin = VT_Auth::isAdmin();

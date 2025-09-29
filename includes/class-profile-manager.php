@@ -35,7 +35,7 @@ class VT_Profile_Manager {
 	public static function createDefaultProfile($user_id) {
 		$db = VT_Database::getInstance();
 		$table_name = $db->prefix . 'user_profiles';
-		$user_data = VT_Auth::getUserById($user_id);
+		$user_data = vt_service('auth.user_repository')->getUserById($user_id);
 
 		$default_data = array(
 			'user_id' => $user_id,
@@ -90,7 +90,7 @@ class VT_Profile_Manager {
 
 		// Display name
 		if (isset($data['display_name'])) {
-			$display_name = VT_Sanitize::textField($data['display_name']);
+			$display_name = vt_service('validation.validator')->textField($data['display_name']);
 			if (strlen($display_name) > 255) {
 				$errors[] = 'Display name must be 255 characters or less.';
 			} else {
@@ -100,7 +100,7 @@ class VT_Profile_Manager {
 
 		// Bio
 		if (isset($data['bio'])) {
-			$bio = VT_Sanitize::textarea($data['bio']);
+			$bio = vt_service('validation.validator')->textarea($data['bio']);
 			if (strlen($bio) > 500) {
 				$errors[] = 'Bio must be 500 characters or less.';
 			} else {
@@ -110,7 +110,7 @@ class VT_Profile_Manager {
 
 		// Location
 		if (isset($data['location'])) {
-			$location = VT_Sanitize::textField($data['location']);
+			$location = vt_service('validation.validator')->textField($data['location']);
 			if (strlen($location) > 255) {
 				$errors[] = 'Location must be 255 characters or less.';
 			} else {
@@ -120,7 +120,7 @@ class VT_Profile_Manager {
 
 		// Avatar source
 		if (isset($data['avatar_source'])) {
-			$avatar_source = VT_Sanitize::textField($data['avatar_source']);
+			$avatar_source = vt_service('validation.validator')->textField($data['avatar_source']);
 			if (in_array($avatar_source, array('custom', 'gravatar'))) {
 				$update_data['avatar_source'] = $avatar_source;
 			}
@@ -128,7 +128,7 @@ class VT_Profile_Manager {
 
 		// Website URL
 		if (isset($data['website_url'])) {
-			$website = VT_Sanitize::url($data['website_url']);
+			$website = vt_service('validation.validator')->url($data['website_url']);
 			if ($website && !filter_var($website, FILTER_VALIDATE_URL)) {
 				$errors[] = 'Please enter a valid website URL.';
 			} else {
@@ -138,12 +138,12 @@ class VT_Profile_Manager {
 
 		// Dietary restrictions
 		if (isset($data['dietary_restrictions'])) {
-			$update_data['dietary_restrictions'] = VT_Sanitize::textarea($data['dietary_restrictions']);
+			$update_data['dietary_restrictions'] = vt_service('validation.validator')->textarea($data['dietary_restrictions']);
 		}
 
 		// Accessibility needs
 		if (isset($data['accessibility_needs'])) {
-			$update_data['accessibility_needs'] = VT_Sanitize::textarea($data['accessibility_needs']);
+			$update_data['accessibility_needs'] = vt_service('validation.validator')->textarea($data['accessibility_needs']);
 		}
 
 		// Hosting preferences
@@ -151,7 +151,7 @@ class VT_Profile_Manager {
 			if (is_array($data['hosting_preferences'])) {
 				$update_data['hosting_preferences'] = json_encode($data['hosting_preferences']);
 			} else {
-				$update_data['hosting_preferences'] = VT_Sanitize::textarea($data['hosting_preferences']);
+				$update_data['hosting_preferences'] = vt_service('validation.validator')->textarea($data['hosting_preferences']);
 			}
 		}
 
@@ -160,7 +160,7 @@ class VT_Profile_Manager {
 			if (is_array($data['available_times'])) {
 				$update_data['available_times'] = json_encode($data['available_times']);
 			} else {
-				$update_data['available_times'] = VT_Sanitize::textarea($data['available_times']);
+				$update_data['available_times'] = vt_service('validation.validator')->textarea($data['available_times']);
 			}
 		}
 
@@ -178,7 +178,7 @@ class VT_Profile_Manager {
 		if (isset($data['privacy']) && is_array($data['privacy'])) {
 			$privacy = array();
 			if (isset($data['privacy']['profile_visibility'])) {
-				$visibility = VT_Sanitize::textField($data['privacy']['profile_visibility']);
+				$visibility = vt_service('validation.validator')->textField($data['privacy']['profile_visibility']);
 				if (in_array($visibility, array('public', 'community', 'private'))) {
 					$privacy['profile_visibility'] = $visibility;
 				} else {
@@ -220,11 +220,11 @@ class VT_Profile_Manager {
 
 		// Handle direct image URL data (from AJAX uploads)
 		if (isset($data['profile_image'])) {
-			$update_data['profile_image'] = VT_Sanitize::url($data['profile_image']);
+			$update_data['profile_image'] = vt_service('validation.validator')->url($data['profile_image']);
 		}
 
 		if (isset($data['cover_image'])) {
-			$update_data['cover_image'] = VT_Sanitize::url($data['cover_image']);
+			$update_data['cover_image'] = vt_service('validation.validator')->url($data['cover_image']);
 		}
 
 		// Return early if there are validation errors
@@ -410,7 +410,7 @@ class VT_Profile_Manager {
 	 */
 	public static function canViewProfile($profile_user_id, $viewing_user_id = null) {
 		if (!$viewing_user_id) {
-			$viewing_user_id = VT_Auth::getCurrentUserId();
+			$viewing_user_id = vt_service('auth.service')->getCurrentUserId();
 		}
 
 		// Users can always view their own profile
@@ -445,7 +445,7 @@ class VT_Profile_Manager {
 	 * Get profile URL for user
 	 */
 	public static function getProfileUrl($user_id) {
-		if ($user_id == VT_Auth::getCurrentUserId()) {
+		if ($user_id == vt_service('auth.service')->getCurrentUserId()) {
 			return VT_Http::getBaseUrl() . '/profile';
 		} else {
 			return VT_Http::getBaseUrl() . '/profile/' . $user_id;
@@ -461,7 +461,7 @@ class VT_Profile_Manager {
 			return $profile['display_name'];
 		}
 
-		$user_data = VT_Auth::getUserById($user_id);
+		$user_data = vt_service('auth.user_repository')->getUserById($user_id);
 		return $user_data ? $user_data->display_name : 'Unknown User';
 	}
 }

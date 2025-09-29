@@ -16,8 +16,8 @@ require_once VT_INCLUDES_DIR . '/class-community-manager.php';
 $community_manager = new VT_Community_Manager();
 
 // Get current user info
-$current_user = VT_Auth::getCurrentUser();
-$user_logged_in = VT_Auth::isLoggedIn();
+$current_user = vt_service('auth.service')->getCurrentUser();
+$user_logged_in = vt_service('auth.service')->isLoggedIn();
 $user_email = $user_logged_in ? $current_user->email : '';
 
 // Get data for both tabs
@@ -80,18 +80,18 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 							<div class="vt-flex vt-flex-between vt-mb-4">
 								<div class="vt-flex-1">
 									<h3 class="vt-heading vt-heading-sm vt-mb-2">
-										<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>" class="vt-text-primary">
-											<?php echo VT_Sanitize::escHtml($community->name); ?>
+										<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>" class="vt-text-primary">
+											<?php echo vt_service('validation.validator')->escHtml($community->name); ?>
 										</a>
 									</h3>
 									<div class="vt-flex vt-gap vt-flex-wrap vt-mb-2">
 										<?php if (!empty($community->role)) : ?>
 										<span class="vt-badge vt-badge-<?php echo $community->role === 'admin' ? 'primary' : 'success'; ?>">
-											<?php echo VT_Sanitize::escHtml(ucfirst($community->role)); ?>
+											<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->role)); ?>
 										</span>
 										<?php endif; ?>
 										<span class="vt-badge vt-badge-<?php echo $community->visibility === 'private' ? 'secondary' : 'success'; ?>">
-											<?php echo VT_Sanitize::escHtml(ucfirst($community->visibility)); ?>
+											<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->visibility)); ?>
 										</span>
 									</div>
 									<div class="vt-text-muted">
@@ -110,7 +110,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 
 							<?php if ($community->description) : ?>
 							<div class="vt-mb-4">
-								<p class="vt-text-muted"><?php echo VT_Sanitize::escHtml(VT_Text::truncateWords($community->description, 15)); ?></p>
+								<p class="vt-text-muted"><?php echo vt_service('validation.validator')->escHtml(VT_Text::truncateWords($community->description, 15)); ?></p>
 							</div>
 							<?php endif; ?>
 
@@ -123,11 +123,11 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 								</div>
 
 								<div class="vt-flex vt-gap">
-									<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>" class="vt-btn">
+									<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>" class="vt-btn">
 										View
 									</a>
 									<?php if ($community->role === 'admin') : ?>
-										<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>/manage" class="vt-btn">
+										<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>/manage" class="vt-btn">
 											Manage
 										</a>
 									<?php endif; ?>
@@ -158,12 +158,12 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 				<div class="vt-section vt-border vt-p-4">
 					<div class="vt-section-header vt-flex vt-flex-between vt-mb-4">
 						<h3 class="vt-heading vt-heading-sm">
-							<a href="/communities/<?php echo VT_Sanitize::escHtml($community->slug); ?>" class="vt-text-primary">
-								<?php echo VT_Sanitize::escHtml($community->name); ?>
+							<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>" class="vt-text-primary">
+								<?php echo vt_service('validation.validator')->escHtml($community->name); ?>
 							</a>
 						</h3>
 						<div class="vt-badge vt-badge-<?php echo $community->visibility === 'public' ? 'success' : 'secondary'; ?>">
-							<?php echo VT_Sanitize::escHtml(ucfirst($community->visibility)); ?>
+							<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->visibility)); ?>
 						</div>
 					</div>
 					<div class="vt-mb-4">
@@ -174,7 +174,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 
 					<?php if ($community->description) : ?>
 				<div class="vt-mb-4">
-					<p class="vt-text-muted"><?php echo VT_Sanitize::escHtml(VT_Text::truncateWords($community->description, 20)); ?></p>
+					<p class="vt-text-muted"><?php echo vt_service('validation.validator')->escHtml(VT_Text::truncateWords($community->description, 20)); ?></p>
 				</div>
 				<?php endif; ?>
 
@@ -190,7 +190,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 						?>
 						<button class="vt-btn <?php echo $is_member ? 'vt-btn-secondary' : 'vt-btn-primary'; ?> join-community-btn"
 								data-community-id="<?php echo $community->id; ?>"
-								data-community-name="<?php echo VT_Sanitize::escHtml($community->name); ?>"
+								data-community-name="<?php echo vt_service('validation.validator')->escHtml($community->name); ?>"
 								<?php echo $is_member ? 'disabled' : ''; ?>>
 							<?php echo $is_member ? 'Member' : 'Join'; ?>
 						</button>

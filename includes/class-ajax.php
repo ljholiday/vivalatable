@@ -23,7 +23,7 @@ class VT_Ajax {
             self::sendError('No action specified');
         }
 
-        $action = VT_Sanitize::textField($_POST['action']);
+        $action = vt_service('validation.validator')->textField($_POST['action']);
 
         if (!isset(self::$registered_actions[$action])) {
             self::sendError('Unknown action');
@@ -75,7 +75,7 @@ class VT_Ajax {
      * Verify AJAX request has valid nonce
      */
     public static function verifyNonce($action, $name = '_ajax_nonce') {
-        if (!VT_Security::verifyNonce($_POST[$name] ?? '', $action)) {
+        if (!vt_service('security.service')->verifyNonce($_POST[$name] ?? '', $action)) {
             self::sendError('Security check failed');
         }
     }

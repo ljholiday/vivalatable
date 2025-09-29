@@ -24,15 +24,15 @@ class VT_Member_Display {
 
 		$args = array_merge($defaults, $args);
 
-		$user = VT_Auth::getUserById($user_id);
+		$user = vt_service('auth.user_repository')->getUserById($user_id);
 		if (!$user) {
-			return '<span class="' . VT_Sanitize::escAttr($args['class']) . '">Unknown User</span>';
+			return '<span class="' . vt_service('validation.validator')->escAttr($args['class']) . '">Unknown User</span>';
 		}
 
 		$profile = VT_Profile_Manager::getUserProfile($user_id);
 		$display_name = $profile['display_name'] ?: $user->display_name ?: $user->username;
 
-		$output = '<div class="' . VT_Sanitize::escAttr($args['class']) . ' vt-flex vt-gap-2 vt-items-center">';
+		$output = '<div class="' . vt_service('validation.validator')->escAttr($args['class']) . ' vt-flex vt-gap-2 vt-items-center">';
 
 		if ($args['show_avatar']) {
 			$avatar_html = self::getAvatarHtml($profile, $args['avatar_size']);
@@ -41,11 +41,11 @@ class VT_Member_Display {
 
 		if ($args['show_profile_link']) {
 			$profile_url = VT_Profile_Manager::getProfileUrl($user_id);
-			$output .= '<a href="' . VT_Sanitize::escUrl($profile_url) . '" class="vt-text-primary vt-font-medium">';
-			$output .= VT_Sanitize::escHtml($display_name);
+			$output .= '<a href="' . vt_service('validation.validator')->escUrl($profile_url) . '" class="vt-text-primary vt-font-medium">';
+			$output .= vt_service('validation.validator')->escHtml($display_name);
 			$output .= '</a>';
 		} else {
-			$output .= '<span class="vt-font-medium">' . VT_Sanitize::escHtml($display_name) . '</span>';
+			$output .= '<span class="vt-font-medium">' . vt_service('validation.validator')->escHtml($display_name) . '</span>';
 		}
 
 		$output .= '</div>';
@@ -71,17 +71,17 @@ class VT_Member_Display {
 
 		$args = array_merge($defaults, $args);
 
-		$output = VT_Sanitize::escHtml($args['prefix']);
+		$output = vt_service('validation.validator')->escHtml($args['prefix']);
 
 		// Try to get user by author_id first, then fall back to host_email
 		if (!empty($event->author_id)) {
 			$output .= self::getMemberDisplay($event->author_id, $args);
 		} elseif (!empty($event->host_email)) {
-			$user = VT_Auth::getUserByEmail($event->host_email);
+			$user = vt_service('auth.user_repository')->getUserByEmail($event->host_email);
 			if ($user) {
 				$output .= self::getMemberDisplay($user->id, $args);
 			} else {
-				$output .= '<span class="vt-member-display">' . VT_Sanitize::escHtml($event->host_email) . '</span>';
+				$output .= '<span class="vt-member-display">' . vt_service('validation.validator')->escHtml($event->host_email) . '</span>';
 			}
 		} else {
 			$output .= '<span class="vt-member-display">Unknown Host</span>';
@@ -119,7 +119,7 @@ class VT_Member_Display {
 
 		return sprintf(
 			'<img src="%s" alt="Avatar" class="vt-avatar" style="width: %dpx; height: %dpx; border-radius: 50%;">',
-			VT_Sanitize::escUrl($avatar_url),
+			vt_service('validation.validator')->escUrl($avatar_url),
 			(int) $size,
 			(int) $size
 		);
@@ -145,10 +145,10 @@ class VT_Member_Display {
 		$args = array_merge($defaults, $args);
 
 		if (empty($members)) {
-			return '<div class="' . VT_Sanitize::escAttr($args['class']) . '">No members</div>';
+			return '<div class="' . vt_service('validation.validator')->escAttr($args['class']) . '">No members</div>';
 		}
 
-		$output = '<div class="' . VT_Sanitize::escAttr($args['class']) . ' vt-flex vt-gap-2 vt-flex-wrap">';
+		$output = '<div class="' . vt_service('validation.validator')->escAttr($args['class']) . ' vt-flex vt-gap-2 vt-flex-wrap">';
 
 		$count = 0;
 		foreach ($members as $member) {

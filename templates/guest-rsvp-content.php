@@ -48,16 +48,16 @@ $success_message = '';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-	if ($_POST['action'] === 'submit_rsvp' && VT_Security::verifyNonce($_POST['nonce'], 'vt_guest_rsvp')) {
-		$rsvp_status = VT_Sanitize::textField($_POST['rsvp_status']);
+	if ($_POST['action'] === 'submit_rsvp' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_guest_rsvp')) {
+		$rsvp_status = vt_service('validation.validator')->textField($_POST['rsvp_status']);
 
 		$guest_data = array(
-			'name' => VT_Sanitize::textField($_POST['guest_name'] ?? ''),
-			'phone' => VT_Sanitize::textField($_POST['guest_phone'] ?? ''),
-			'dietary_restrictions' => VT_Sanitize::textField($_POST['dietary_restrictions'] ?? ''),
+			'name' => vt_service('validation.validator')->textField($_POST['guest_name'] ?? ''),
+			'phone' => vt_service('validation.validator')->textField($_POST['guest_phone'] ?? ''),
+			'dietary_restrictions' => vt_service('validation.validator')->textField($_POST['dietary_restrictions'] ?? ''),
 			'plus_one' => intval($_POST['plus_one'] ?? 0),
-			'plus_one_name' => VT_Sanitize::textField($_POST['plus_one_name'] ?? ''),
-			'notes' => VT_Sanitize::textField($_POST['guest_notes'] ?? '')
+			'plus_one_name' => vt_service('validation.validator')->textField($_POST['plus_one_name'] ?? ''),
+			'notes' => vt_service('validation.validator')->textField($_POST['guest_notes'] ?? '')
 		);
 
 		$result = $guest_manager->processAnonymousRsvp($rsvp_token, $rsvp_status, $guest_data);
@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	}
 
 	// Handle guest-to-user conversion
-	if ($_POST['action'] === 'create_account' && VT_Security::verifyNonce($_POST['nonce'], 'vt_guest_conversion')) {
+	if ($_POST['action'] === 'create_account' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_guest_conversion')) {
 		$user_data = array(
-			'username' => VT_Sanitize::textField($_POST['username']),
+			'username' => vt_service('validation.validator')->textField($_POST['username']),
 			'password' => $_POST['password'],
-			'display_name' => VT_Sanitize::textField($_POST['display_name'] ?? $guest->name)
+			'display_name' => vt_service('validation.validator')->textField($_POST['display_name'] ?? $guest->name)
 		);
 
 		$user_result = $guest_manager->convertGuestToUser($guest->id, $user_data);
@@ -166,7 +166,7 @@ $pre_select = $_GET['pre_select'] ?? '';
 
 	<form method="post" class="vt-form" id="rsvp-form">
 		<input type="hidden" name="action" value="submit_rsvp">
-		<input type="hidden" name="nonce" value="<?php echo VT_Security::createNonce('vt_guest_rsvp'); ?>">
+		<input type="hidden" name="nonce" value="<?php echo vt_service('security.service')->createNonce('vt_guest_rsvp'); ?>">
 
 		<!-- RSVP Status Selection -->
 		<div class="vt-form-group">
@@ -308,7 +308,7 @@ $pre_select = $_GET['pre_select'] ?? '';
 
 				<form method="post" class="vt-form" id="account-creation-form">
 					<input type="hidden" name="action" value="create_account">
-					<input type="hidden" name="nonce" value="<?php echo VT_Security::createNonce('vt_guest_conversion'); ?>">
+					<input type="hidden" name="nonce" value="<?php echo vt_service('security.service')->createNonce('vt_guest_conversion'); ?>">
 
 					<div class="vt-form-group">
 						<label class="vt-form-label" for="username">

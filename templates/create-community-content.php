@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		'name' => trim($_POST['name'] ?? ''),
 		'description' => trim($_POST['description'] ?? ''),
 		'visibility' => $_POST['visibility'] ?? 'public',
-		'creator_email' => VT_Auth::getCurrentUser()->email ?? ''
+		'creator_email' => vt_service('auth.service')->getCurrentUser()->email ?? ''
 	];
 
 	// Basic validation

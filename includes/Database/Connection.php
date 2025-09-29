@@ -56,6 +56,14 @@ class VT_Database_Connection {
     }
 
     /**
+     * Fetch a single column value
+     */
+    public function fetchColumn(string $query, array $params = []): mixed {
+        $stmt = $this->execute($query, $params);
+        return $stmt->fetchColumn();
+    }
+
+    /**
      * Insert record and return ID
      */
     public function insert(string $table, array $data): int {
@@ -170,14 +178,14 @@ class VT_Database_Connection {
                 $dsn = sprintf(
                     'mysql:host=%s;dbname=%s;charset=%s',
                     $this->config['host'],
-                    $this->config['dbname'],
+                    $this->config['database'],
                     $this->config['charset'] ?? 'utf8mb4'
                 );
             } else {
                 $dsn = sprintf(
                     'mysql:unix_socket=%s;dbname=%s;charset=%s',
                     $this->config['socket'] ?? '/tmp/mysql.sock',
-                    $this->config['dbname'],
+                    $this->config['database'],
                     $this->config['charset'] ?? 'utf8mb4'
                 );
             }

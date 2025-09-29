@@ -38,7 +38,7 @@ class VT_Security {
     }
 
     public static function createNonce($action = -1) {
-        $user_id = VT_Auth::getCurrentUserId();
+        $user_id = vt_service('auth.service')->getCurrentUserId();
         $time_bucket = floor(time() / (self::$nonce_life / 2)) * (self::$nonce_life / 2);
         $token = $user_id . '|' . $action . '|' . $time_bucket;
         $hash = self::hash($token);
@@ -51,7 +51,7 @@ class VT_Security {
             return false;
         }
 
-        $user_id = VT_Auth::getCurrentUserId();
+        $user_id = vt_service('auth.service')->getCurrentUserId();
         $current_time = time();
 
         // Check current and previous time buckets (12-hour buckets within 24-hour window)
@@ -74,7 +74,7 @@ class VT_Security {
         $field = '<input type="hidden" name="' . $name . '" value="' . $nonce . '" />';
 
         if ($referer) {
-            $field .= '<input type="hidden" name="_wp_http_referer" value="' . VT_Sanitize::escAttr($_SERVER['REQUEST_URI']) . '" />';
+            $field .= '<input type="hidden" name="_wp_http_referer" value="' . vt_service('validation.validator')->escAttr($_SERVER['REQUEST_URI']) . '" />';
         }
 
         if ($echo) {
@@ -153,13 +153,12 @@ class VT_Security {
     }
 
     public static function ksesPost($data) {
-        return VT_Sanitize::post($data);
+        return vt_service('validation.sanitizer')->richText($data);
     }
 
     public static function sanitizeTextarea($data) {
-        return VT_Sanitize::post($data);
+        return vt_service('validation.sanitizer')->richText($data);
     }
 }
 
-// Initialize security system
-VT_Security::init();
+// Initialize security system - now handled in bootstrap.php

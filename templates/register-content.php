@@ -6,7 +6,7 @@
  */
 
 // Check if user is already logged in
-if (VT_Auth::isLoggedIn()) {
+if (vt_service('auth.service')->isLoggedIn()) {
 	header('Location: /');
 	exit;
 }
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		// If no validation errors, attempt registration
 		if (empty($errors)) {
-			$user_id = VT_Auth::register($username, $email, $password, $display_name);
+			$user_id = vt_service('auth.service')->register($username, $email, $password, $display_name);
 
 			if ($user_id) {
 				// Handle guest token conversion if applicable

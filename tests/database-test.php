@@ -208,8 +208,8 @@ class VT_Database_Test {
                 'name' => 'Test Guest',
                 'email' => 'test.guest' . time() . '@example.com',
                 'status' => 'pending',
-                'rsvp_token' => VT_Security::generateToken(),
-                'temporary_guest_id' => VT_Security::generateToken()
+                'rsvp_token' => vt_service('security.service')->generateToken(),
+                'temporary_guest_id' => vt_service('security.service')->generateToken()
             ];
 
             $guest_id = $this->db->insert('guests', $guest_data);

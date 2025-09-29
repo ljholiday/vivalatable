@@ -15,6 +15,14 @@ class VT_Security_SecurityService {
     }
 
     /**
+     * Initialize security system (for compatibility)
+     */
+    public function init(): void {
+        // Security initialization is handled in constructor
+        // This method exists for compatibility with legacy VT_Security::init() calls
+    }
+
+    /**
      * Initialize security secrets
      */
     private function initializeSecrets(): void {

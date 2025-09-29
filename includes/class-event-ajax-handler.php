@@ -39,7 +39,7 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxCreateEvent() {
-		VT_Security::verifyNonce('create_vt_event', 'vt_event_nonce');
+		vt_service('security.service')->verifyNonce('create_vt_event', 'vt_event_nonce');
 
 		$form_errors = array();
 
@@ -70,14 +70,14 @@ class VT_Event_Ajax_Handler {
 			}
 
 			$event_data = array(
-				'title' => VT_Sanitize::textField($_POST['event_title']),
-				'description' => VT_Security::ksesPost($_POST['event_description'] ?? ''),
-				'event_date' => VT_Sanitize::textField($_POST['event_date']),
-				'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
+				'title' => vt_service('validation.validator')->textField($_POST['event_title']),
+				'description' => vt_service('validation.sanitizer')->richText($_POST['event_description'] ?? ''),
+				'event_date' => vt_service('validation.validator')->textField($_POST['event_date']),
+				'venue' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-				'host_email' => VT_Sanitize::email($_POST['host_email']),
-				'host_notes' => VT_Security::ksesPost($_POST['host_notes'] ?? ''),
-				'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
+				'host_email' => vt_service('validation.validator')->email($_POST['host_email']),
+				'host_notes' => vt_service('validation.sanitizer')->richText($_POST['host_notes'] ?? ''),
+				'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
 				'community_id' => intval($_POST['community_id'] ?? 0),
 			);
 		}
@@ -103,7 +103,7 @@ class VT_Event_Ajax_Handler {
 				'event_title' => $created_event->title,
 			);
 
-			VT_Transient::set('vt_event_created_' . VT_Auth::getCurrentUserId(), $creation_data, 300);
+			VT_Transient::set('vt_event_created_' . vt_service('auth.service')->getCurrentUserId(), $creation_data, 300);
 
 			VT_Ajax::sendSuccess(array(
 				'event_id' => $event_id,
@@ -116,7 +116,7 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxUpdateEvent() {
-		VT_Security::verifyNonce('edit_vt_event', 'vt_edit_event_nonce');
+		vt_service('security.service')->verifyNonce('edit_vt_event', 'vt_edit_event_nonce');
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
@@ -129,12 +129,12 @@ class VT_Event_Ajax_Handler {
 			VT_Ajax::sendError('Event not found.');
 		}
 
-		$current_user = VT_Auth::getCurrentUser();
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 		$can_edit = false;
 
-		if (VT_Auth::currentUserCan('edit_posts') ||
-			(VT_Auth::isLoggedIn() && $current_user_id == $event->author_id) ||
+		if (vt_service('auth.service')->currentUserCan('edit_posts') ||
+			(vt_service('auth.service')->isLoggedIn() && $current_user_id == $event->author_id) ||
 			($current_user->email == $event->host_email)) {
 			$can_edit = true;
 		}
@@ -162,14 +162,14 @@ class VT_Event_Ajax_Handler {
 			}
 
 			$event_data = array(
-				'title' => VT_Sanitize::textField($_POST['event_title']),
-				'description' => VT_Security::ksesPost($_POST['event_description'] ?? ''),
-				'event_date' => VT_Sanitize::textField($_POST['event_date']),
-				'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
+				'title' => vt_service('validation.validator')->textField($_POST['event_title']),
+				'description' => vt_service('validation.sanitizer')->richText($_POST['event_description'] ?? ''),
+				'event_date' => vt_service('validation.validator')->textField($_POST['event_date']),
+				'venue' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-				'host_email' => VT_Sanitize::email($_POST['host_email']),
-				'host_notes' => VT_Security::ksesPost($_POST['host_notes'] ?? ''),
-				'privacy' => VT_Sanitize::textField($_POST['privacy'] ?? 'public'),
+				'host_email' => vt_service('validation.validator')->email($_POST['host_email']),
+				'host_notes' => vt_service('validation.sanitizer')->richText($_POST['host_notes'] ?? ''),
+				'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
 			);
 		}
 
@@ -204,23 +204,23 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxGetEventConversations() {
-		VT_Security::verifyNonce('vt_nonce', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
 			VT_Ajax::sendError('Event ID is required.');
 		}
 
-		$current_user = VT_Auth::getCurrentUser();
+		$current_user = vt_service('auth.service')->getCurrentUser();
 		$user_id = 0;
 
-		if (VT_Auth::isLoggedIn()) {
+		if (vt_service('auth.service')->isLoggedIn()) {
 			$user_email = $current_user->email;
 			$user_name = $current_user->display_name;
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		} else {
-			$user_email = VT_Sanitize::email($_POST['guest_email'] ?? '');
-			$user_name = VT_Sanitize::textField($_POST['guest_name'] ?? '');
+			$user_email = vt_service('validation.validator')->email($_POST['guest_email'] ?? '');
+			$user_name = vt_service('validation.validator')->textField($_POST['guest_name'] ?? '');
 
 			if (empty($user_email) || empty($user_name)) {
 				VT_Ajax::sendError('Email and name are required for guest access.');
@@ -239,15 +239,15 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxSendEventInvitation() {
-		VT_Security::verifyNonce('vt_event_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_event_action', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in.');
 		}
 
 		$event_id = intval($_POST['event_id']);
-		$email = VT_Sanitize::email($_POST['email']);
-		$message = VT_Security::sanitizeTextarea($_POST['message'] ?? '');
+		$email = vt_service('validation.validator')->email($_POST['email']);
+		$message = vt_service('validation.validator')->textarea($_POST['message'] ?? '');
 
 		if (!$event_id || !$email) {
 			VT_Ajax::sendError('Event ID and email are required.');
@@ -260,10 +260,10 @@ class VT_Event_Ajax_Handler {
 			VT_Ajax::sendError('Event not found.');
 		}
 
-		$current_user = VT_Auth::getCurrentUser();
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 
-		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
+		if ($event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
 			VT_Ajax::sendError('Only the event host can send invitations.');
 		}
 
@@ -306,7 +306,7 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxGetEventInvitations() {
-		VT_Security::verifyNonce('vt_event_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_event_action', 'nonce');
 
 		$event_id = intval($_POST['event_id']);
 		if (!$event_id) {
@@ -320,8 +320,8 @@ class VT_Event_Ajax_Handler {
 			VT_Ajax::sendError('Event not found.');
 		}
 
-		$current_user_id = VT_Auth::getCurrentUserId();
-		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		if ($event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
 			VT_Ajax::sendError('Only the event host can view invitations.');
 		}
 
@@ -373,7 +373,7 @@ class VT_Event_Ajax_Handler {
 
 				$html .= '<div class="vt-invitation-item">';
 				$html .= '<div class="vt-invitation-badges">';
-				$html .= '<span class="vt-badge vt-badge-' . $status_class . '">' . VT_Sanitize::escHtml($status_text) . '</span>';
+				$html .= '<span class="vt-badge vt-badge-' . $status_class . '">' . vt_service('validation.validator')->escHtml($status_text) . '</span>';
 
 				$source = $guest->invitation_source ?? 'direct';
 				$source_badges = array(
@@ -382,29 +382,29 @@ class VT_Event_Ajax_Handler {
 					'bluesky' => array('label' => 'BlueSky', 'class' => 'vt-badge-info'),
 				);
 				$source_info = $source_badges[$source] ?? $source_badges['direct'];
-				$html .= '<span class="vt-badge ' . $source_info['class'] . '">' . VT_Sanitize::escHtml($source_info['label']) . '</span>';
+				$html .= '<span class="vt-badge ' . $source_info['class'] . '">' . vt_service('validation.validator')->escHtml($source_info['label']) . '</span>';
 				$html .= '</div>';
 
 				$html .= '<div class="vt-invitation-details">';
-				$html .= '<h4>' . VT_Sanitize::escHtml($guest->email) . '</h4>';
+				$html .= '<h4>' . vt_service('validation.validator')->escHtml($guest->email) . '</h4>';
 				if (!empty($guest->name)) {
-					$html .= '<div class="vt-text-muted">' . VT_Sanitize::escHtml($guest->name) . '</div>';
+					$html .= '<div class="vt-text-muted">' . vt_service('validation.validator')->escHtml($guest->name) . '</div>';
 				}
 				$html .= '<div class="vt-text-muted">';
 				$html .= sprintf('Invited on %s', date('M j, Y', strtotime($guest->rsvp_date)));
 				$html .= '</div>';
 				if (!empty($guest->dietary_restrictions)) {
-					$html .= '<div class="vt-text-muted"><strong>Dietary:</strong> ' . VT_Sanitize::escHtml($guest->dietary_restrictions) . '</div>';
+					$html .= '<div class="vt-text-muted"><strong>Dietary:</strong> ' . vt_service('validation.validator')->escHtml($guest->dietary_restrictions) . '</div>';
 				}
 				if (!empty($guest->notes)) {
-					$html .= '<div class="vt-text-muted"><em>"' . VT_Sanitize::escHtml($guest->notes) . '"</em></div>';
+					$html .= '<div class="vt-text-muted"><em>"' . vt_service('validation.validator')->escHtml($guest->notes) . '"</em></div>';
 				}
 				$html .= '</div>';
 
 				$html .= '<div class="vt-invitation-actions">';
-				$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-secondary" onclick="copyInvitationUrl(\'' . VT_Sanitize::escJs($guest->invitation_url) . '\')">Copy Link</button>';
+				$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-secondary" onclick="copyInvitationUrl(\'' . vt_service('validation.sanitizer')->escapeAttribute($guest->invitation_url) . '\')">Copy Link</button>';
 				if ($guest->status === 'pending') {
-					$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-danger cancel-event-invitation" data-invitation-id="' . VT_Sanitize::escAttr($guest->id) . '">Remove</button>';
+					$html .= '<button type="button" class="vt-btn vt-btn-sm vt-btn-danger cancel-event-invitation" data-invitation-id="' . vt_service('validation.validator')->escAttr($guest->id) . '">Remove</button>';
 				}
 				$html .= '</div>';
 
@@ -419,9 +419,9 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxCancelEventInvitation() {
-		VT_Security::verifyNonce('vt_event_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_event_action', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in.');
 		}
 
@@ -449,8 +449,8 @@ class VT_Event_Ajax_Handler {
 			VT_Ajax::sendError('Event not found.');
 		}
 
-		$current_user_id = VT_Auth::getCurrentUserId();
-		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		if ($event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
 			VT_Ajax::sendError('Only the event host can remove guests.');
 		}
 
@@ -466,9 +466,9 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxGetEventStats() {
-		VT_Security::verifyNonce('vt_event_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_event_action', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in.');
 		}
 
@@ -484,8 +484,8 @@ class VT_Event_Ajax_Handler {
 			VT_Ajax::sendError('Event not found.');
 		}
 
-		$current_user_id = VT_Auth::getCurrentUserId();
-		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		if ($event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
 			VT_Ajax::sendError('Only the event host can view statistics.');
 		}
 
@@ -528,9 +528,9 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxGetEventGuests() {
-		VT_Security::verifyNonce('vt_event_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_event_action', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in.');
 		}
 
@@ -546,8 +546,8 @@ class VT_Event_Ajax_Handler {
 			VT_Ajax::sendError('Event not found.');
 		}
 
-		$current_user_id = VT_Auth::getCurrentUserId();
-		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		if ($event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
 			VT_Ajax::sendError('Only the event host can view the guest list.');
 		}
 
@@ -565,9 +565,9 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxDeleteEvent() {
-		VT_Security::verifyNonce('vt_event_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_event_action', 'nonce');
 
-		if (!VT_Auth::isLoggedIn()) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in.');
 		}
 
@@ -583,8 +583,8 @@ class VT_Event_Ajax_Handler {
 			VT_Ajax::sendError('Event not found.');
 		}
 
-		$current_user_id = VT_Auth::getCurrentUserId();
-		if ($event->author_id != $current_user_id && !VT_Auth::currentUserCan('edit_others_posts')) {
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		if ($event->author_id != $current_user_id && !vt_service('auth.service')->currentUserCan('edit_others_posts')) {
 			VT_Ajax::sendError('You do not have permission to delete this event.');
 		}
 
@@ -601,9 +601,9 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxAdminDeleteEvent() {
-		VT_Security::verifyNonce('vt_event_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_event_action', 'nonce');
 
-		if (!VT_Auth::currentUserCan('delete_others_posts')) {
+		if (!vt_service('auth.service')->currentUserCan('delete_others_posts')) {
 			VT_Ajax::sendError('You do not have permission to delete events.');
 		}
 
@@ -625,7 +625,7 @@ class VT_Event_Ajax_Handler {
 	}
 
 	public function ajaxCreateCommunityEvent() {
-		VT_Security::verifyNonce('create_vt_community_event', 'vt_community_event_nonce');
+		vt_service('security.service')->verifyNonce('create_vt_community_event', 'vt_community_event_nonce');
 
 		$form_errors = array();
 		if (empty($_POST['event_title'])) {
@@ -649,18 +649,18 @@ class VT_Event_Ajax_Handler {
 		$community_manager = new VT_Community_Manager();
 		$community_id = intval($_POST['community_id']);
 
-		if (!$community_manager->isMember($community_id, VT_Auth::getCurrentUserId())) {
+		if (!$community_manager->isMember($community_id, vt_service('auth.service')->getCurrentUserId())) {
 			VT_Ajax::sendError('You must be a member of the community to create events.');
 		}
 
 		$event_data = array(
-			'title' => VT_Sanitize::textField($_POST['event_title']),
-			'description' => VT_Security::ksesPost($_POST['event_description'] ?? ''),
-			'event_date' => VT_Sanitize::textField($_POST['event_date']),
-			'venue' => VT_Sanitize::textField($_POST['venue_info'] ?? ''),
+			'title' => vt_service('validation.validator')->textField($_POST['event_title']),
+			'description' => vt_service('validation.sanitizer')->richText($_POST['event_description'] ?? ''),
+			'event_date' => vt_service('validation.validator')->textField($_POST['event_date']),
+			'venue' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
 			'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-			'host_email' => VT_Sanitize::email($_POST['host_email']),
-			'host_notes' => VT_Security::ksesPost($_POST['host_notes'] ?? ''),
+			'host_email' => vt_service('validation.validator')->email($_POST['host_email']),
+			'host_notes' => vt_service('validation.sanitizer')->richText($_POST['host_notes'] ?? ''),
 			'community_id' => $community_id,
 			// Privacy will be inherited from community - no need to pass it
 		);
@@ -677,7 +677,7 @@ class VT_Event_Ajax_Handler {
 				'event_title' => $created_event->title,
 			);
 
-			VT_Transient::set('vt_community_event_created_' . VT_Auth::getCurrentUserId(), $creation_data, 300);
+			VT_Transient::set('vt_community_event_created_' . vt_service('auth.service')->getCurrentUserId(), $creation_data, 300);
 
 			VT_Ajax::sendSuccess(array(
 				'event_id' => $event_id,
@@ -763,41 +763,41 @@ class VT_Event_Ajax_Handler {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><?php echo VT_Sanitize::escHtml($event->title); ?> - Event Invitation</title>
+	<title><?php echo vt_service('validation.validator')->escHtml($event->title); ?> - Event Invitation</title>
 </head>
 <body>
 	<div>
 		<!-- Header -->
 		<div>
 			<h1>You're Invited!</h1>
-			<p><?php echo VT_Sanitize::escHtml($event->title); ?></p>
+			<p><?php echo vt_service('validation.validator')->escHtml($event->title); ?></p>
 		</div>
 
 		<!-- Main Content -->
 		<div>
 			<p>Hi there!</p>
 
-			<p><strong><?php echo VT_Sanitize::escHtml($host_name); ?></strong> has invited you to their event. Here are all the details:</p>
+			<p><strong><?php echo vt_service('validation.validator')->escHtml($host_name); ?></strong> has invited you to their event. Here are all the details:</p>
 
 			<!-- Event Details Card -->
 			<div>
-				<h2><?php echo VT_Sanitize::escHtml($event->title); ?></h2>
+				<h2><?php echo vt_service('validation.validator')->escHtml($event->title); ?></h2>
 
 				<div>
 					<p><strong>When:</strong> <?php echo $event_day; ?>, <?php echo $event_date; ?> at <?php echo $event_time; ?></p>
 					<?php if ($event->venue_info) : ?>
-					<p><strong>Where:</strong> <?php echo VT_Sanitize::escHtml($event->venue_info); ?></p>
+					<p><strong>Where:</strong> <?php echo vt_service('validation.validator')->escHtml($event->venue_info); ?></p>
 					<?php endif; ?>
 					<?php if ($event->description) : ?>
 					<p><strong>Details:</strong></p>
-					<p><?php echo nl2br(VT_Sanitize::escHtml($event->description)); ?></p>
+					<p><?php echo nl2br(vt_service('validation.validator')->escHtml($event->description)); ?></p>
 					<?php endif; ?>
 				</div>
 
 				<?php if ($personal_message) : ?>
 				<div>
-					<p><strong>Personal message from <?php echo VT_Sanitize::escHtml($host_name); ?>:</strong></p>
-					<p>"<?php echo VT_Sanitize::escHtml($personal_message); ?>"</p>
+					<p><strong>Personal message from <?php echo vt_service('validation.validator')->escHtml($host_name); ?>:</strong></p>
+					<p>"<?php echo vt_service('validation.validator')->escHtml($personal_message); ?>"</p>
 				</div>
 				<?php endif; ?>
 			</div>
@@ -806,33 +806,33 @@ class VT_Event_Ajax_Handler {
 			<div>
 				<p>Can you make it?</p>
 				<div>
-					<a href="<?php echo VT_Sanitize::escUrl($rsvp_yes_url); ?>">
+					<a href="<?php echo vt_service('validation.validator')->escUrl($rsvp_yes_url); ?>">
 						Yes, I'll be there!
 					</a>
-					<a href="<?php echo VT_Sanitize::escUrl($rsvp_maybe_url); ?>">
+					<a href="<?php echo vt_service('validation.validator')->escUrl($rsvp_maybe_url); ?>">
 						Maybe
 					</a>
-					<a href="<?php echo VT_Sanitize::escUrl($rsvp_no_url); ?>">
+					<a href="<?php echo vt_service('validation.validator')->escUrl($rsvp_no_url); ?>">
 						Can't make it
 					</a>
 				</div>
 				<p>
-					Or <a href="<?php echo VT_Sanitize::escUrl($invitation_url); ?>">click here to RSVP with more details</a>
+					Or <a href="<?php echo vt_service('validation.validator')->escUrl($invitation_url); ?>">click here to RSVP with more details</a>
 				</p>
 			</div>
 
 			<!-- Host Contact -->
 			<div>
 				<p>
-					Questions about the event? Just reply to this email to reach <?php echo VT_Sanitize::escHtml($host_name); ?> directly.
+					Questions about the event? Just reply to this email to reach <?php echo vt_service('validation.validator')->escHtml($host_name); ?> directly.
 				</p>
 			</div>
 		</div>
 
 		<!-- Footer -->
 		<div>
-			<p>This invitation was sent through <a href="<?php echo VT_Sanitize::escUrl($site_url); ?>"><?php echo VT_Sanitize::escHtml($site_name); ?></a></p>
-			<p>If you can't click the buttons above, copy and paste this link: <br><?php echo VT_Sanitize::escUrl($invitation_url); ?></p>
+			<p>This invitation was sent through <a href="<?php echo vt_service('validation.validator')->escUrl($site_url); ?>"><?php echo vt_service('validation.validator')->escHtml($site_name); ?></a></p>
+			<p>If you can't click the buttons above, copy and paste this link: <br><?php echo vt_service('validation.validator')->escUrl($invitation_url); ?></p>
 		</div>
 	</div>
 </body>

@@ -24,7 +24,7 @@ if (!$event_manager->canUserViewEvent($event)) {
     return;
 }
 
-$current_user = VT_Auth::getCurrentUser();
+$current_user = vt_service('auth.service')->getCurrentUser();
 $is_host = $current_user && $current_user->id == $event->author_id;
 ?>
 
@@ -32,14 +32,14 @@ $is_host = $current_user && $current_user->id == $event->author_id;
 <div class="vt-section">
     <div class="vt-flex vt-justify-between vt-align-center vt-mb-4">
         <div>
-            <h1 class="vt-heading vt-heading-lg vt-mb-2"><?php echo VT_Sanitize::html($event->title); ?></h1>
+            <h1 class="vt-heading vt-heading-lg vt-mb-2"><?php echo vt_service('validation.sanitizer')->richText($event->title); ?></h1>
             <div class="vt-flex vt-gap vt-items-center vt-mb-2">
                 <span class="vt-text-muted"><?php echo date('F j, Y', strtotime($event->event_date)); ?></span>
                 <?php if ($event->event_time): ?>
-                    <span class="vt-text-muted">at <?php echo VT_Sanitize::html($event->event_time); ?></span>
+                    <span class="vt-text-muted">at <?php echo vt_service('validation.sanitizer')->richText($event->event_time); ?></span>
                 <?php endif; ?>
                 <span class="vt-badge vt-badge-<?php echo $event->privacy === 'private' ? 'secondary' : 'success'; ?>">
-                    <?php echo VT_Sanitize::escHtml(ucfirst($event->privacy)); ?>
+                    <?php echo vt_service('validation.validator')->escHtml(ucfirst($event->privacy)); ?>
                 </span>
             </div>
         </div>
@@ -53,12 +53,12 @@ $is_host = $current_user && $current_user->id == $event->author_id;
 
     <?php if ($event->venue_info): ?>
         <div class="vt-mb-4">
-            <strong>Location:</strong> <?php echo VT_Sanitize::html($event->venue_info); ?>
+            <strong>Location:</strong> <?php echo vt_service('validation.sanitizer')->richText($event->venue_info); ?>
         </div>
     <?php endif; ?>
 
     <div class="vt-text-content">
-        <?php echo VT_Sanitize::post($event->description); ?>
+        <?php echo vt_service('validation.sanitizer')->richText($event->description); ?>
     </div>
 </div>
 
@@ -94,7 +94,7 @@ $is_host = $current_user && $current_user->id == $event->author_id;
 </div>
 
 <!-- RSVP Section -->
-<?php if (VT_Auth::isLoggedIn()): ?>
+<?php if (vt_service('auth.service')->isLoggedIn()): ?>
     <div class="vt-section">
         <h3 class="vt-heading vt-heading-sm vt-mb-3">RSVP</h3>
 

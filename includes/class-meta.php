@@ -29,9 +29,9 @@ class VT_Meta {
         }
 
         $result = $db->insert('meta', array(
-            'object_type' => VT_Sanitize::textField($objectType),
+            'object_type' => vt_service('validation.validator')->textField($objectType),
             'object_id' => intval($objectId),
-            'meta_key' => VT_Sanitize::textField($metaKey),
+            'meta_key' => vt_service('validation.validator')->textField($metaKey),
             'meta_value' => maybe_serialize($metaValue),
             'created_at' => VT_Time::currentTime('mysql')
         ));
@@ -91,12 +91,12 @@ class VT_Meta {
         $table = $db->prefix . 'meta';
 
         $where = array(
-            'object_type' => VT_Sanitize::textField($objectType),
+            'object_type' => vt_service('validation.validator')->textField($objectType),
             'object_id' => intval($objectId)
         );
 
         if (!empty($metaKey)) {
-            $where['meta_key'] = VT_Sanitize::textField($metaKey);
+            $where['meta_key'] = vt_service('validation.validator')->textField($metaKey);
         }
 
         if (!empty($metaValue)) {

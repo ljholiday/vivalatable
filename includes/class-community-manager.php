@@ -26,21 +26,21 @@ class VT_Community_Manager {
 			return ['error' => 'Creator email is required'];
 		}
 
-		$current_user = VT_Auth::getCurrentUser();
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 
 		if (!$current_user_id) {
 			return ['error' => 'You must be logged in to create a community'];
 		}
 
 		// Sanitize input data
-		$name = VT_Sanitize::textField($community_data['name']);
-		$description = VT_Sanitize::post($community_data['description'] ?? '');
+		$name = vt_service('validation.validator')->textField($community_data['name']);
+		$description = vt_service('validation.sanitizer')->richText($community_data['description'] ?? '');
 		$visibility = $this->validatePrivacySetting($community_data['visibility'] ?? 'public');
-		$creator_email = VT_Sanitize::email($community_data['creator_email']);
+		$creator_email = vt_service('validation.validator')->email($community_data['creator_email']);
 
 		// Generate unique slug
-		$slug = VT_Sanitize::slug($name);
+		$slug = vt_service('validation.sanitizer')->slug($name);
 		$original_slug = $slug;
 		$counter = 1;
 
@@ -129,7 +129,7 @@ class VT_Community_Manager {
 	 * Get community by slug
 	 */
 	public function getCommunityBySlug($slug) {
-		$slug = VT_Sanitize::slug($slug);
+		$slug = vt_service('validation.sanitizer')->slug($slug);
 		if (!$slug) {
 			return null;
 		}
@@ -170,10 +170,10 @@ class VT_Community_Manager {
 			if (in_array($field, $allowed_fields)) {
 				switch ($field) {
 					case 'name':
-						$sanitized_data[$field] = VT_Sanitize::textField($value);
+						$sanitized_data[$field] = vt_service('validation.validator')->textField($value);
 						break;
 					case 'description':
-						$sanitized_data[$field] = VT_Sanitize::post($value);
+						$sanitized_data[$field] = vt_service('validation.sanitizer')->richText($value);
 						break;
 					case 'visibility':
 						$sanitized_data[$field] = $this->validatePrivacySetting($value);
@@ -234,7 +234,7 @@ class VT_Community_Manager {
 		}
 
 		// Ensure we have a user_id (required field)
-		$user_id = isset($member_data['user_id']) ? intval($member_data['user_id']) : VT_Auth::getCurrentUserId();
+		$user_id = isset($member_data['user_id']) ? intval($member_data['user_id']) : vt_service('auth.service')->getCurrentUserId();
 		if (!$user_id) {
 			return new VT_Error('user_id_required', 'User ID is required for community membership');
 		}
@@ -243,8 +243,8 @@ class VT_Community_Manager {
 		$sanitized_data = array(
 			'community_id' => $community_id,
 			'user_id' => $user_id,
-			'email' => VT_Sanitize::email($member_data['email']),
-			'display_name' => VT_Sanitize::textField($member_data['display_name'] ?? ''),
+			'email' => vt_service('validation.validator')->email($member_data['email']),
+			'display_name' => vt_service('validation.validator')->textField($member_data['display_name'] ?? ''),
 			'role' => in_array($member_data['role'] ?? 'member', array('admin', 'member')) ? $member_data['role'] : 'member',
 			'status' => in_array($member_data['status'] ?? 'active', array('active', 'inactive')) ? $member_data['status'] : 'active',
 			'joined_at' => VT_Time::currentTime('mysql')
@@ -276,11 +276,11 @@ class VT_Community_Manager {
 		}
 
 		if (!$user_id && !$email) {
-			$current_user = VT_Auth::getCurrentUser();
+			$current_user = vt_service('auth.service')->getCurrentUser();
 			if (!$current_user) {
 				return false;
 			}
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 			$email = $current_user->email;
 		}
 
@@ -295,7 +295,7 @@ class VT_Community_Manager {
 			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
-					$community_id, VT_Sanitize::email($email), 'active'
+					$community_id, vt_service('validation.validator')->email($email), 'active'
 				)
 			);
 		} else {
@@ -315,11 +315,11 @@ class VT_Community_Manager {
 		}
 
 		if (!$user_id && !$email) {
-			$current_user = VT_Auth::getCurrentUser();
+			$current_user = vt_service('auth.service')->getCurrentUser();
 			if (!$current_user) {
 				return null;
 			}
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 			$email = $current_user->email;
 		}
 
@@ -334,7 +334,7 @@ class VT_Community_Manager {
 			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT role FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
-					$community_id, VT_Sanitize::email($email), 'active'
+					$community_id, vt_service('validation.validator')->email($email), 'active'
 				)
 			);
 		} else {
@@ -349,7 +349,7 @@ class VT_Community_Manager {
 	 */
 	public function canManageCommunity($community_id, $user_id = null) {
 		if (!$user_id) {
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		}
 
 		if (!$user_id) {
@@ -357,7 +357,7 @@ class VT_Community_Manager {
 		}
 
 		// Site admins can manage any community
-		if (VT_Auth::isSiteAdmin()) {
+		if (vt_service('auth.service')->isSiteAdmin()) {
 			return true;
 		}
 
@@ -391,11 +391,11 @@ class VT_Community_Manager {
 			return new VT_Error('permission_denied', 'You do not have permission to send invitations for this community');
 		}
 
-		$current_user = VT_Auth::getCurrentUser();
+		$current_user = vt_service('auth.service')->getCurrentUser();
 		$inviter_member = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND user_id = %d",
-				$community_id, VT_Auth::getCurrentUserId()
+				$community_id, vt_service('auth.service')->getCurrentUserId()
 			)
 		);
 
@@ -404,7 +404,7 @@ class VT_Community_Manager {
 			$this->db->prepare(
 				"SELECT id FROM {$this->db->prefix}community_invitations
 				 WHERE community_id = %d AND invited_email = %s AND status = 'pending'",
-				$community_id, VT_Sanitize::email($invitation_data['invited_email'])
+				$community_id, vt_service('validation.validator')->email($invitation_data['invited_email'])
 			)
 		);
 
@@ -417,16 +417,16 @@ class VT_Community_Manager {
 		}
 
 		// Generate invitation token
-		$invitation_token = VT_Security::generateToken();
+		$invitation_token = vt_service('security.service')->generateToken();
 
 		// Prepare invitation data
 		$insert_data = array(
 			'community_id' => $community_id,
-			'invited_email' => VT_Sanitize::email($invitation_data['invited_email']),
-			'invited_display_name' => VT_Sanitize::textField($invitation_data['invited_display_name'] ?? ''),
+			'invited_email' => vt_service('validation.validator')->email($invitation_data['invited_email']),
+			'invited_display_name' => vt_service('validation.validator')->textField($invitation_data['invited_display_name'] ?? ''),
 			'invitation_token' => $invitation_token,
 			'invited_by_member_id' => $inviter_member->id,
-			'personal_message' => VT_Sanitize::post($invitation_data['personal_message'] ?? ''),
+			'personal_message' => vt_service('validation.sanitizer')->richText($invitation_data['personal_message'] ?? ''),
 			'status' => 'pending',
 			'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
 			'created_at' => VT_Time::currentTime('mysql')
@@ -482,28 +482,28 @@ class VT_Community_Manager {
 		<html>
 		<body>
 			<div>
-				<h2>You've been invited to join <?php echo VT_Sanitize::escHtml($invitation->community_name); ?></h2>
+				<h2>You've been invited to join <?php echo vt_service('validation.validator')->escHtml($invitation->community_name); ?></h2>
 
 				<p>Hi there!</p>
 
-				<p><?php echo VT_Sanitize::escHtml($invitation->inviter_name); ?> has invited you to join the community "<?php echo VT_Sanitize::escHtml($invitation->community_name); ?>".</p>
+				<p><?php echo vt_service('validation.validator')->escHtml($invitation->inviter_name); ?> has invited you to join the community "<?php echo vt_service('validation.validator')->escHtml($invitation->community_name); ?>".</p>
 
 				<?php if ($invitation->community_description): ?>
 				<div>
 					<p><strong>About this community:</strong></p>
-					<p><?php echo nl2br(VT_Sanitize::escHtml($invitation->community_description)); ?></p>
+					<p><?php echo nl2br(vt_service('validation.validator')->escHtml($invitation->community_description)); ?></p>
 				</div>
 				<?php endif; ?>
 
 				<?php if ($invitation->personal_message): ?>
 				<div>
-					<p><strong>Personal message from <?php echo VT_Sanitize::escHtml($invitation->inviter_name); ?>:</strong></p>
-					<p><?php echo nl2br(VT_Sanitize::escHtml($invitation->personal_message)); ?></p>
+					<p><strong>Personal message from <?php echo vt_service('validation.validator')->escHtml($invitation->inviter_name); ?>:</strong></p>
+					<p><?php echo nl2br(vt_service('validation.validator')->escHtml($invitation->personal_message)); ?></p>
 				</div>
 				<?php endif; ?>
 
 				<div>
-					<a href="<?php echo VT_Sanitize::escUrl($invitation_url); ?>">
+					<a href="<?php echo vt_service('validation.validator')->escUrl($invitation_url); ?>">
 						Accept Invitation
 					</a>
 				</div>
@@ -515,9 +515,9 @@ class VT_Community_Manager {
 				<hr>
 
 				<p>
-					If you have any questions about this invitation, please contact <?php echo VT_Sanitize::escHtml($invitation->inviter_name); ?>.
+					If you have any questions about this invitation, please contact <?php echo vt_service('validation.validator')->escHtml($invitation->inviter_name); ?>.
 					<br>
-					You can also copy and paste this link into your browser: <?php echo VT_Sanitize::escUrl($invitation_url); ?>
+					You can also copy and paste this link into your browser: <?php echo vt_service('validation.validator')->escUrl($invitation_url); ?>
 				</p>
 			</div>
 		</body>
@@ -531,7 +531,7 @@ class VT_Community_Manager {
 	 */
 	public function getUserCommunities($user_id = null, $include_inactive = false) {
 		if (!$user_id) {
-			$user_id = VT_Auth::getCurrentUserId();
+			$user_id = vt_service('auth.service')->getCurrentUserId();
 		}
 
 		if (!$user_id) {
@@ -638,7 +638,7 @@ class VT_Community_Manager {
 	private function validatePrivacySetting($privacy) {
 		$allowed_privacy_settings = array('public', 'private');
 
-		$privacy = VT_Sanitize::textField($privacy);
+		$privacy = vt_service('validation.validator')->textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid
@@ -663,7 +663,7 @@ class VT_Community_Manager {
 		}
 
 		// Check if current user is admin of this community
-		$current_user_id = VT_Auth::getCurrentUserId();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 		if (!$current_user_id) {
 			return new VT_Error('user_required', 'You must be logged in');
 		}
