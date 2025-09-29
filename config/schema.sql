@@ -13,6 +13,27 @@ CREATE TABLE IF NOT EXISTS vt_config (
     KEY autoload (autoload)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
+-- Member identities table for AT Protocol integration
+CREATE TABLE IF NOT EXISTS vt_member_identities (
+    id mediumint(9) NOT NULL AUTO_INCREMENT,
+    user_id bigint(20) UNSIGNED NOT NULL,
+    email varchar(100) NOT NULL,
+    display_name varchar(250) NOT NULL,
+    at_protocol_did varchar(255) DEFAULT '',
+    at_protocol_handle varchar(255) DEFAULT '',
+    pds_url varchar(255) DEFAULT '',
+    profile_data longtext DEFAULT '',
+    is_verified tinyint(1) DEFAULT 0,
+    created_at datetime DEFAULT CURRENT_TIMESTAMP,
+    updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY user_id (user_id),
+    UNIQUE KEY at_protocol_did (at_protocol_did),
+    KEY email (email),
+    KEY at_protocol_handle (at_protocol_handle),
+    KEY is_verified (is_verified)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
 -- Events table - pure custom table, no WordPress posts
 CREATE TABLE IF NOT EXISTS vt_events (
     id mediumint(9) NOT NULL AUTO_INCREMENT,
