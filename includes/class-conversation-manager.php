@@ -713,7 +713,7 @@ class VT_Conversation_Manager {
 		$allowed_html['a']['target'] = true;
 		$allowed_html['a']['rel'] = true;
 
-		return VT_Security::kses($content, $allowed_html);
+		return vt_service('validation.sanitizer')->richText($content);
 	}
 
 	/**

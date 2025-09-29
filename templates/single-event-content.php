@@ -81,6 +81,8 @@ $is_host = $current_user && $current_user->id == $event->author_id;
             <strong>RSVPs:</strong>
             <?php
             $stats = $event->guest_stats ?? ['attending' => 0, 'declined' => 0, 'pending' => 0];
+            // Ensure all required keys exist
+            $stats = array_merge(['attending' => 0, 'declined' => 0, 'pending' => 0], (array)$stats);
             echo $stats['attending'] . ' attending';
             if ($stats['declined'] > 0) echo ', ' . $stats['declined'] . ' declined';
             if ($stats['pending'] > 0) echo ', ' . $stats['pending'] . ' pending';

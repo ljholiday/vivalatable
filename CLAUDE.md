@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-VivalaTable is a PHP-based community and event management platform. It's a custom MVC framework application focused on security, modularity, and clean code separation.
+VivalaTable is a PHP-based community and event management platform built around **Circles of Trust** anti-algorithm social filtering. It's a custom MVC framework application focused on security, modularity, and clean code separation.
+
+### Circles of Trust - Core Feature
+The application's primary feature is anti-algorithm social filtering through three levels:
+- **Inner Circle**: Content from communities you're a member of (direct relationships)
+- **Trusted Circle**: Inner + content from communities created by members of your communities (friend-of-friend)
+- **Extended Circle**: Trusted + content from the broader network (friend-of-friend-of-friend)
+
+This system replaces traditional algorithmic feeds with human-curated trust networks.
 
 ## Key Commands
 
@@ -70,6 +78,8 @@ The application follows a class-based architecture with these key components:
 - **Manager Classes**: Business logic (Event, Community, Conversation, etc.)
 - **AJAX Handlers**: Dedicated classes for AJAX endpoints
 - **VT_Sanitize**: Input validation and sanitization
+- **VT_Conversation_Feed**: **CRITICAL** - Implements Circles of Trust filtering for conversations
+- **VT_Container**: Dependency injection container with vt_service() helper
 
 ### Template System
 - Base templates in `templates/base/` for layout structure
@@ -143,6 +153,24 @@ return [
 3. Add template in `templates/[feature]-content.php`
 4. Add JavaScript in `assets/js/[feature].js`
 5. Add styles in `assets/css/style.css` with `.vt-` prefix
+
+### CRITICAL: Circles of Trust Implementation Requirements
+**NEVER implement conversation or content filtering without Circles of Trust integration:**
+
+1. **Always use VT_Conversation_Feed::list()** for conversation filtering
+2. **Circle parameters required**: 'inner', 'trusted', or 'extended'
+3. **UI must include circle filter tabs**: Inner, Trusted, Extended buttons
+4. **Backend filtering**: All queries must respect circle membership
+5. **Educational UI**: Explain anti-algorithm concept to users
+
+**Example Implementation:**
+```php
+// PHP Backend
+$feed_result = VT_Conversation_Feed::list($user_id, $circle, $options);
+
+// JavaScript Frontend
+// Circle filter buttons that call AJAX with circle parameter
+```
 
 ### Database Schema Changes
 Run migrations through `migrate.php` - never modify database directly in production.
