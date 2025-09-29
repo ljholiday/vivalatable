@@ -82,24 +82,29 @@ else
     exit 1
 fi
 
-# Import schema
+# Import schema using mysql command directly
 print_status "Creating database tables from schema..."
 php -r "
 require_once 'includes/bootstrap.php';
 try {
-    \$db = VT_Database::getInstance();
-    \$schema = file_get_contents('config/schema.sql');
+    // Get database connection details
+    \$config = VT_Config::getDatabaseConfig();
+    \$host = \$config['host'];
+    \$dbname = \$config['dbname'];
+    \$username = \$config['username'];
+    \$password = \$config['password'];
 
-    // Split by semicolon and execute each statement
-    \$statements = array_filter(array_map('trim', explode(';', \$schema)));
+    // Use mysql command to import schema
+    \$command = \"mysql -h '\$host' -u '\$username' -p'\$password' '\$dbname' < config/schema.sql 2>&1\";
+    \$output = shell_exec(\$command);
+    \$exit_code = shell_exec('echo \$?');
 
-    foreach (\$statements as \$statement) {
-        if (!empty(\$statement) && !preg_match('/^--/', \$statement)) {
-            \$db->query(\$statement);
-        }
+    if (trim(\$exit_code) === '0') {
+        echo 'Schema imported successfully' . PHP_EOL;
+    } else {
+        echo 'Schema import failed: ' . \$output . PHP_EOL;
+        exit(1);
     }
-
-    echo 'Schema imported successfully' . PHP_EOL;
 } catch (Exception \$e) {
     echo 'Schema import error: ' . \$e->getMessage() . PHP_EOL;
     exit(1);
