@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS vt_conversations (
     author_id bigint(20) UNSIGNED NOT NULL,
     author_name varchar(100) NOT NULL,
     author_email varchar(100) NOT NULL,
+    privacy varchar(20) DEFAULT 'public',
     is_pinned tinyint(1) DEFAULT 0,
     is_locked tinyint(1) DEFAULT 0,
     reply_count int(11) DEFAULT 0,
@@ -150,6 +151,7 @@ CREATE TABLE IF NOT EXISTS vt_conversations (
     KEY event_id (event_id),
     KEY community_id (community_id),
     KEY author_id (author_id),
+    KEY privacy (privacy),
     KEY is_pinned (is_pinned),
     KEY last_reply_date (last_reply_date),
     UNIQUE KEY slug (slug)

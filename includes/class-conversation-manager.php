@@ -432,7 +432,7 @@ class VT_Conversation_Manager {
 			return "(
 				(c.event_id IS NULL AND c.community_id IS NULL AND c.privacy = 'public') OR
 				(c.event_id IS NOT NULL AND e.privacy = 'public') OR
-				(c.community_id IS NOT NULL AND cm.visibility = 'public')
+				(c.community_id IS NOT NULL AND cm.privacy = 'public')
 			)";
 		}
 
@@ -453,7 +453,7 @@ class VT_Conversation_Manager {
 				))
 			)) OR
 			(c.community_id IS NOT NULL AND (
-				cm.visibility = 'public' OR
+				cm.privacy = 'public' OR
 				cm.creator_id = $current_user_id OR
 				EXISTS(
 					SELECT 1 FROM $members_table m
