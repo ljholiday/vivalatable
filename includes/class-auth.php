@@ -33,7 +33,7 @@ class VT_Auth {
         $stmt->execute([$email_or_username, $email_or_username]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user->password)) {
+        if ($user && password_verify($password, $user->password_hash)) {
             $_SESSION['user_id'] = $user->id;
             self::$current_user_id = $user->id;
             self::$current_user = $user;
@@ -89,7 +89,7 @@ class VT_Auth {
         $user_data = [
             'username' => $username,
             'email' => $email,
-            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
             'display_name' => $display_name ?: $username,
             'status' => 'active'
         ];

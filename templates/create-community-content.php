@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$community_manager = new VT_Community_Manager();
 		$result = $community_manager->createCommunity($community_data);
 
-		if (is_object($result) && method_exists($result, 'get_error_message')) {
+		if (is_vt_error($result)) {
 			// Handle VT_Error object
 			$errors[] = $result->get_error_message();
 		} elseif (is_array($result) && isset($result['error'])) {
