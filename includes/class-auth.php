@@ -78,6 +78,10 @@ class VT_Auth {
             "SELECT id FROM vt_users WHERE email = %s OR username = %s",
             $email, $username
         ));
+
+        // Debug: Log what we're checking
+        error_log("VT_Auth::register - Checking for existing user: email=$email, username=$username, found=" . ($existing ? 'YES' : 'NO'));
+
         if ($existing) {
             return false;
         }
@@ -91,6 +95,9 @@ class VT_Auth {
         ];
 
         $result = $db->insert('users', $user_data);
+
+        // Debug: Log insert result
+        error_log("VT_Auth::register - Insert result: " . ($result ? 'SUCCESS' : 'FAILED'));
 
         if ($result) {
             $user_id = $db->insert_id;

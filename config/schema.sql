@@ -2,6 +2,17 @@
 -- Converted from PartyMinder WordPress plugin schema
 -- Table prefix: vt_ (instead of wp_partyminder_)
 
+-- Configuration table for application settings
+CREATE TABLE IF NOT EXISTS vt_config (
+    id mediumint(9) NOT NULL AUTO_INCREMENT,
+    option_name varchar(191) NOT NULL,
+    option_value longtext NOT NULL,
+    autoload varchar(20) DEFAULT 'yes',
+    PRIMARY KEY (id),
+    UNIQUE KEY option_name (option_name),
+    KEY autoload (autoload)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
 -- Events table - pure custom table, no WordPress posts
 CREATE TABLE IF NOT EXISTS vt_events (
     id mediumint(9) NOT NULL AUTO_INCREMENT,
