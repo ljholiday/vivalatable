@@ -82,29 +82,53 @@ else
     exit 1
 fi
 
-# Import schema using mysql command directly
+# Import schema using PHP PDO (works in all hosting environments)
 print_status "Creating database tables from schema..."
 php -r "
 require_once 'includes/bootstrap.php';
 try {
-    // Get database connection details
-    \$config = VT_Config::getDatabaseConfig();
-    \$host = \$config['host'];
-    \$dbname = \$config['dbname'];
-    \$username = \$config['username'];
-    \$password = \$config['password'];
+    \$db = VT_Database::getInstance();
+    \$schema = file_get_contents('config/schema.sql');
 
-    // Use mysql command to import schema
-    \$command = \"mysql -h '\$host' -u '\$username' -p'\$password' '\$dbname' < config/schema.sql 2>&1\";
-    \$output = shell_exec(\$command);
-    \$exit_code = shell_exec('echo \$?');
+    // Remove comments and split into statements more carefully
+    \$lines = explode(PHP_EOL, \$schema);
+    \$current_statement = '';
+    \$statements = [];
 
-    if (trim(\$exit_code) === '0') {
-        echo 'Schema imported successfully' . PHP_EOL;
-    } else {
-        echo 'Schema import failed: ' . \$output . PHP_EOL;
-        exit(1);
+    foreach (\$lines as \$line) {
+        \$line = trim(\$line);
+
+        // Skip empty lines and comments
+        if (empty(\$line) || substr(\$line, 0, 2) === '--') {
+            continue;
+        }
+
+        \$current_statement .= \$line . ' ';
+
+        // If line ends with semicolon, we have a complete statement
+        if (substr(\$line, -1) === ';') {
+            \$statement = trim(\$current_statement);
+            if (!empty(\$statement)) {
+                \$statements[] = \$statement;
+            }
+            \$current_statement = '';
+        }
     }
+
+    // Execute each statement
+    \$executed = 0;
+    foreach (\$statements as \$statement) {
+        try {
+            \$db->query(\$statement);
+            \$executed++;
+        } catch (Exception \$e) {
+            echo 'Failed to execute statement: ' . substr(\$statement, 0, 50) . '...' . PHP_EOL;
+            echo 'Error: ' . \$e->getMessage() . PHP_EOL;
+            exit(1);
+        }
+    }
+
+    echo \"Schema imported successfully (\$executed statements executed)\" . PHP_EOL;
 } catch (Exception \$e) {
     echo 'Schema import error: ' . \$e->getMessage() . PHP_EOL;
     exit(1);
