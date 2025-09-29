@@ -19,9 +19,20 @@ class VT_Auth {
         if (isset($_SESSION['user_id']) && $_SESSION['user_id'] > 0) {
             self::$current_user_id = $_SESSION['user_id'];
             self::$current_user = self::getUserById(self::$current_user_id);
+
+            // If user doesn't exist in database, clear invalid session
+            if (!self::$current_user) {
+                unset($_SESSION['user_id']);
+                self::$current_user_id = 0;
+            }
         } elseif (isset($_SESSION['guest_token'])) {
             // Handle guest sessions
             self::$current_user = self::getGuestByToken($_SESSION['guest_token']);
+
+            // If guest doesn't exist, clear invalid session
+            if (!self::$current_user) {
+                unset($_SESSION['guest_token']);
+            }
         }
     }
 
