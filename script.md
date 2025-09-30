@@ -1,248 +1,279 @@
-# VivalaTable Migration Project
+# VivalaTable Development Script
 
-## What We're Building
-**Complete LAMP migration of PartyMinder WordPress plugin to standalone application**
+## Current Session: Permission Model Design & Two-Community Architecture
+**Date:** 2025-09-30
+**Status:** Planning Phase
 
-VivalaTable is a professional event management and community platform that replicates all PartyMinder functionality without WordPress dependencies:
+---
 
-- **Event Management System** - Create, manage, and RSVP to events with guest limits and privacy controls
-- **Community Platform** - Create communities with membership management and community-specific events
-- **Guest System** - 32-character token-based guest invitations allowing RSVP without registration
-- **Circles of Trust Privacy** - Anti-algorithm social filtering with granular privacy controls
-- **User Management** - Registration, authentication, profiles, and statistics tracking
-- **Conversation System** - Community discussions with privacy-based filtering
-- **AI Assistant Integration** - AI-powered event planning and management features
-- **AT Protocol/Bluesky Integration** - Social media connectivity
+## Two-Community Model Decision (NEW)
 
-## Project Status: PRODUCTION DEPLOYMENT READY
-**Last Updated:** 2025-09-29
-**Current Phase:** Final Production Schema and Authentication Fixes Complete
+### Core Architecture
+Every new user gets **TWO communities automatically created**:
 
-## Understanding Circles of Trust
+#### 1. **[Display Name] Circle** (Private Personal Community)
+- **Privacy:** Private (always, cannot be changed)
+- **Access:** Invite-only (owner controls membership)
+- **Purpose:** Close Circle (Circle 1) - trusted inner circle
+- **Discovery:** Hidden from discovery, not searchable
+- **Naming:** No apostrophes - "Lonn Holiday Circle" not "Lonn Holiday's Circle"
 
-### Core Concept
-**Anti-algorithm social filtering system** that replaces traditional algorithmic feeds with relationship-based content visibility:
+#### 2. **[Display Name]** (Public Community)
+- **Privacy:** Public
+- **Access:** Anyone can join (instant, no approval)
+- **Purpose:** Public-facing content, discoverable presence
+- **Discovery:** Listed in community directory, searchable
+- **Naming:** Just the display name - "Lonn Holiday"
 
-1. **Inner Circle** - Content from communities you're a member of (direct relationships)
-2. **Trusted Circle** - Inner + content from communities created by members of your communities (friend-of-friend)
-3. **Extended Circle** - Trusted + content from the broader network (friend-of-friend-of-friend)
+### Rationale
+- **Solves Cold Start Problem:** New users have instant discoverability via public community
+- **Privacy by Design:** Inner circle remains protected and invite-only
+- **Discovery Mechanism:** Public space allows connections before trust is established
+- **Graduated Trust:** Follow publicly → earn invitation to private circle
+- **No Apostrophe Hell:** "Lonn Holiday Circle" avoids possessive grammar and technical issues
 
-### Implementation Status
-- **Conversations**: Circles of Trust filtering working correctly
-- **Communities**: Discovery system partially functional, membership sync broken
-- **Events**: Privacy system exists but needs validation
+### Discovery Flow
+1. User creates content in public communities (theirs or others)
+2. Others see content, visit profile
+3. Can join their public community (instant)
+4. Can request/receive invitation to their Circle (approval required)
 
-### Critical Business Logic
-The Circles of Trust system is the **core differentiator** from traditional social platforms. It ensures users see content based on real social relationships rather than algorithmic manipulation.
+---
 
-## Final Production Status
+## Vocabulary & Terminology Decisions
 
-### PRODUCTION READY ✅
-All core systems tested and functional:
-- **Complete Database Schema**: 24-table schema exported from working development environment
-- **User Registration & Authentication**: Working with automatic personal community creation
-- **Community System**: Full discovery, joining, and member management functionality
-- **Event Management**: Core creation, listing, RSVP functionality
-- **Conversation System**: Circle filtering working properly
-- **Guest Token System**: 32-character tokens validated and working
-- **Privacy System**: Comprehensive Circles of Trust implementation
+### Official Terms (from STYLEGUIDE.md)
+- **Communities** (not groups)
+- **Conversations** (not posts/threads)
+- **Messages** (units inside conversations)
+- **Connections** (not followers/friends)
+- **Circles** (trust levels)
 
-### Final Production Fixes Completed ✅
+### Action Verbs (NO "post")
+- ✅ **Start a Conversation** (create new discussion)
+- ✅ **Send a Message** (contribute to existing conversation)
+- ✅ **Reply** (respond to someone)
+- ✅ **Share** (spread content)
+- ❌ **Post** (banned - too generic, no meaning)
 
-#### 1. Database Schema Complete
-**FIXED:** Exported complete 24-table schema from working local development
-- All missing tables now included (vt_config, vt_member_identities, etc.)
-- Personal community ownership columns added
-- Schema consistency between development and production achieved
+### Circle Terminology
+- **Circle 1 — Close** (personal circles)
+- **Circle 2 — Trusted** (friend-of-friend)
+- **Circle 3 — Extended** (broader network)
 
-#### 2. Authentication System Fixed
-**FIXED:** Password column mismatch resolved
-- Registration now uses correct `password_hash` column
-- Login authentication updated to match database schema
-- Personal community creation during registration verified working
+---
 
-#### 3. VT_Error Handling Fixed
-**FIXED:** Community creation error handling standardized
-- Templates now use `is_vt_error()` function correctly
-- Error messages display properly in UI
-- No more crashes from object/array type mismatches
+## Permission Model Design
 
-### Architecture Issues Discovered
+### Events vs Conversations - Different Rules
 
-#### Community Discovery Logic Gap
-PartyMinder has sophisticated two-layer community system:
-1. **My Communities** - User's memberships with role badges and management options
-2. **All Communities** - Public discovery with join functionality
+#### **Events (Structured, High Stakes)**
+- **Can I create an event in someone else's community?** → **NO**
+- **Rationale:** Events are real-world commitments (venue, time, RSVPs)
+- **Alternative:** "Suggest an Event" feature (admin approval)
+- **Precedent:** You don't announce parties at someone else's house
 
-VivalaTable implementation:
-- ✅ UI tabs exist and switch properly
-- ❌ Backend membership queries incomplete
-- ❌ Cross-user visibility broken
-- ❌ Join workflow partially functional
+#### **Conversations (Freeform, Low Stakes)**
+- **Can I start a conversation in someone else's community?** → **YES** (if member)
+- **Rationale:** That's the point of communities - discussion spaces
+- **Self-Repairing:** Bad actors get moderated, quality self-selects
+- **Precedent:** Reddit, Discourse, Discord (members can create topics)
 
-#### Missing Integration Points
-- Community joining doesn't update "My Communities" view
-- Member status changes don't propagate across UI
-- Personal communities don't appear in public discovery
-- Community privacy/visibility settings incomplete
+### Permission Matrix
 
-## DEPLOYMENT STATUS: READY FOR PRODUCTION ✅
+| Action | Public Community (member) | Personal Circle (member) | Someone's Circle (invited) |
+|--------|--------------------------|--------------------------|---------------------------|
+| Start Conversation | ✅ YES | ✅ YES | ✅ YES |
+| Create Event | ❌ NO (suggest) | ✅ YES (owner) | ❌ NO (suggest) |
+| Reply to Conversation | ✅ YES | ✅ YES | ✅ YES |
+| Invite Others | Settings dependent | ❌ NO (owner only) | ❌ NO |
+| Edit Own Content | ✅ YES (time limit) | ✅ YES (time limit) | ✅ YES (time limit) |
+| Delete Own Content | ✅ YES (conditions) | ✅ YES (conditions) | ✅ YES (conditions) |
+| Moderate Others | ❌ NO | ❌ NO | ❌ NO |
 
-### Production Deployment Package Complete
-**Database**: Complete 24-table schema with all required tables and columns
-**Authentication**: Fixed password column issues, registration with personal community creation working
-**Core Features**: Community system, event management, conversations all functional
-**Error Handling**: VT_Error objects properly handled throughout application
-**Testing**: Key workflows verified working (registration, community creation, personal communities)
+| Action | Community Admin | Site Admin |
+|--------|----------------|------------|
+| Edit Any Content | ✅ YES (in community) | ✅ YES (anywhere) |
+| Delete Any Content | ✅ YES (in community) | ✅ YES (anywhere) |
+| Pin Conversations | ✅ YES | ✅ YES |
+| Create Events | ✅ YES | ✅ YES |
+| Manage Members | ✅ YES (in community) | ✅ YES (anywhere) |
 
-### Files Ready for Production Deployment
-- `config/schema.sql` - Complete database schema (24 tables)
-- `templates/create-community-content.php` - Fixed VT_Error handling
-- `includes/class-auth.php` - Fixed password column references
-- `includes/class-personal-community-service.php` - Working personal community creation
-- All other core files previously completed
+### Key Permission Rules
 
-### Verified Working Features ✅
-- **User Registration** - Creates account + personal community automatically
-- **Community Creation** - Manual community creation with proper error handling
-- **Personal Communities** - Automatic creation during registration, discoverable by others
-- **Community Membership** - AJAX joining, member management, role assignments
-- **Privacy System** - Circles of Trust filtering across all content types
-- **Event Management** - Creation, listing, RSVP functionality
-- **Guest System** - 32-character token-based invitations
+**Joining Communities:**
+1. ✅ Public communities → instant join (no approval)
+2. ✅ Private communities → invite required
+3. ✅ Personal Circles → always private, always invite-only
 
-## PRODUCTION DEPLOYMENT INSTRUCTIONS
+**Content Visibility:**
+1. ✅ Public conversations → anyone can view (even guests)
+2. ✅ Members-only conversations → community members only
+3. ✅ Private conversations → invite/permission required
 
-### Required Steps for Production
-1. **Commit Changes**:
-   ```bash
-   git add config/schema.sql templates/create-community-content.php includes/class-auth.php
-   git commit -m "Final production fixes: complete schema, auth password columns, VT_Error handling"
-   ```
+**Editing/Deleting:**
+1. ✅ Edit own content (15-30 min window OR "edited" indicator)
+2. ✅ Delete own conversation (only if no replies yet)
+3. ✅ Delete own reply (always, shows "[deleted]" if has children)
+4. ✅ Community admins can edit/delete anything in their community
+5. ✅ Site admins can edit/delete anything anywhere
 
-2. **Deploy to Production**:
-   ```bash
-   git checkout main
-   git merge lonn
-   git push origin main
-   ```
+**Discovery:**
+1. ✅ Guests can view public content (read-only)
+2. ✅ Guests cannot participate, RSVP, or join
+3. ✅ Public communities listed in directory
+4. ✅ Personal Circles hidden from discovery
 
-3. **Production Database Setup**:
-   ```bash
-   # On production server
-   git pull origin main
-   mysql -u root -p -e "DROP DATABASE IF EXISTS ljholida_vivalatable; CREATE DATABASE ljholida_vivalatable;"
-   ./install.sh
-   ```
+---
 
-### Post-Deployment Verification
-1. **Test Registration** - Create new account, verify personal community creation
-2. **Test Community Creation** - Create public/private communities
-3. **Test Event Creation** - Verify event management functionality
-4. **Test Conversations** - Verify circle filtering works
+## Implementation Implications (Next Steps)
 
-### Future Development Priorities
-1. **AI Assistant Integration** - Add class-ai-assistant.php
-2. **AT Protocol/Bluesky Integration** - Add class-at-protocol-manager.php
-3. **Performance Optimization** - Database query optimization
-4. **Advanced Features** - Enhanced event management, conversation features
+### Database Changes Needed
+- [ ] Add `community_type` column to `vt_communities` table
+  - Values: `'public'`, `'circle'`
+  - Circles cannot be changed to public
+- [ ] Add `suggested_by` and `status` columns to `vt_events` table
+  - Support "Suggest an Event" workflow
+  - Status: `'draft'`, `'suggested'`, `'active'`, `'cancelled'`
 
-## Key Architectural Decisions
+### New Permission Methods Needed
 
-### Community System Architecture
-- **Two-Layer Discovery** - Personal membership vs public discovery
-- **Real-time Membership** - AJAX joining with immediate UI updates
-- **Privacy-First Design** - Circles of Trust determine visibility
-- **Context Preservation** - Community discussions stay in community context
+**In `VT_Community_Manager`:**
+- [ ] `canStartConversation($community_id, $user_id)` - member check
+- [ ] `canCreateEvent($community_id, $user_id)` - owner/admin only
+- [ ] `canSuggestEvent($community_id, $user_id)` - member check
+- [ ] `canInviteMembers($community_id, $user_id)` - settings-dependent
 
-### Integration Requirements
-- Community joining must update both database and UI state
-- Membership queries must be consistent across all templates
-- Privacy rules must be enforced at database query level
-- Cross-user visibility must respect community privacy settings
+**In `VT_Conversation_Manager`:**
+- [ ] `canEditConversation($conversation_id, $user_id)` - author/admin
+- [ ] `canDeleteConversation($conversation_id, $user_id)` - author/admin + no replies
+- [ ] `canPinConversation($conversation_id, $user_id)` - community admin/site admin
 
-## Testing Strategy
+**In `VT_Event_Manager`:**
+- [ ] `canEditEvent($event_id, $user_id)` - author/community admin
+- [ ] `canDeleteEvent($event_id, $user_id)` - author/site admin
+- [ ] `canApproveEvent($event_id, $user_id)` - community admin
 
-### Community System Tests
-```bash
-# Test 1: Join community and verify membership
-# Test 2: Check cross-user community visibility
-# Test 3: Verify personal community discovery
-# Test 4: Test conversation navigation context
-# Test 5: Validate circle filtering integration
-```
+### UI Changes Needed
+- [ ] Update community creation flow to create BOTH communities for new users
+- [ ] Add "Suggest Event" button/flow for members
+- [ ] Add edit/delete buttons to conversations (conditional on permissions)
+- [ ] Add edit/delete buttons to replies (conditional on permissions)
+- [ ] Add "Request to Join" button for Personal Circles (future feature)
+- [ ] Update community listings to distinguish public vs circles
 
-### Critical User Journeys
-1. **New User Journey** - Register → discover communities → join → participate
-2. **Community Creator Journey** - Create community → invite members → manage discussions
-3. **Cross-User Discovery** - Browse public communities → join → access content
-4. **Privacy Validation** - Create private community → verify access controls
+### Templates to Update
+- [ ] Create `suggest-event-content.php` template
+- [ ] Create `edit-conversation-content.php` template
+- [ ] Update `single-conversation-content.php` with edit/delete UI
+- [ ] Update community creation to handle two-community setup
+- [ ] Update user registration to create both communities
 
-## System Achievements Summary (2025-09-28)
+### Documentation Needed
+- [ ] Update STYLEGUIDE.md with two-community model
+- [ ] Update CONVENTIONS.md with naming rules (no apostrophes)
+- [ ] Create PERMISSIONS.md with complete permission matrix
+- [ ] Update CONTRIBUTING.md with permission checking patterns
 
-### Community System Integration - COMPLETE ✅
+---
 
-**Major Breakthrough:** Successfully transformed isolated community silos into functional discovery and growth system.
+## Recent Work Completed
 
-**Key Problems Solved:**
-- ✅ **Personal Community Creation** - Backfilled missing communities for all users
-- ✅ **AJAX Join Broken** - Fixed error handling, permission checks, and database integration
-- ✅ **Cross-User Discovery** - Public communities now visible across user accounts
-- ✅ **Member Management** - Functional members tab with proper role and join date display
-- ✅ **Privacy Visibility** - Comprehensive badge system for content awareness
+### Conversation Replies System ✅
+- Fixed validation architecture (Trust Boundary Pattern)
+- Removed validator calls from managers (managers trust data)
+- Fixed insert_id timing bug (retrieve before UPDATE queries)
+- Added avatar integration using member-display.php partial
+- Added reply formatting CSS (cards, hover effects, spacing)
+- Removed redundant reply buttons
 
-**Technical Fixes:**
-- Fixed AJAX handler error detection with `is_vt_error()` validation
-- Added `skip_invitation=true` for self-joining public communities
-- Implemented missing `status` field in membership data
-- Created comprehensive privacy badge system across all templates
-- Cleaned test data from 21 users to 9 essential accounts
+### Error Handling Improvements ✅
+- Fixed JSON corruption (display_errors → log_errors)
+- Created copyable error modal system (modal.js)
+- Updated all AJAX handlers to use VT_Ajax::sendError()
+- Replaced browser alert() with vtShowError()/vtShowSuccess()
 
-## STATUS UPDATE (2025-09-29)
+### Code Quality ✅
+- Removed all error_log() function calls (forbidden)
+- Updated dev/php.xml with "NEVER use error_log()" rule
+- Established debug.log as debugging file location
+- Fixed all validator/sanitizer misuse in templates and managers
 
-### CONVERSATIONS REBUILD IN PROGRESS 🚧
+### Git Workflow ✅
+- Created 8 logical commits (no files left behind)
+- Commits: error handling, modal system, validation architecture, replies, conversations, security, database, cleanup
+- Established multi-stage commit pattern for complex work
 
-**Current Task:** Complete rebuild of conversations system to properly showcase Circles of Trust as the core anti-algorithm feature.
+---
 
-**Issue Identified:** Previous conversations implementation was created before proper understanding of Circles of Trust, resulting in broken filtering functionality.
+## Current Codebase Status
 
-**Current State:**
-- ✅ Broken implementation deleted (AJAX handler, template gutted, JS gutted)
-- ✅ Backup exists: `templates/conversations-content-broken.php.bak`
-- ✅ Core infrastructure intact: `VT_Conversation_Feed::list()` exists and works
-- ✅ Documentation complete: `dev/circles.xml` defines requirements
+### Working Systems ✅
+- User registration/authentication
+- Community creation and discovery
+- Event creation and RSVP
+- Conversation system with Circles of Trust filtering
+- Reply system with avatars
+- Guest token system
+- Security (CSRF, nonces, prepared statements)
 
-**Rebuild Plan (Building NEW, not restoring):**
+### Permission Gaps (Current Focus)
+- No canEdit/canDelete methods for conversations
+- No canEdit/canDelete methods for replies
+- No canEdit/canDelete methods for events
+- No "Suggest Event" workflow
+- No two-community auto-creation for new users
+- No distinction between public communities and personal circles
 
-1. **Backend AJAX Handler** - Create new `includes/class-conversation-ajax-handler.php`:
-   - Single endpoint: `ajaxGetConversations()`
-   - MUST call `VT_Conversation_Feed::list($user_id, $circle, $options)`
-   - Validate circle parameter: 'inner', 'trusted', 'extended'
-   - Secondary filter parameter: '', 'events', 'communities'
-   - Return JSON with HTML + metadata (circle, count)
-   - Nonce verification with modern services
+---
 
-2. **Frontend Template** - Build functional UI in `templates/conversations-content.php`:
-   - **Circle Filter Buttons**: Inner/Trusted/Extended (clean, minimal)
-   - **Type Filters**: All/Events/Communities as secondary filters
-   - **Conversation Grid**: Display filtered conversations
-   - **Empty States**: Simple "No conversations found" messages
-   - NO educational content (handled off-site)
+## Next Actions
 
-3. **JavaScript** - Build interactive experience in `assets/js/conversations.js`:
-   - Circle button handlers with visual feedback (active state)
-   - AJAX calls with circle parameter to `/ajax/conversations`
-   - Loading/error states
-   - Dynamic content updates
-   - Clean, minimal implementation
+**Priority 1: Document Decisions**
+1. Update STYLEGUIDE.md with two-community model and terminology
+2. Create PERMISSIONS.md with complete permission matrix
+3. Update CONVENTIONS.md with naming conventions
 
-**Architecture Requirements (per dev/circles.xml):**
-- MUST use `VT_Conversation_Feed::list()` for ALL conversation filtering
-- Circle parameter is REQUIRED in all AJAX calls
-- Content queries MUST respect circle membership at database level
-- UI MUST have circle filter buttons
-- Never bypass VT_Conversation_Feed with direct queries
+**Priority 2: Implement Two-Community Model**
+1. Update user registration to create both communities
+2. Add community_type database column
+3. Update UI to distinguish public vs circles
 
-**Goal:** Clean, functional Circles of Trust filtering that works correctly.
+**Priority 3: Implement Permission Methods**
+1. Add all canEdit/canDelete methods to managers
+2. Update templates to show edit/delete UI conditionally
+3. Create edit templates for conversations
 
-**Next Steps:** Execute rebuild plan after user confirms approach.
+**Priority 4: Suggest Event Feature**
+1. Add suggested event workflow
+2. Create suggest-event-content.php template
+3. Add admin approval interface
+
+---
+
+## Development Standards
+
+### Critical Rules
+- ✅ **NEVER use error_log()** - use debug.log in root
+- ✅ **NEVER use validators in managers** - sanitize at boundaries only
+- ✅ **NEVER commit directly to main** - always work on lonn branch
+- ✅ **NEVER leave uncommitted files** - multi-stage logical commits
+- ✅ **NEVER use apostrophes** in naming (technical + UX nightmare)
+
+### Git Workflow
+1. Work on `lonn` branch
+2. Merge `lonn` into `main` when ready
+3. Push `main` to GitHub
+4. Checkout `lonn` again to continue development
+
+### Validation Architecture (Trust Boundary Pattern)
+- **Templates (Boundary):** Sanitize input, validate, check permissions
+- **Managers (Business Logic):** Trust pre-sanitized data, implement logic
+- **Database (Storage):** Use prepared statements, store clean data
+
+### Naming Conventions
+- Communities: No apostrophes ever ("Lonn Holiday Circle" not "Lonn Holiday's")
+- Methods: camelCase (getUserProfile)
+- Variables: snake_case ($current_user)
+- CSS: .vt- prefix for all classes
+- Tables: vt_ prefix, snake_case
