@@ -88,7 +88,7 @@ $is_logged_in = vt_service('auth.service')->isLoggedIn();
         </div>
         <div class="vt-flex vt-gap vt-flex-column">
             <a href="/profile" class="vt-btn">
-                Edit Profile
+                Profile
             </a>
             <a href="/logout" class="vt-btn">
                 Logout
