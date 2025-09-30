@@ -236,8 +236,8 @@ class VT_Pages {
 	 * Single conversation page
 	 */
 	public static function singleConversation($params) {
-		$conversation_id = $params['id'];
-		self::renderPage('single-conversation', 'Conversation', null, 'two-column', compact('conversation_id'));
+		$conversation_slug = $params['slug'] ?? null;
+		self::renderPage('single-conversation', 'Conversation', null, 'two-column', compact('conversation_slug'));
 	}
 
 	/**

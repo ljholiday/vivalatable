@@ -161,6 +161,13 @@ class VT_Router {
 	}
 
 	/**
+	 * Get current route parameters
+	 */
+	public static function getCurrentParams() {
+		return self::$current_route['params'] ?? array();
+	}
+
+	/**
 	 * Get the current request path
 	 */
 	private static function getRequestPath() {
