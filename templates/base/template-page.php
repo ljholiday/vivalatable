@@ -35,6 +35,7 @@
     <?php echo $content; ?>
 </div>
 
+<script src="/assets/js/modal.js"></script>
 <script src="/assets/js/vivalatable.js"></script>
 </body>
 </html>

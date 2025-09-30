@@ -75,14 +75,14 @@ function initJoinButtons() {
                     this.disabled = false;
                     this.onclick = () => window.location.href = '/communities/' + data.community_slug;
 
-                    alert(`Welcome to ${communityName}!`);
+                    vtShowSuccess(`Welcome to ${communityName}!`);
                 } else {
                     throw new Error(data.message || 'Failed to join community');
                 }
             })
             .catch(error => {
                 console.error('Error joining community:', error);
-                alert('Failed to join community: ' + error.message);
+                vtShowError('Failed to join community: ' + error.message);
                 this.disabled = false;
                 this.textContent = isPersonalCommunity ? 'Connect' : 'Join';
             });

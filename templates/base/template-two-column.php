@@ -71,6 +71,7 @@
     </div>
 </div>
 
+<script src="/assets/js/modal.js"></script>
 <script src="/assets/js/vivalatable.js"></script>
 <?php if (strpos(VT_Router::getCurrentUri(), '/conversations') !== false) : ?>
 <script src="/assets/js/conversations.js"></script>

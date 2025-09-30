@@ -2020,3 +2020,8 @@ body.vt-modal-open {
   background: var(--vt-success);
   opacity: 0.9;
 }
+
+/* Error Modal - ensure text is selectable */
+.vt-modal-body {
+  user-select: text;
+  cursor: text;
