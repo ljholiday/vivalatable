@@ -1,380 +1,777 @@
-# Contributing to PartyMinder
+# Contributing to VivalaTable
 
-Thank you for considering a contribution to the PartyMinder plugin. This document outlines the preferred practices for contributing code, fixing bugs, updating templates, and maintaining project consistency.
+Thank you for considering a contribution to VivalaTable. This document outlines coding practices, validation patterns, architecture principles, and industry standards that guide this project.
 
 ---
 
 ## 1. Project Philosophy
 
-PartyMinder prioritizes:
-- **Professional presentation**: Clean, business-appropriate interface without emojis or decorative symbols
-- **Minimal, semantic CSS** with consistent `.pm-` prefixed class names
-- **Shared layouts and templates** to avoid code duplication
-- **WordPress integration**: Proper use of WordPress APIs, hooks, and security practices
-- **Stability across themes**: Works reliably with any WordPress theme
-- **Clean, maintainable code**: Modular structure with clear separation of concerns
-- **Database integrity**: Safe schema changes with proper migrations
+VivalaTable is a custom PHP MVC application built around **Circles of Trust** anti-algorithm social filtering. It prioritizes:
 
-Avoid:
-- **Emojis or decorative symbols** - This is a professional business application
-- **Utility-first CSS** (e.g., `.p-4`, `.mt-2`) - Use semantic class names
-- **Generic class names** (e.g., `.card`, `.button`, `.header`) - Always use `.pm-` prefix
-- **Inline styles or IDs** for styling - Keep styles in the main CSS file
-- **Duplicated layout structures** - Use shared template system
+- **Security first**: All input validated and sanitized at boundaries
+- **Clean architecture**: Separation of concerns following industry patterns
+- **Modern PHP**: PHP 8.1+ with strict types and dependency injection
+- **Language separation**: PHP for logic, HTML for structure, CSS for style, JavaScript for behavior
+- **Native implementation**: Custom framework without WordPress dependencies
 
----
+### Core Values
+- **Trust over algorithms**: Human-curated social networks, not engagement optimization
+- **Privacy by design**: User control over data and visibility
+- **Professional presentation**: Clean interface without emojis or decorative elements
+- **Maintainability**: Code must be readable and understandable without explanation
 
-## 2. Development Setup
+### Two-Community Model
 
-### Local Environment
-1. **WordPress Local Development**: Use Local by Flywheel, MAMP, XAMPP, or similar
-2. **Plugin Location**: Place in `wp-content/plugins/partyminder/`
-3. **Database**: Ensure clean WordPress installation for testing
-4. **Theme Testing**: Test with default WordPress themes (Twenty Twenty-Three, etc.)
+Every new user gets TWO communities automatically created:
 
-### Clone and Setup
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/[your-org]/partyminder.git
-   cd partyminder
-   ```
+1. **[Display Name] Circle** (Private Personal Community)
+   - Privacy: Private (always, cannot be changed)
+   - Access: Invite-only (owner controls membership)
+   - Purpose: Close Circle (Circle 1) - trusted inner circle
+   - Discovery: Hidden from discovery, not searchable
+   - Naming: No apostrophes - "Lonn Holiday Circle" not "Lonn Holiday's Circle"
 
-2. **Activate Plugin**: Go to WordPress Admin > Plugins > Activate PartyMinder
-3. **Check Setup**: Verify plugin pages are created and accessible
-4. **Test Environment**: Create test events, users, and communities
+2. **[Display Name]** (Public Community)
+   - Privacy: Public
+   - Access: Anyone can join (instant, no approval)
+   - Purpose: Public-facing content, discoverable presence
+   - Discovery: Listed in community directory, searchable
+   - Naming: Just the display name - "Lonn Holiday"
+
+**Rationale**: Solves cold start problem (public discoverability) while maintaining privacy by design (invite-only inner circle).
 
 ---
 
-## 3. How to Contribute
+## 2. Validation and Sanitization Architecture
 
-### Branch Management
-1. **Create feature branch** from `main`:
-   ```bash
-   git checkout -b feature/descriptive-feature-name
-   git checkout -b fix/specific-bug-description
-   git checkout -b refactor/component-name
-   ```
+### The Boundary Pattern (Industry Standard)
 
-2. **Branch Naming Conventions**:
-   - `feature/` - New functionality
-   - `fix/` - Bug fixes
-   - `refactor/` - Code improvements without functionality changes
-   - `docs/` - Documentation updates
+VivalaTable follows the **Trust Boundary Pattern**, a fundamental security principle outlined in OWASP's secure coding practices and common in frameworks like Laravel, Symfony, and Rails.
 
-### Development Workflow
-1. **Make changes** following coding guidelines below
-2. **Test thoroughly** across different user scenarios
-3. **Run quality checks** (see Section 6)
-4. **Update documentation** if needed
-5. **Commit with clear messages** (see commit format below)
-6. **Push and create pull request**
+**Key Principle**: Validation and sanitization occur at the application boundary (where untrusted data enters), not in business logic layers.
 
-### Commit Message Format
-```bash
-# Format: Type: Brief description (50 chars max)
-# Examples:
-git commit -m "Add: Event invitation email templates"
-git commit -m "Fix: RSVP form validation for anonymous users"
-git commit -m "Update: Database schema documentation"
-git commit -m "Remove: Deprecated emoji usage from templates"
+### Three-Layer Architecture
+
+```
+┌─────────────────────────────────────────┐
+│   Boundary Layer (Templates/AJAX)      │  ← Validate & Sanitize
+│   - Receives untrusted user input      │
+│   - Validates format and constraints   │
+│   - Sanitizes for safe handling        │
+└─────────────┬───────────────────────────┘
+              │ Clean Data
+              ↓
+┌─────────────────────────────────────────┐
+│   Business Logic (Managers/Services)    │  ← Trust the Data
+│   - Receives pre-validated data        │
+│   - Implements business rules           │
+│   - NO validation/sanitization here    │
+└─────────────┬───────────────────────────┘
+              │ Trusted Data
+              ↓
+┌─────────────────────────────────────────┐
+│   Data Layer (Database)                 │  ← Store Clean Data
+│   - Uses prepared statements            │
+│   - Handles typed data safely           │
+└─────────────────────────────────────────┘
 ```
 
----
+### VivalaTable's Validation Services
 
-## 4. Coding and Styling Guidelines
+**Two distinct services with different purposes:**
 
-### WordPress Standards
-- **Follow WordPress Coding Standards** exactly
-- **Use WordPress APIs**: Don't reinvent WordPress functionality
-- **Security First**: Sanitize inputs, escape outputs, verify nonces
-- **Hook Integration**: Use WordPress actions and filters appropriately
+#### 1. Sanitizer Service (Returns Values)
+Use sanitizers to **clean data** and get the sanitized value directly:
 
-### PHP Code Quality
 ```php
-// Always sanitize and escape
-$title = sanitize_text_field( $_POST['title'] );
-echo '<h1>' . esc_html( $title ) . '</h1>';
+// In templates/AJAX handlers - CORRECT
+$name = vt_service('validation.sanitizer')->textField($_POST['name']);
+$email = vt_service('validation.sanitizer')->email($_POST['email']);
+$content = vt_service('validation.sanitizer')->richText($_POST['content']);
 
-// Always verify nonces
-if ( ! wp_verify_nonce( $_POST['nonce'], 'partyminder_action' ) ) {
-    wp_die( 'Security check failed' );
-}
-
-// Use proper capability checks
-if ( ! current_user_can( 'edit_posts' ) ) {
-    wp_die( 'Insufficient permissions' );
-}
+// Pass clean data to manager
+$manager->createConversation([
+    'title' => $name,
+    'author_email' => $email,
+    'content' => $content
+]);
 ```
 
-### CSS Requirements
-- **All class names must begin with `.pm-`**
-- **Use semantic names**: `.pm-card`, `.pm-form-row`, `.pm-section-header`
-- **Single stylesheet**: Keep everything in `assets/css/partyminder.css`
-- **No inline styles**: All styling in CSS file
-- **Responsive design**: Mobile-first approach
-- **Exception**: `.partyminder-content` is required to override WordPress theme defaults
+#### 2. Validator Service (Returns Validation Results)
+Use validators when you need **error feedback** for users:
 
-### Professional Tone Requirements
-- **NO EMOJIS**: Never use emojis in code, templates, or user-facing text
-- **Professional language**: Business-appropriate copy and messaging
-- **Clean interfaces**: Remove any decorative symbols or casual elements
-
-### JavaScript Guidelines
-- **Use WordPress standards**: Enqueue scripts properly with `wp_enqueue_script()`
-- **jQuery compatibility**: Use `jQuery(document).ready()` pattern
-- **AJAX integration**: Use WordPress AJAX API with proper nonces
-- **Error handling**: Graceful fallbacks for JavaScript failures
-
----
-
-## 5. Template Architecture
-
-### Shared Layout System
-Use these master templates to avoid code duplication:
-
-#### `main` - General Content Pages
-- **Used for**: Event listings, conversations, public pages
-- **Structure**: Single column, full-width content
-- **Variables**: `$page_title`, `$page_description`, `$main_content`
-
-#### `two-column` - Dashboard and Settings
-- **Used for**: User dashboards, settings pages, management interfaces
-- **Structure**: Main content + sidebar
-- **Variables**: `$main_content`, `$sidebar_content`, `$breadcrumbs`
-
-#### `form` - Create/Edit Screens
-- **Used for**: Event creation, RSVP forms, user registration
-- **Structure**: Centered form with minimal distractions
-- **Variables**: `$page_title`, `$form_content`, `$breadcrumbs`
-
-### Template Best Practices
 ```php
-// Set up template variables before including layout
-$page_title = __( 'Create Event', 'partyminder' );
-$breadcrumbs = array(
-    array( 'title' => __( 'Dashboard', 'partyminder' ), 'url' => PartyMinder::get_dashboard_url() ),
-    array( 'title' => __( 'Create Event', 'partyminder' ) )
-);
+// In forms where you show validation errors - CORRECT
+$emailValidation = vt_service('validation.validator')->email($_POST['email']);
 
-// Capture main content
-ob_start();
-include PARTYMINDER_PLUGIN_DIR . 'templates/create-event-form.php';
-$main_content = ob_get_clean();
-
-// Use appropriate layout template
-require PARTYMINDER_PLUGIN_DIR . 'templates/base/template-form.php';
-```
-
----
-
-## 6. Database Changes
-
-### Schema Updates
-If your changes involve database modifications:
-
-1. **Update table creation methods** in `includes/class-activator.php`
-2. **Add migration logic** in `run_database_migrations()` method
-3. **Update documentation**:
-   ```bash
-   # Update DATABASE_STRUCTURE.md with current schema
-   # Document new tables, columns, or indexes added
-   ```
-4. **Use `dbDelta()`** for safe table updates
-5. **Bump plugin version** in main plugin header
-6. **Test migration** on existing installations
-
-### Database Best Practices
-```php
-// Always use prepared statements
-$wpdb->prepare( "SELECT * FROM {$wpdb->prefix}partyminder_events WHERE id = %d", $event_id );
-
-// Use WordPress table prefix
-$table_name = $wpdb->prefix . 'partyminder_events';
-
-// Handle errors gracefully
-$result = $wpdb->insert( $table_name, $data );
-if ( $result === false ) {
-    error_log( 'PartyMinder: Database insert failed - ' . $wpdb->last_error );
-    return new WP_Error( 'database_error', __( 'Failed to save data', 'partyminder' ) );
+if (!$emailValidation['is_valid']) {
+    foreach ($emailValidation['errors'] as $error) {
+        echo '<p class="error">' . esc_html($error) . '</p>';
+    }
+} else {
+    // Use the validated value
+    $cleanEmail = $emailValidation['value'];
 }
 ```
 
+**Critical Rule**: Validators return arrays `['value' => ..., 'is_valid' => ..., 'errors' => []]`. Never pass validator results directly to database operations.
+
+### What NOT To Do
+
+```php
+// WRONG - In manager class
+class ConversationManager {
+    public function addReply($conversation_id, $data) {
+        // ❌ DON'T DO THIS
+        $name = vt_service('validation.validator')->textField($data['name']);
+        // Returns array, not string - breaks database insert!
+
+        $this->db->insert('replies', ['author_name' => $name]);
+        // ERROR: Array to string conversion
+    }
+}
+
+// CORRECT - In template (boundary)
+$name = vt_service('validation.sanitizer')->textField($_POST['name']);
+$manager->addReply($conversation_id, ['name' => $name]);
+
+// CORRECT - In manager (trusts data)
+class ConversationManager {
+    public function addReply($conversation_id, $data) {
+        // Data is already clean, just use it
+        $this->db->insert('replies', ['author_name' => $data['name']]);
+    }
+}
+```
+
+### Industry References
+
+This pattern is documented in:
+
+- **OWASP Secure Coding Practices**: Input Validation at Trust Boundaries
+- **Laravel Framework**: Form Requests validate at controller layer, Models trust data
+- **Symfony Framework**: Form component validates, Services receive clean DTOs
+- **Domain-Driven Design**: Aggregate Roots trust data from Application Services
+- **Clean Architecture**: Use Cases validate, Entities trust the Use Case layer
+
+**Key insight**: Once data passes validation at the boundary, deeper layers trust it. Re-validating in every layer introduces bugs, performance overhead, and architectural confusion.
+
 ---
 
-## 7. Testing Requirements
+## 3. Naming Conventions
 
-### Before Submitting Any PR
+### PHP Methods
+- **All PHP class methods use camelCase** (PSR-1/PSR-12 standard)
+- Examples:
+  - `getUserProfile()` ✅ (correct)
+  - `get_user_profile()` ❌ (incorrect)
+  - `sendRsvpInvitation()` ✅ (correct)
 
-#### Code Quality Checks
+### PHP Variables
+- Use snake_case for local variables
+- Examples:
+  - `$current_user` ✅
+  - `$event_data` ✅
+  - `$rsvp_status` ✅
+
+### Class Naming
+- Use `VT_` prefix with underscore-separated words
+- Examples:
+  - `VT_Event_Manager` ✅
+  - `VT_Community_Manager` ✅
+  - `VT_Conversation_Manager` ✅
+
+### File Naming
+- PHP class files: `class-event-manager.php` (hyphen-separated)
+- Template files: `dashboard-content.php` (hyphen-separated)
+
+### Database Conventions
+- **Table names**: Singular nouns with underscores (`vt_events`, `vt_communities`)
+- **Column names**: snake_case (`event_date`, `created_at`, `display_name`)
+
+### Username vs Display Name
+- **Username**: Login identifier, unique, alphanumeric, stored in `vt_users.username`
+- **Display Name**: User's preferred name, human-readable, can contain spaces
+
+Priority order when displaying names:
+1. `vt_user_profiles.display_name` (user's preferred display name)
+2. `vt_users.display_name` (fallback display name)
+3. `vt_users.username` (final fallback)
+
+### Privacy Terminology
+- Use **privacy** column consistently across all entities
+- Values: `'public'` or `'private'`
+- Applied to: Events, Communities, Conversations
+
+---
+
+## 4. Development Setup
+
+### System Requirements
+- PHP 8.1 or higher
+- MySQL 5.7+ or MariaDB 10.3+
+- Web server (Apache/Nginx) with mod_rewrite or equivalent
+- Composer for dependency management (if used)
+
+### Installation
+1. Clone repository:
+   ```bash
+   git clone https://github.com/vivalatable/vivalatable.git
+   cd vivalatable
+   ```
+
+2. Copy database configuration:
+   ```bash
+   cp config/database.php.sample config/database.php
+   ```
+
+3. Edit `config/database.php` with your credentials
+
+4. Create database:
+   ```bash
+   mysql -u root -p
+   CREATE DATABASE vivalatable CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
+   ```
+
+5. Run installation:
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+6. Configure web server to point to project root
+
+### Database Schema Management
+
+**Single Source of Truth**: `config/schema.sql`
+
+- Schema exports are the authoritative definition of database structure
+- `install.sh` imports schema.sql directly
+- `migrate.php` is for development convenience only (not deployed)
+- Before committing schema changes, export current database:
+  ```bash
+  mysqldump -u root --no-data --skip-add-drop-table --skip-comments vivalatable | \
+    sed 's/ AUTO_INCREMENT=[0-9]*//g' > config/schema.sql
+  ```
+
+**Never**:
+- Manually edit production databases
+- Rely on migrate.php for deployments
+- Commit schema.sql without testing clean install
+
+---
+
+## 5. Code Organization Standards
+
+### Language Separation (Strict)
+
+**PHP** - Server-side logic only
+- Lives in: `includes/`, `templates/`
+- Handles: Business logic, data access, template rendering
+- NO HTML structure, NO inline JavaScript, NO CSS rules
+
+**HTML** - Structure and semantics only
+- Lives in: `templates/`
+- Handles: Document structure, semantic markup
+- Minimal inline PHP for rendering only (loops, conditionals)
+
+**CSS** - Presentation only
+- Lives in: `assets/css/`
+- All classes use `.vt-` prefix
+- NO inline styles in templates
+- NO style attributes except for user-generated dynamic values
+
+**JavaScript** - Client behavior only
+- Lives in: `assets/js/`
+- Organized by feature: `conversations.js`, `communities.js`, `modal.js`
+- NO inline `<script>` blocks longer than 3 lines
+- Use event delegation, not inline `onclick` handlers
+
+### File Structure
+
+```
+vivalatable/
+├── includes/              # PHP classes and business logic
+│   ├── Auth/             # Authentication services
+│   ├── Database/         # Database services
+│   ├── Security/         # Security services
+│   ├── Validation/       # Validation & sanitization
+│   ├── class-*.php       # Legacy managers (being modernized)
+│   └── bootstrap.php     # Application initialization
+├── templates/            # HTML templates
+│   ├── base/            # Layout templates (two-column, form, page)
+│   ├── partials/        # Reusable components
+│   └── *-content.php    # Page content templates
+├── assets/
+│   ├── css/             # Stylesheets (.vt- prefix required)
+│   └── js/              # JavaScript modules
+├── config/              # Configuration files
+│   ├── schema.sql       # Database schema (source of truth)
+│   └── database.php     # Database credentials (not in git)
+├── dev/doctrine/        # Development standards (XML charters)
+└── .claude/             # Claude Code workspace (gitignored)
+```
+
+### Manager vs Service Pattern
+
+**Managers** (Legacy, being phased out):
+- Handle specific entity CRUD: `VT_Conversation_Manager`, `VT_Event_Manager`
+- Direct database access via `$this->db`
+- Being modernized to use Services
+
+**Services** (Modern):
+- Single responsibility: `AuthenticationService`, `SecurityService`
+- Dependency injection via constructor
+- Accessed via: `vt_service('auth.service')`
+- Return typed values or throw exceptions
+
+---
+
+## 6. URL Routing Standards
+
+### Core Principles
+1. **Predictable**: URLs follow consistent patterns across all resources
+2. **Readable**: Use slugs for public-facing URLs, not numeric IDs
+3. **RESTful**: Follow REST conventions for resource actions
+4. **Hierarchical**: Express resource relationships through URL structure
+5. **Secure**: Never expose internal database IDs in public URLs
+
+### Resource Identifier Standards
+- **Internal Operations**: Use numeric auto-increment IDs
+- **Public URLs**: Use human-readable slugs
+- **Slug Format**: lowercase, hyphenated, derived from titles/names
+  - Example: "Beach Party 2024" → "beach-party-2024"
+
+### URL Structure Patterns
+
+**Collection Resources:**
+```
+GET    /resources              # List all resources
+POST   /resources              # Create new resource
+GET    /resources/create       # Show creation form
+```
+
+**Individual Resources:**
+```
+GET    /resources/{slug}       # View single resource
+PUT    /resources/{slug}       # Update resource (API)
+DELETE /resources/{slug}       # Delete resource (API)
+```
+
+**Resource Actions:**
+```
+GET    /resources/{slug}/edit     # Show edit form
+POST   /resources/{slug}/edit     # Process edit form
+GET    /resources/{slug}/manage   # Management interface
+POST   /resources/{slug}/manage   # Process management actions
+```
+
+### VivalaTable Resource Mappings
+
+**Events:**
+```
+GET    /events                    # Events list page
+GET    /events/create            # Create event form
+POST   /events/create            # Process event creation
+GET    /events/{slug}            # Single event page
+GET    /events/{slug}/edit       # Edit event form
+GET    /events/{slug}/manage     # Manage event (host only)
+```
+
+**Communities:**
+```
+GET    /communities                    # Communities list page
+GET    /communities/create            # Create community form
+POST   /communities/create            # Process community creation
+GET    /communities/{slug}            # Single community page
+GET    /communities/{slug}/edit       # Edit community form
+GET    /communities/{slug}/manage     # Manage community (admin only)
+GET    /communities/{slug}/members    # Members list
+```
+
+**Conversations:**
+```
+GET    /conversations                 # Conversations list page
+GET    /conversations/create         # Create conversation form
+POST   /conversations/create         # Process conversation creation
+GET    /conversations/{slug}         # Single conversation page
+POST   /conversations/{slug}/reply   # Add reply
+```
+
+**Authentication:**
+```
+GET    /login                        # Login form
+POST   /login                        # Process login
+GET    /logout                       # Logout action
+GET    /register                     # Registration form
+POST   /register                     # Process registration
+```
+
+---
+
+## 7. Database Architecture
+
+### Core Tables
+
+#### Events System
+- **vt_events**: Event data (title, description, date, time, venue)
+- **vt_guests**: RSVP and guest management with 32-character tokens
+- **vt_event_invitations**: Event invitation system
+- **vt_event_rsvps**: Modern RSVP flow with accessibility support
+
+#### Communities System (Circles of Trust)
+- **vt_communities**: Community management with privacy controls
+  - `privacy` enum('public','private') - Core circles functionality
+  - `type` varchar(50) - standard, personal, food, hobby, etc.
+  - `personal_owner_user_id` - For personal communities (circles)
+- **vt_community_members**: Membership with roles (admin, member) and status
+- **vt_community_events**: Links communities and events
+- **vt_community_invitations**: Community invitation system
+
+#### Conversations System
+- **vt_conversations**: Discussion threads linked to events/communities
+- **vt_conversation_replies**: Threaded replies with depth tracking
+- **vt_conversation_follows**: User subscriptions
+- **vt_conversation_topics**: Categorization system
+
+#### User System
+- **vt_users**: LAMP user authentication (login, email, password_hash)
+- **vt_user_profiles**: Full hosting functionality and preferences
+- **vt_member_identities**: AT Protocol integration
+
+### Key Business Rules
+
+**RSVP Status**: `pending`, `yes`, `no`, `maybe`
+**Event Status**: `active`, `cancelled`, `completed`
+**Community Privacy**: `public`, `private`
+**Token System**: 32-character tokens for invitations
+
+---
+
+## 8. Security Requirements
+
+### Input Validation Checklist
+
+At every boundary (template, AJAX handler, API endpoint):
+
+```php
+// ✓ Verify authentication
+if (!vt_service('auth.service')->isLoggedIn()) {
+    VT_Router::redirect('/login');
+}
+
+// ✓ Verify authorization
+if (!$manager->canEdit($item_id, $current_user_id)) {
+    http_response_code(403);
+    die('Access denied');
+}
+
+// ✓ Verify CSRF token
+if (!vt_service('security.service')->verifyNonce($_POST['nonce'], 'action_name')) {
+    VT_Ajax::sendError('Security check failed');
+}
+
+// ✓ Sanitize all inputs
+$title = vt_service('validation.sanitizer')->textField($_POST['title']);
+$content = vt_service('validation.sanitizer')->richText($_POST['content']);
+```
+
+### Output Escaping
+
+Always escape output based on context:
+
+```php
+// HTML context
+echo htmlspecialchars($user_input, ENT_QUOTES, 'UTF-8');
+echo vt_service('validation.validator')->escHtml($data);
+
+// HTML attribute context
+echo vt_service('validation.validator')->escAttr($data);
+
+// URL context
+echo vt_service('validation.validator')->escUrl($url);
+```
+
+### Database Security
+
+```php
+// ✓ ALWAYS use prepared statements
+$db->prepare("SELECT * FROM vt_users WHERE id = %d", $user_id);
+
+// ✓ Use service methods
+$auth = vt_service('auth.service');
+$user_id = $auth->getCurrentUserId();
+
+// ✗ NEVER concatenate SQL
+$query = "SELECT * FROM users WHERE id = " . $_GET['id']; // SQL injection!
+```
+
+---
+
+## 9. Testing Before Pull Requests
+
+### Code Quality Checks
+
 ```bash
 # Check for unprefixed CSS classes
-grep -o '^\.[a-zA-Z0-9_-]\+' assets/css/partyminder.css | grep -v '^\.pm-' | sort | uniq
+grep -rn "class=\"[^\"]*\"" templates/ | grep -v "vt-" | head -20
 
-# Search for emojis in codebase (should return nothing)
-grep -r "[\u{1F600}-\u{1F64F}]" templates/ includes/ || echo "No emojis found ✓"
+# Check for inline styles (should be minimal)
+grep -rn "style=" templates/ | wc -l
+
+# Check for emojis in code (should return nothing)
+grep -P "[\\x{1F300}-\\x{1F9FF}]" includes/ templates/
 
 # Check for debug code
-grep -r "var_dump\|print_r\|error_log.*test" templates/ includes/
+grep -rn "var_dump\|print_r\|dd(" includes/ templates/
+
+# Check for error_log() usage (forbidden)
+grep -rn "error_log(" includes/ templates/
+
+# Check error log for issues
+tail -50 error.log
 ```
 
-#### Functional Testing
-- **Plugin activation/deactivation**: No errors in PHP logs
-- **User flows**: Test as different user roles (admin, subscriber, logged out)
-- **Theme compatibility**: Test with default WordPress themes
-- **Responsive design**: Verify mobile and desktop layouts
-- **Browser compatibility**: Test in Chrome, Firefox, Safari, Edge
-- **JavaScript functionality**: Check browser console for errors
+### Functional Testing
 
-#### WordPress Integration
-- **No WordPress conflicts**: Test with common plugins active
-- **Performance**: No significant impact on page load times
-- **Security**: All user inputs properly sanitized
-- **Accessibility**: ARIA labels, keyboard navigation works
-
-### Manual Testing Checklist
-- [ ] Plugin activates without errors
-- [ ] All pages load correctly
-- [ ] Forms submit successfully
-- [ ] AJAX functionality works
-- [ ] User permissions respected
-- [ ] Email notifications sent
-- [ ] Database operations succeed
-- [ ] No JavaScript errors in console
-- [ ] Mobile responsive layouts work
-- [ ] Works with different WordPress themes
+- [ ] Clean database install works (`./install.sh`)
+- [ ] User registration and login functions
+- [ ] Creating events/communities/conversations works
+- [ ] Circles of Trust filtering returns correct results
+- [ ] AJAX operations return valid JSON
+- [ ] File uploads work with correct permissions
+- [ ] Mobile responsive layouts display correctly
+- [ ] No JavaScript errors in browser console
+- [ ] No PHP errors in error.log
 
 ---
 
-## 8. WordPress-Specific Guidelines
+## 10. Git Workflow
 
-### Security Requirements
+### Branch Naming
+
+```bash
+feature/circles-of-trust-filtering
+fix/conversation-reply-validation
+refactor/modernize-auth-service
+docs/update-contributing-guide
+```
+
+### Commit Messages
+
+```bash
+# Good commits
+git commit -m "Add Circles of Trust conversation filtering
+
+Implement VT_Conversation_Feed::list() with inner/trusted/extended
+circle parameters. Updates AJAX handler and JavaScript to support
+dynamic filtering."
+
+# Bad commits
+git commit -m "fix stuff"           # Too vague
+git commit -m "WIP"                 # Not descriptive
+git commit -m "Update files"        # Says nothing
+```
+
+### Pull Request Process
+
+1. **Create feature branch** from `main`
+2. **Make changes** following these standards
+3. **Test thoroughly** (see section 9)
+4. **Update documentation** if needed
+5. **Commit with descriptive messages**
+6. **Push and create PR** with:
+   - Clear description of changes
+   - Why the change was needed
+   - How you tested it
+   - Any breaking changes
+
+---
+
+## 11. Common Patterns
+
+### Creating a New Feature
+
+1. **Manager/Service** (Business Logic):
 ```php
-// Input validation and sanitization
-$email = is_email( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
-$title = sanitize_text_field( $_POST['title'] );
-$content = wp_kses_post( $_POST['content'] );
+class VT_Thing_Manager {
+    private $db;
 
-// Output escaping
-echo esc_html( $user_input );
-echo esc_attr( $form_value );
-echo esc_url( $link_url );
+    public function __construct() {
+        $this->db = VT_Database::getInstance();
+    }
 
-// Nonce verification for all forms
-wp_nonce_field( 'partyminder_create_event', 'partyminder_nonce' );
-if ( ! wp_verify_nonce( $_POST['partyminder_nonce'], 'partyminder_create_event' ) ) {
-    wp_die( 'Security check failed' );
+    // Data is already clean - trust it
+    public function createThing($data) {
+        return $this->db->insert('things', [
+            'title' => $data['title'],
+            'user_id' => $data['user_id'],
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+    }
 }
 ```
 
-### Hook Usage Patterns
+2. **Template** (Boundary):
 ```php
-// Actions - for performing operations
-add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-add_action( 'init', array( $this, 'register_post_types' ) );
+// templates/create-thing-content.php
+$manager = new VT_Thing_Manager();
+$errors = [];
 
-// Filters - for modifying data
-add_filter( 'the_content', array( $this, 'inject_event_content' ) );
-add_filter( 'wp_title', array( $this, 'modify_event_titles' ) );
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify security
+    if (!vt_service('security.service')->verifyNonce($_POST['nonce'], 'create_thing')) {
+        $errors[] = 'Security check failed';
+    }
 
-// AJAX handlers
-add_action( 'wp_ajax_partyminder_create_event', array( $this, 'handle_create_event' ) );
-add_action( 'wp_ajax_nopriv_partyminder_rsvp', array( $this, 'handle_public_rsvp' ) );
+    // Sanitize inputs
+    $title = vt_service('validation.sanitizer')->textField($_POST['title']);
+
+    // Validate
+    if (empty($title)) {
+        $errors[] = 'Title is required';
+    }
+
+    // If valid, create
+    if (empty($errors)) {
+        $result = $manager->createThing([
+            'title' => $title,
+            'user_id' => vt_service('auth.service')->getCurrentUserId()
+        ]);
+
+        if ($result) {
+            VT_Router::redirect('/things');
+        }
+    }
+}
+?>
+<form method="post">
+    <?php echo vt_service('security.service')->nonceField('create_thing'); ?>
+    <input type="text" name="title" value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>">
+    <button type="submit">Create</button>
+</form>
 ```
 
-### File Organization
-- **Class files**: `includes/class-{name}.php`
-- **Template files**: `templates/{page}-content.php`
-- **Base templates**: `templates/base/template-{type}.php`
-- **Partial templates**: `templates/partials/{component}.php`
+3. **JavaScript** (Behavior):
+```javascript
+// assets/js/things.js
+(function() {
+    'use strict';
 
----
-
-## 9. Performance Guidelines
-
-### Database Optimization
-- **Minimize queries**: Use `get_results()` instead of multiple `get_row()` calls
-- **Use indexes**: Ensure frequently queried columns have proper indexes
-- **Cache expensive operations**: Use WordPress transients for heavy queries
-- **Pagination**: Always paginate large result sets
-
-### Frontend Performance
-- **Minimize HTTP requests**: Combine CSS and JS where possible
-- **Optimize images**: Proper sizing and compression
-- **Conditional loading**: Only load scripts/styles where needed
-- **Database caching**: Use WordPress object cache when available
-
----
-
-## 10. Accessibility Requirements
-
-### ARIA and Keyboard Navigation
-```php
-// Proper ARIA labels
-<button aria-label="<?php esc_attr_e( 'Delete event', 'partyminder' ); ?>">
-    <?php _e( 'Delete', 'partyminder' ); ?>
-</button>
-
-// Keyboard navigation
-<div class="pm-tabs" role="tablist">
-    <button role="tab" aria-selected="true" aria-controls="pm-events-panel">
-        <?php _e( 'My Events', 'partyminder' ); ?>
-    </button>
-</div>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Feature-specific JavaScript
+    });
+})();
 ```
 
-### Visual Accessibility
-- **Color contrast**: Ensure sufficient contrast ratios
-- **Focus indicators**: Clear focus states for interactive elements
-- **Screen reader support**: Proper heading hierarchy and landmarks
-- **Alternative text**: Descriptive alt text for images
+4. **CSS** (Presentation):
+```css
+/* assets/css/style.css */
+.vt-thing-card {
+    padding: var(--vt-space-md);
+    background: var(--vt-surface);
+}
+```
 
 ---
 
-## 11. Code Review Checklist
+## 12. Key Lessons from Migration
+
+### Core Infrastructure
+
+1. **No Circular Dependencies**: Database and Config classes must be independent
+2. **MySQL Socket Paths**: Check actual MySQL configuration before assuming standard connections
+3. **Session Management**: Use `session_status()` check before `session_start()`
+4. **Absolute Paths Always**: Use `VT_PLUGIN_DIR . '/path'` for all file includes
+5. **Method Signatures**: Verify static vs instance methods before calling
+
+### Database Operations
+
+1. **insert_id Timing**: Retrieve immediately after INSERT, before any other queries
+2. **WordPress Placeholder Conversion**: Convert %d, %s, %f to ? in prepare() method
+3. **PDO Statement Handling**: Methods must handle both raw queries and PDOStatement objects
+4. **Database Prefix**: Make VT_Database->prefix property public for template access
+
+### Testing and Validation
+
+1. **Test Incrementally**: Verify each component works before building on it
+2. **Check Dependencies**: Verify all classes and methods exist before using
+3. **No Assumptions**: Don't assume relative paths, method names, or column names
+
+---
+
+## 13. Future Roadmap
+
+### Current Phase: User Testing & Validation
+- Testing core functionality with real data
+- Community creation and membership
+- Event creation and RSVP
+- Conversations and Circles of Trust filtering
+
+### Planned Features
+
+**Email System Integration** (High Priority)
+- SMTP configuration
+- RSVP confirmations and reminders
+- Community invitations
+- Password reset functionality
+
+**Bluesky Social Integration** (High Priority)
+- Bluesky API integration for follower retrieval
+- Social invitation system
+- Cross-platform identity verification
+
+**Enhanced Media System** (Medium Priority)
+- Conversation reply images
+- Community and event cover images
+- Image optimization and processing
+- oEmbed integration for link previews
+
+**Modular Invitation System** (Medium Priority)
+- Unified invitation/request/join/RSVP system
+- Join request approval workflow
+- Reusable UI components
+- Consistent email templates
+
+See `dev/consolidate-dev/DEPLOYMENT_ROADMAP.md` and `FUTURE_MODULAR_INVITATION_SYSTEM.md` for detailed planning.
+
+---
+
+## 14. Code Review Standards
+
+### For Contributors
+
+Before submitting PR, verify:
+- [ ] No validators called in manager classes
+- [ ] All CSS classes use `.vt-` prefix
+- [ ] No inline styles (except dynamic user values)
+- [ ] No JavaScript longer than 3 lines in templates
+- [ ] All user input sanitized at boundaries
+- [ ] All output escaped appropriately
+- [ ] CSRF tokens on all state-changing forms
+- [ ] No debug code (var_dump, print_r, error_log)
+- [ ] No emojis in code or UI
+- [ ] Tests pass, no errors in logs
 
 ### For Reviewers
-- [ ] **Security**: All inputs sanitized, outputs escaped, nonces verified
-- [ ] **Performance**: No unnecessary database queries or expensive operations
-- [ ] **WordPress standards**: Proper use of hooks, APIs, and coding standards
-- [ ] **CSS compliance**: All classes prefixed with `.pm-`, no inline styles
-- [ ] **Professional tone**: No emojis or casual language
-- [ ] **Template usage**: Appropriate use of shared layout system
-- [ ] **Documentation**: Code comments and documentation updated
-- [ ] **Testing**: Evidence of thorough testing provided
-- [ ] **Backward compatibility**: Changes don't break existing functionality
+
+Check:
+- [ ] Architecture: Boundary pattern followed correctly
+- [ ] Security: Input validated, output escaped, nonces verified
+- [ ] Separation: PHP/HTML/CSS/JS properly separated
+- [ ] Performance: No N+1 queries, appropriate indexes
+- [ ] Standards: Follows dev/doctrine/*.xml guidelines
+- [ ] Testing: Evidence of thorough testing provided
 
 ---
 
-## 12. Version Control and Releases
+## 15. Getting Help
 
-### When to Bump Version Numbers
-- **Major version** (1.0 → 2.0): Breaking changes, major feature additions
-- **Minor version** (1.1 → 1.2): New features, significant improvements
-- **Patch version** (1.1.1 → 1.1.2): Bug fixes, minor improvements
-
-### Release Process
-1. **Update version** in main plugin file header
-2. **Update changelog** with new features and fixes
-3. **Test thoroughly** on clean WordPress installation
-4. **Tag release** in version control
-5. **Update documentation** as needed
+- **GitHub Issues**: Bug reports and feature requests
+- **GitHub Discussions**: Questions about architecture and patterns
+- **Pull Requests**: Code contributions with clear descriptions
+- **Documentation**: Check `dev/doctrine/*.xml` for specific guidelines
 
 ---
 
-## 13. Issues and Questions
-
-### GitHub Issues
-Please open a GitHub issue if:
-- **Bug reports**: Include steps to reproduce, expected vs actual behavior
-- **Feature requests**: Describe use case and proposed solution
-- **Documentation**: Questions about setup, usage, or contribution process
-- **Security concerns**: Responsible disclosure of potential vulnerabilities
-
-### Getting Help
-- **Code questions**: Use GitHub discussions or issues
-- **Development setup**: Check development setup section above
-- **WordPress integration**: Refer to WordPress Codex and developer documentation
-
-This plugin is maintained by the PartyMinder development team. Use GitHub for all collaboration and communication.
-
-Thank you for contributing to PartyMinder!
+**Thank you for contributing to VivalaTable and helping build an anti-algorithm social platform!**
