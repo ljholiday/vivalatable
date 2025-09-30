@@ -200,8 +200,6 @@ class VT_Conversation_Manager {
 		$result = $this->db->insert('conversation_replies', $insert_data);
 
 		if (!$result) {
-			error_log('Reply insert failed. Insert data: ' . json_encode($insert_data));
-			error_log('DB last error: ' . $this->db->last_error);
 			return false;
 		}
 
