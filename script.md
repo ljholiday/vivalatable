@@ -206,13 +206,43 @@ VivalaTable implementation:
 
 **Issue Identified:** Previous conversations implementation was created before proper understanding of Circles of Trust, resulting in broken filtering functionality.
 
-**Rebuild Plan:**
-1. ✅ **Delete Broken Implementation** - Removed broken AJAX handler and JavaScript
-2. 🔄 **Design Circles of Trust Data Flow** - Architecture for proper circle-based filtering
-3. ⏳ **Build New Circle-Based AJAX Backend** - Modern service-based implementation
-4. ⏳ **Create New Frontend Experience** - Educational UI for anti-algorithm concept
-5. ⏳ **Test Complete Rebuild** - Verify all circle filtering works properly
+**Current State:**
+- ✅ Broken implementation deleted (AJAX handler, template gutted, JS gutted)
+- ✅ Backup exists: `templates/conversations-content-broken.php.bak`
+- ✅ Core infrastructure intact: `VT_Conversation_Feed::list()` exists and works
+- ✅ Documentation complete: `dev/circles.xml` defines requirements
 
-**Previous Production Status:** All other systems remain production-ready - communities, events, authentication, and user management are fully functional.
+**Rebuild Plan (Building NEW, not restoring):**
 
-**Next Steps:** Complete conversations rebuild to properly demonstrate the core Circles of Trust value proposition.
+1. **Backend AJAX Handler** - Create new `includes/class-conversation-ajax-handler.php`:
+   - Single endpoint: `ajaxGetConversations()`
+   - MUST call `VT_Conversation_Feed::list($user_id, $circle, $options)`
+   - Validate circle parameter: 'inner', 'trusted', 'extended'
+   - Secondary filter parameter: '', 'events', 'communities'
+   - Return JSON with HTML + metadata (circle, count)
+   - Nonce verification with modern services
+
+2. **Frontend Template** - Build functional UI in `templates/conversations-content.php`:
+   - **Circle Filter Buttons**: Inner/Trusted/Extended (clean, minimal)
+   - **Type Filters**: All/Events/Communities as secondary filters
+   - **Conversation Grid**: Display filtered conversations
+   - **Empty States**: Simple "No conversations found" messages
+   - NO educational content (handled off-site)
+
+3. **JavaScript** - Build interactive experience in `assets/js/conversations.js`:
+   - Circle button handlers with visual feedback (active state)
+   - AJAX calls with circle parameter to `/ajax/conversations`
+   - Loading/error states
+   - Dynamic content updates
+   - Clean, minimal implementation
+
+**Architecture Requirements (per dev/circles.xml):**
+- MUST use `VT_Conversation_Feed::list()` for ALL conversation filtering
+- Circle parameter is REQUIRED in all AJAX calls
+- Content queries MUST respect circle membership at database level
+- UI MUST have circle filter buttons
+- Never bypass VT_Conversation_Feed with direct queries
+
+**Goal:** Clean, functional Circles of Trust filtering that works correctly.
+
+**Next Steps:** Execute rebuild plan after user confirms approach.
