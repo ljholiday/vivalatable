@@ -277,12 +277,25 @@ class VT_Security_SecurityService {
      * Get or generate salts
      */
     private function getOrGenerateSalts(): array {
-        // In production, load from secure config
-        return [
+        // Use constant salts from config or generate persistent ones
+        // In a real app, these should be in config and never change
+        $config_path = dirname(__DIR__, 2) . '/config/security_salts.php';
+
+        if (file_exists($config_path)) {
+            return require $config_path;
+        }
+
+        // Generate and save salts if they don't exist
+        $salts = [
             'auth' => bin2hex(random_bytes(32)),
             'nonce' => bin2hex(random_bytes(32)),
             'session' => bin2hex(random_bytes(32))
         ];
+
+        $content = "<?php\n// Security salts - DO NOT commit to git\nreturn " . var_export($salts, true) . ";\n";
+        file_put_contents($config_path, $content);
+
+        return $salts;
     }
 
     /**
