@@ -15,7 +15,11 @@
       "WebFetch(domain:github.com)",
       "Bash(grep:*)",
       "WebFetch(domain:localhost)",
-      "Read(//private/var/log/**)"
+      "Read(//private/var/log/**)",
+      "Bash(node:*)",
+      "Bash(git reset:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

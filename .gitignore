@@ -4,7 +4,7 @@ config/security_salts.php
 
 # Local development ducumentation
 dev
-.claude
+.claude/
 
 # Development tools
 migrate.php
@@ -13,6 +13,6 @@ migrate.php
 error.log
 
 # Uploaded files
-upload/
+uploads/
 
 
