@@ -5,8 +5,8 @@
  * Ported from PartyMinder WordPress plugin
  */
 
-// Get conversation slug from URL
-$conversation_slug = $_GET['conversation'] ?? '';
+// Get conversation slug from page params or fallback to query string
+$conversation_slug = $conversation_slug ?? $_GET['conversation'] ?? '';
 if (!$conversation_slug) {
 	VT_Router::redirect('/conversations');
 	exit;
@@ -70,7 +70,7 @@ $messages = array();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_reply && vt_service('security.service')->verifyNonce($_POST['reply_nonce'], 'vt_conversation_reply')) {
 	$reply_content = vt_service('validation.sanitizer')->richText($_POST['reply_content'] ?? '');
-	$parent_reply_id = vt_service('validation.validator')->integer($_POST['parent_reply_id'] ?? 0);
+	$parent_reply_id = intval($_POST['parent_reply_id'] ?? 0);
 
 	if (empty($reply_content)) {
 		$errors[] = 'Reply content is required.';
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $can_reply && vt_service('security.
 			'author_email' => $current_user->email
 		);
 
-		$reply_id = $conversation_manager->createReply($reply_data);
+		$reply_id = $conversation_manager->addReply($conversation->id, $reply_data);
 		if ($reply_id) {
 			$messages[] = 'Reply posted successfully!';
 			// Refresh the page to show the new reply
@@ -211,24 +211,27 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 		<div class="vt-replies">
 			<?php foreach ($replies as $reply) : ?>
 				<div class="vt-reply" id="reply-<?php echo $reply->id; ?>">
-					<div class="vt-reply-header vt-mb-2">
-						<span class="vt-reply-author">
-							<strong><?php echo htmlspecialchars($reply->author_name); ?></strong>
-						</span>
-						<span class="vt-reply-meta vt-text-muted">
+					<div class="vt-reply-header">
+						<div class="vt-reply-author">
+							<?php
+							$user_id = $reply->author_id;
+							$args = array(
+								'avatar_size' => 40,
+								'show_avatar' => true,
+								'show_name' => true,
+								'link_profile' => true,
+								'class' => 'vt-member-display'
+							);
+							include __DIR__ . '/partials/member-display.php';
+							?>
+						</div>
+						<div class="vt-reply-meta vt-text-muted">
 							<?php echo date('M j, Y \a\t g:i A', strtotime($reply->created_at)); ?>
-						</span>
+						</div>
 					</div>
 					<div class="vt-reply-content">
 						<?php echo nl2br(htmlspecialchars($reply->content)); ?>
 					</div>
-					<?php if ($can_reply) : ?>
-						<div class="vt-reply-actions vt-mt-2">
-							<button class="vt-btn vt-btn-sm vt-btn-secondary" onclick="showReplyForm(<?php echo $reply->id; ?>)">
-								Reply
-							</button>
-						</div>
-					<?php endif; ?>
 				</div>
 			<?php endforeach; ?>
 		</div>
@@ -239,16 +242,3 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 	<?php endif; ?>
 </div>
 
-<script>
-function showReplyForm(parentReplyId) {
-	// Simple implementation - in a full app this would show an inline reply form
-	const replyTextarea = document.getElementById('reply_content');
-	const parentInput = document.querySelector('input[name="parent_reply_id"]');
-
-	if (replyTextarea && parentInput) {
-		parentInput.value = parentReplyId;
-		replyTextarea.scrollIntoView({ behavior: 'smooth' });
-		replyTextarea.focus();
-	}
-}
-</script>

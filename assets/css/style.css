@@ -2025,3 +2025,47 @@ body.vt-modal-open {
 .vt-modal-body {
   user-select: text;
   cursor: text;
+}
+
+/* Conversation Replies */
+.vt-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.vt-reply {
+  padding: 1.25rem;
+  border: 1px solid var(--vt-border);
+  border-radius: 0.5rem;
+  background: var(--vt-surface);
+  transition: all 0.2s ease;
+}
+
+.vt-reply:hover {
+  border-color: var(--vt-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.vt-reply-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--vt-border);
+}
+
+.vt-reply-author .vt-member-display {
+  font-weight: 600;
+}
+
+.vt-reply-meta {
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.vt-reply-content {
+  line-height: 1.6;
+  color: var(--vt-text);
+}
