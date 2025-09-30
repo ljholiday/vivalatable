@@ -142,16 +142,6 @@ else
     exit 1
 fi
 
-# Run migrations
-print_status "Running database migrations..."
-php migrate.php
-
-if [ $? -eq 0 ]; then
-    print_success "Migrations completed"
-else
-    print_warning "Migrations encountered issues (may be expected if already applied)"
-fi
-
 # Step 2: File Permissions
 echo
 print_status "Step 2: Setting file permissions..."

@@ -1,8 +1,3 @@
--- MySQL dump 10.13  Distrib 9.4.0, for macos15.4 (arm64)
---
--- Host: localhost    Database: vivalatable
--- ------------------------------------------------------
--- Server version	9.4.0
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -14,12 +9,6 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Table structure for table `vt_ai_interactions`
---
-
-DROP TABLE IF EXISTS `vt_ai_interactions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_ai_interactions` (
@@ -41,12 +30,6 @@ CREATE TABLE `vt_ai_interactions` (
   KEY `created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_analytics`
---
-
-DROP TABLE IF EXISTS `vt_analytics`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_analytics` (
@@ -62,12 +45,6 @@ CREATE TABLE `vt_analytics` (
   KEY `metric_date` (`metric_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_at_protocol_sync`
---
-
-DROP TABLE IF EXISTS `vt_at_protocol_sync`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_at_protocol_sync` (
@@ -91,12 +68,6 @@ CREATE TABLE `vt_at_protocol_sync` (
   KEY `at_protocol_uri` (`at_protocol_uri`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_at_protocol_sync_log`
---
-
-DROP TABLE IF EXISTS `vt_at_protocol_sync_log`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_at_protocol_sync_log` (
@@ -117,12 +88,6 @@ CREATE TABLE `vt_at_protocol_sync_log` (
   KEY `success` (`success`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_communities`
---
-
-DROP TABLE IF EXISTS `vt_communities`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_communities` (
@@ -158,14 +123,8 @@ CREATE TABLE `vt_communities` (
   KEY `personal_owner_user_id` (`personal_owner_user_id`),
   KEY `visibility` (`visibility`),
   KEY `created_by` (`created_by`)
-) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_community_events`
---
-
-DROP TABLE IF EXISTS `vt_community_events`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_community_events` (
@@ -184,12 +143,6 @@ CREATE TABLE `vt_community_events` (
   KEY `visibility` (`visibility`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_community_invitations`
---
-
-DROP TABLE IF EXISTS `vt_community_invitations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_community_invitations` (
@@ -213,14 +166,8 @@ CREATE TABLE `vt_community_invitations` (
   KEY `invited_user_id` (`invited_user_id`),
   KEY `status` (`status`),
   KEY `expires_at` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_community_members`
---
-
-DROP TABLE IF EXISTS `vt_community_members`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_community_members` (
@@ -247,14 +194,8 @@ CREATE TABLE `vt_community_members` (
   KEY `status` (`status`),
   KEY `at_protocol_did` (`at_protocol_did`),
   KEY `community_user_status` (`community_id`,`user_id`,`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_config`
---
-
-DROP TABLE IF EXISTS `vt_config`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_config` (
@@ -265,12 +206,6 @@ CREATE TABLE `vt_config` (
   KEY `autoload` (`autoload`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_conversation_follows`
---
-
-DROP TABLE IF EXISTS `vt_conversation_follows`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_conversation_follows` (
@@ -286,14 +221,8 @@ CREATE TABLE `vt_conversation_follows` (
   KEY `conversation_id` (`conversation_id`),
   KEY `user_id` (`user_id`),
   KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_conversation_replies`
---
-
-DROP TABLE IF EXISTS `vt_conversation_replies`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_conversation_replies` (
@@ -314,14 +243,8 @@ CREATE TABLE `vt_conversation_replies` (
   KEY `created_at` (`created_at`),
   KEY `conversation_created_at` (`conversation_id`,`created_at`),
   KEY `conversation_created` (`conversation_id`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_conversation_topics`
---
-
-DROP TABLE IF EXISTS `vt_conversation_topics`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_conversation_topics` (
@@ -337,14 +260,8 @@ CREATE TABLE `vt_conversation_topics` (
   UNIQUE KEY `slug` (`slug`),
   KEY `sort_order` (`sort_order`),
   KEY `is_active` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_conversations`
---
-
-DROP TABLE IF EXISTS `vt_conversations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_conversations` (
@@ -375,14 +292,8 @@ CREATE TABLE `vt_conversations` (
   KEY `community_id` (`community_id`),
   KEY `community_created_at` (`community_id`,`created_at`),
   KEY `community_created` (`community_id`,`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_event_invitations`
---
-
-DROP TABLE IF EXISTS `vt_event_invitations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_event_invitations` (
@@ -407,14 +318,8 @@ CREATE TABLE `vt_event_invitations` (
   KEY `invited_user_id` (`invited_user_id`),
   KEY `status` (`status`),
   KEY `expires_at` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_events`
---
-
-DROP TABLE IF EXISTS `vt_events`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_events` (
@@ -467,14 +372,8 @@ CREATE TABLE `vt_events` (
   KEY `community_id` (`community_id`),
   KEY `created_by` (`created_by`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_guests`
---
-
-DROP TABLE IF EXISTS `vt_guests`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_guests` (
@@ -503,14 +402,8 @@ CREATE TABLE `vt_guests` (
   KEY `temporary_guest_id` (`temporary_guest_id`),
   KEY `converted_user_id` (`converted_user_id`),
   KEY `invitation_source` (`invitation_source`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_member_identities`
---
-
-DROP TABLE IF EXISTS `vt_member_identities`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_member_identities` (
@@ -543,14 +436,8 @@ CREATE TABLE `vt_member_identities` (
   KEY `is_verified` (`is_verified`),
   KEY `did` (`did`),
   KEY `handle` (`handle`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_post_images`
---
-
-DROP TABLE IF EXISTS `vt_post_images`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_post_images` (
@@ -582,12 +469,6 @@ CREATE TABLE `vt_post_images` (
   KEY `display_order` (`display_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_search`
---
-
-DROP TABLE IF EXISTS `vt_search`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_search` (
@@ -612,14 +493,8 @@ CREATE TABLE `vt_search` (
   KEY `visibility_idx` (`visibility_scope`),
   KEY `owner_idx` (`owner_user_id`),
   FULLTEXT KEY `ft_search` (`title`,`content`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_sessions`
---
-
-DROP TABLE IF EXISTS `vt_sessions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_sessions` (
@@ -635,12 +510,6 @@ CREATE TABLE `vt_sessions` (
   KEY `expires_at` (`expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_social`
---
-
-DROP TABLE IF EXISTS `vt_social`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_social` (
@@ -660,12 +529,6 @@ CREATE TABLE `vt_social` (
   KEY `connection_status` (`connection_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_user_activity_tracking`
---
-
-DROP TABLE IF EXISTS `vt_user_activity_tracking`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_user_activity_tracking` (
@@ -679,14 +542,8 @@ CREATE TABLE `vt_user_activity_tracking` (
   UNIQUE KEY `unique_tracking` (`user_id`,`activity_type`,`item_id`),
   KEY `user_id` (`user_id`),
   KEY `activity_type` (`activity_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_user_profiles`
---
-
-DROP TABLE IF EXISTS `vt_user_profiles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_user_profiles` (
@@ -722,14 +579,8 @@ CREATE TABLE `vt_user_profiles` (
   KEY `is_verified` (`is_verified`),
   KEY `is_active` (`is_active`),
   KEY `last_active` (`last_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `vt_users`
---
-
-DROP TABLE IF EXISTS `vt_users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_users` (
@@ -740,17 +591,14 @@ CREATE TABLE `vt_users` (
   `display_name` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `last_login_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping routines for database 'vivalatable'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -761,4 +609,3 @@ CREATE TABLE `vt_users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-29  0:54:07

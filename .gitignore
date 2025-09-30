@@ -1,14 +1,18 @@
 # Local database credentials
 config/database.php
+config/security_salts.php
 
 # Local development ducumentation
 dev
 .claude
 
+# Development tools
+migrate.php
+
 # Logs
 error.log
 
-# Uploaded files 
+# Uploaded files
 upload/
 
 
