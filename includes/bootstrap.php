@@ -9,9 +9,11 @@ define('VT_VERSION', '1.0.0');
 define('VT_PLUGIN_DIR', dirname(__DIR__));
 define('VT_INCLUDES_DIR', __DIR__);
 
-// Error reporting for development
+// Error reporting - log all errors but don't display them (prevents JSON corruption)
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', dirname(__DIR__) . '/error.log');
 
 // Set timezone
 date_default_timezone_set('UTC');

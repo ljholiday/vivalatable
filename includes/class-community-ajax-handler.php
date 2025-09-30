@@ -57,9 +57,8 @@ class VT_Community_Ajax_Handler {
 		}
 
 		if (!$community_id) {
-			header('Content-Type: application/json');
-			echo json_encode(['success' => false, 'message' => 'Invalid community ID']);
-			exit;
+			VT_Ajax::sendError('Invalid community ID');
+			return;
 		}
 
 		// Add community_id to POST for compatibility with existing method
@@ -819,9 +818,8 @@ class VT_Community_Ajax_Handler {
 	public static function ajaxGetCommunities() {
 		// Verify nonce for security
 		if (!vt_service('security.service')->verifyNonce($_POST['nonce'] ?? '', 'vt_nonce')) {
-			header('Content-Type: application/json');
-			echo json_encode(['success' => false, 'message' => 'Security check failed']);
-			exit;
+			VT_Ajax::sendError('Security check failed');
+			return;
 		}
 
 		$circle = vt_service('validation.validator')->textField($_POST['circle'] ?? 'inner');
