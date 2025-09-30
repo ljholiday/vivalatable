@@ -1,18 +1,78 @@
-# Local database credentials
-config/database.php
-config/security_salts.php
-
+# Mostly bombproof .gitignore file
+# Last update 2025-09-29
+# -------------------------------------------------
 # Local development ducumentation
-dev
+# -------------------------------------------------
+dev/
 .claude/
 
-# Development tools
-migrate.php
+# -------------------------------------------------
+# Core - Environment-specific configs (never commit)
+# -------------------------------------------------
+config/database.php
+config/security_salts.php
+.env
+*.env
 
-# Logs
-error.log
-
-# Uploaded files
+# -------------------------------------------------
+# Uploads, cache, and runtime data
+# -------------------------------------------------
 uploads/
+storage/
+cache/
+tmp/
+*.log
+*.sql
+*.sqlite
+*.bak
+*.swp
 
+# -------------------------------------------------
+# Composer, Node, and dependency directories
+# -------------------------------------------------
+vendor/
+node_modules/
+
+# -------------------------------------------------
+# Build and distribution artifacts
+# -------------------------------------------------
+*.zip
+*.tar.gz
+*.tgz
+*.tar
+*.gz
+*.rar
+dist/
+build/
+package-lock.json
+npm-debug.log*
+yarn-error.log
+
+# -------------------------------------------------
+# IDE/editor-specific files
+# -------------------------------------------------
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# -------------------------------------------------
+# OS-generated cruft
+# -------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.tmp
+
+# -------------------------------------------------
+# Tests and local scripts (optional)
+# -------------------------------------------------
+tests/.phpunit.result.cache
+phpunit.xml
+phpunit.xml.dist
+migrate.php
+dev/
+scripts/
+.local/
 
