@@ -40,11 +40,11 @@ $messages = array();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && vt_service('security.service')->verifyNonce($_POST['create_conversation_nonce'], 'vt_create_conversation')) {
 	$conversation_data = array(
-		'title' => vt_service('validation.validator')->textField($_POST['title'] ?? ''),
+		'title' => vt_service('validation.sanitizer')->textField($_POST['title'] ?? ''),
 		'content' => vt_service('validation.sanitizer')->richText($_POST['content'] ?? ''),
-		'community_id' => vt_service('validation.validator')->integer($_POST['community_id'] ?? 0),
-		'event_id' => vt_service('validation.validator')->integer($_POST['event_id'] ?? 0),
-		'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
+		'community_id' => intval($_POST['community_id'] ?? 0),
+		'event_id' => intval($_POST['event_id'] ?? 0),
+		'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
 		'author_id' => $current_user->id,
 		'author_name' => $current_user->display_name ?: $current_user->username,
 		'author_email' => $current_user->email

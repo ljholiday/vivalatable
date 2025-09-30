@@ -137,17 +137,17 @@ class VT_Conversation_Manager {
 		$insert_data = array(
 			'event_id' => $data['event_id'] ?? null,
 			'community_id' => $community_id,
-			'title' => vt_service('validation.validator')->textField($data['title']),
+			'title' => $data['title'],
 			'slug' => $slug,
-			'content' => vt_service('validation.sanitizer')->richText($data['content']),
+			'content' => $data['content'],
 			'author_id' => $data['author_id'] ?? vt_service('auth.service')->getCurrentUserId(),
-			'author_name' => vt_service('validation.validator')->textField($data['author_name']),
-			'author_email' => vt_service('validation.validator')->email($data['author_email']),
+			'author_name' => $data['author_name'],
+			'author_email' => $data['author_email'],
 			'privacy' => $this->validateConversationPrivacy($data['privacy'] ?? 'public', $data),
 			'is_pinned' => $data['is_pinned'] ?? 0,
 			'created_at' => VT_Time::currentTime('mysql'),
 			'last_reply_date' => VT_Time::currentTime('mysql'),
-			'last_reply_author' => vt_service('validation.validator')->textField($data['author_name']),
+			'last_reply_author' => $data['author_name'],
 		);
 
 		$result = $this->db->insert('conversations', $insert_data);
@@ -178,7 +178,7 @@ class VT_Conversation_Manager {
 			$parent = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT depth_level FROM $replies_table WHERE id = %d",
-					$data['parent_reply_id']
+					intval($data['parent_reply_id'])
 				)
 			);
 			$depth = $parent ? ($parent->depth_level + 1) : 0;
@@ -188,11 +188,11 @@ class VT_Conversation_Manager {
 		// Insert reply
 		$insert_data = array(
 			'conversation_id' => $conversation_id,
-			'parent_reply_id' => $data['parent_reply_id'] ?? null,
-			'content' => vt_service('validation.sanitizer')->richText($data['content']),
+			'parent_reply_id' => !empty($data['parent_reply_id']) ? intval($data['parent_reply_id']) : null,
+			'content' => $data['content'],
 			'author_id' => $data['author_id'] ?? vt_service('auth.service')->getCurrentUserId(),
-			'author_name' => vt_service('validation.validator')->textField($data['author_name']),
-			'author_email' => vt_service('validation.validator')->email($data['author_email']),
+			'author_name' => $data['author_name'],
+			'author_email' => $data['author_email'],
 			'depth_level' => $depth,
 			'created_at' => VT_Time::currentTime('mysql'),
 		);
@@ -200,8 +200,13 @@ class VT_Conversation_Manager {
 		$result = $this->db->insert('conversation_replies', $insert_data);
 
 		if (!$result) {
+			error_log('Reply insert failed. Insert data: ' . json_encode($insert_data));
+			error_log('DB last error: ' . $this->db->last_error);
 			return false;
 		}
+
+		// Get insert ID immediately after insert (before any other queries)
+		$reply_id = $this->db->insert_id;
 
 		// Update conversation reply count and last reply info
 		$reply_count = $this->db->getVar(
@@ -216,12 +221,10 @@ class VT_Conversation_Manager {
 			array(
 				'reply_count' => $reply_count,
 				'last_reply_date' => VT_Time::currentTime('mysql'),
-				'last_reply_author' => vt_service('validation.validator')->textField($data['author_name']),
+				'last_reply_author' => $data['author_name'],
 			),
 			array('id' => $conversation_id)
 		);
-
-		$reply_id = $this->db->insert_id;
 
 		// Auto-follow the conversation for reply author
 		$this->followConversation($conversation_id, $data['author_id'], $data['author_email']);
@@ -252,6 +255,13 @@ class VT_Conversation_Manager {
 		}
 
 		return $conversation;
+	}
+
+	/**
+	 * Get conversation by slug
+	 */
+	public function getConversationBySlug($slug) {
+		return $this->getConversation($slug, true);
 	}
 
 	/**
@@ -479,8 +489,6 @@ class VT_Conversation_Manager {
 
 		// For standalone conversations, validate the provided privacy
 		$allowed_privacy_settings = array('public', 'friends', 'members');
-
-		$privacy = vt_service('validation.validator')->textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid
@@ -889,8 +897,8 @@ class VT_Conversation_Manager {
 
 		// Prepare update data
 		$data = array(
-			'title' => vt_service('validation.validator')->textField($update_data['title']),
-			'content' => vt_service('validation.sanitizer')->richText($update_data['content']),
+			'title' => $update_data['title'],
+			'content' => $update_data['content'],
 			'slug' => $this->generateConversationSlug($update_data['title'], $conversation_id),
 		);
 
@@ -962,8 +970,6 @@ class VT_Conversation_Manager {
 	 */
 	private function validatePrivacySetting($privacy) {
 		$allowed_privacy_settings = array('public', 'friends', 'members');
-
-		$privacy = vt_service('validation.validator')->textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid
