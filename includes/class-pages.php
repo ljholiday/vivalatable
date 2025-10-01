@@ -203,9 +203,14 @@ class VT_Pages {
 				$result = $event_manager->createEventForm($event_data);
 
 				if (isset($result['success']) && $result['success']) {
-					// Redirect to the new event page
-					$event_id = $result['event_id'];
-					VT_Router::redirect('/events/' . $event_id);
+					// Redirect to the new event page using slug
+					$event_slug = $result['slug'] ?? null;
+					if ($event_slug) {
+						VT_Router::redirect('/events/' . $event_slug);
+						return;
+					}
+					// Fallback to events list if slug not available
+					VT_Router::redirect('/events');
 					return;
 				} elseif (isset($result['error'])) {
 					$errors[] = $result['error'];
