@@ -111,7 +111,14 @@ class VT_Auth_AuthenticationService {
             'display_name' => $displayName
         ];
 
-        return $this->userRepository->create($userData);
+        $userId = $this->userRepository->create($userData);
+
+        // Create BOTH communities for new user (Circle + Public)
+        if ($userId && class_exists('VT_Personal_Community_Service')) {
+            VT_Personal_Community_Service::ensureBothCommunitiesForUser($userId);
+        }
+
+        return $userId;
     }
 
     /**

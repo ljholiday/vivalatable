@@ -125,9 +125,9 @@ class VT_Auth {
                 $identity_manager->ensureIdentityExists($user_id, $email, $display_name ?: $username);
             }
 
-            // Create personal community for new user
+            // Create BOTH communities for new user (Circle + Public)
             if (class_exists('VT_Personal_Community_Service')) {
-                VT_Personal_Community_Service::ensurePersonalCommunityForUser($user_id);
+                VT_Personal_Community_Service::ensureBothCommunitiesForUser($user_id);
             }
 
             return $user_id;
