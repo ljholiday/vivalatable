@@ -86,17 +86,6 @@ $breadcrumbs = array();
 		<button class="vt-btn" data-circle="all" role="tab" aria-selected="false" aria-controls="vt-convo-list">
 			All
 		</button>
-
-		<!-- Type Filters -->
-		<a href="/conversations" class="vt-btn <?php echo ($active_filter === '') ? 'is-active' : ''; ?>">
-			All
-		</a>
-		<a href="/conversations?filter=events" class="vt-btn <?php echo ($active_filter === 'events') ? 'is-active' : ''; ?>">
-			Events
-		</a>
-		<a href="/conversations?filter=communities" class="vt-btn <?php echo ($active_filter === 'communities') ? 'is-active' : ''; ?>">
-			Communities
-		</a>
 	</div>
 </div>
 <?php endif; ?>
