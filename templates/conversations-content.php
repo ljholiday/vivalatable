@@ -72,16 +72,6 @@ $breadcrumbs = array();
 		<span class="vt-text-muted">(<?php echo count($recent_conversations); ?> conversation<?php echo count($recent_conversations) !== 1 ? 's' : ''; ?>)</span>
 	</div>
 
-	<!-- Educational Message -->
-	<div class="vt-mb-4 vt-p-4" style="background: #f0f9ff; border-left: 4px solid var(--vt-primary); border-radius: 4px;">
-		<p class="vt-text-sm" style="margin: 0;">
-			<strong>Circles of Trust:</strong> Control what you see based on relationships.
-			<strong>Inner</strong> = your communities,
-			<strong>Trusted</strong> = friend-of-friend,
-			<strong>Extended</strong> = broader network.
-		</p>
-	</div>
-
 	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<!-- Circle Filters (Circles of Trust) -->
 		<button class="vt-btn is-active" data-circle="inner" role="tab" aria-selected="true" aria-controls="vt-convo-list" style="font-weight: 600;">
