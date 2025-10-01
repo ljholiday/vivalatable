@@ -54,8 +54,13 @@
 			return response.json();
 		})
 		.then(data => {
+			console.log('[Conversations] Data received', data);
+			console.log('[Conversations] Success:', data.success);
+			console.log('[Conversations] Meta:', data.data?.meta);
+
 			if (data.success) {
 				list.innerHTML = data.data.html;
+				console.log('[Conversations] Updated list HTML');
 
 				// Update circle status with metadata
 				if (circleStatus && data.data.meta) {
@@ -64,8 +69,10 @@
 					circleStatus.innerHTML =
 						'<strong class="vt-text-primary">' + circleLabel + ' Circle</strong> ' +
 						'<span class="vt-text-muted">(' + meta.count + ' conversation' + (meta.count !== 1 ? 's' : '') + ')</span>';
+					console.log('[Conversations] Updated status to:', circleLabel, meta.count);
 				}
 			} else {
+				console.error('[Conversations] AJAX error:', data.message);
 				list.innerHTML = '<div class="vt-text-center vt-p-4"><p class="vt-text-muted">Error: ' + (data.message || 'Unknown error') + '</p></div>';
 			}
 		})
