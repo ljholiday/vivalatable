@@ -83,10 +83,13 @@ $breadcrumbs = array();
 		<button class="vt-btn" data-circle="extended" role="tab" aria-selected="false" aria-controls="vt-convo-list">
 			Extended
 		</button>
+		<button class="vt-btn" data-circle="all" role="tab" aria-selected="false" aria-controls="vt-convo-list">
+			All
+		</button>
 
 		<!-- Type Filters -->
 		<a href="/conversations" class="vt-btn <?php echo ($active_filter === '') ? 'is-active' : ''; ?>">
-			All
+			All Types
 		</a>
 		<a href="/conversations?filter=events" class="vt-btn <?php echo ($active_filter === 'events') ? 'is-active' : ''; ?>">
 			Events
