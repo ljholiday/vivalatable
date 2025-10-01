@@ -33,7 +33,7 @@ class VT_Conversation_Ajax_Handler {
 
 		// Get and validate circle parameter
 		$circle = $_POST['circle'] ?? 'inner';
-		$allowed_circles = array('inner', 'trusted', 'extended');
+		$allowed_circles = array('inner', 'trusted', 'extended', 'all');
 		if (!in_array($circle, $allowed_circles, true)) {
 			$circle = 'inner';
 		}

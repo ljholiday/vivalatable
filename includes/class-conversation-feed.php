@@ -217,14 +217,18 @@ class VT_Conversation_Feed {
 		$circle_params = array();
 
 		$circle_communities = array();
-		if ($circle === 'inner' && $circles && !empty($circles['inner']['communities'])) {
+		if ($circle === 'all') {
+			// 'all' circle - global feed, no circle filtering
+			// Show ALL public conversations regardless of relationship
+			$circle_communities = null; // Signal to skip community filtering
+		} elseif ($circle === 'inner' && $circles && !empty($circles['inner']['communities'])) {
 			$circle_communities = $circles['inner']['communities'];
 		} elseif ($circle === 'trusted' && $circles && !empty($circles['trusted']['communities'])) {
 			$circle_communities = $circles['trusted']['communities'];
 		} elseif ($circle === 'extended' && $circles && !empty($circles['extended']['communities'])) {
 			$circle_communities = $circles['extended']['communities'];
 		} elseif ($circles) {
-			// 'all' circle - merge all communities
+			// Default fallback - merge all circles
 			$circle_communities = array_unique(array_merge(
 				$circles['inner']['communities'] ?? array(),
 				$circles['trusted']['communities'] ?? array(),
@@ -232,7 +236,11 @@ class VT_Conversation_Feed {
 			));
 		}
 
-		if (!empty($circle_communities)) {
+		if ($circle_communities === null) {
+			// 'all' circle - no filtering, show everything public
+			$circle_filter = "(1=1)"; // Always true, no circle filtering
+			$circle_params = array();
+		} elseif (!empty($circle_communities)) {
 			$community_placeholders = implode(',', array_fill(0, count($circle_communities), '%d'));
 			$circle_filter = "
 				(
