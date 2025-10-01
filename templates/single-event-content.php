@@ -45,7 +45,7 @@ $event_conversations = $conversation_manager->getEventConversations($event->id);
             </div>
         </div>
 
-        <div class="vt-flex vt-flex-col vt-items-end vt-gap-2">
+        <div class="vt-flex vt-flex-column vt-items-end" style="gap: 0.5rem;">
             <?php if ($is_host): ?>
                 <a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-primary">Manage</a>
             <?php endif; ?>
