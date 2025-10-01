@@ -167,6 +167,8 @@ class VT_Conversation_Feed {
 					$circles['extended']['creators']
 				));
 			case 'all':
+				// Global feed - return sentinel value to signal no creator filtering
+				return array(-1); // Sentinel: don't filter by creator
 			default:
 				return array_unique(array_merge(
 					$circles['inner']['creators'],
