@@ -60,10 +60,29 @@ $display_name = VT_Profile_Manager::getDisplayName($user_obj->id);
 // Get profile URL
 $profile_url = VT_Profile_Manager::getProfileUrl($user_obj->id);
 
-// Generate avatar HTML (simplified since we don't have gravatar integration yet)
-$avatar_html = '<div class="vt-avatar vt-avatar-sm vt-rounded-full vt-bg-gray-300 vt-flex vt-items-center vt-justify-center" style="width: ' . intval($args['avatar_size']) . 'px; height: ' . intval($args['avatar_size']) . 'px;">' .
-               '<span class="vt-text-white vt-font-bold">' . strtoupper(substr($display_name, 0, 1)) . '</span>' .
-               '</div>';
+// Get profile data for avatar
+$profile_data = VT_Profile_Manager::getUserProfile($user_obj->id);
+
+// Get avatar URL using same logic as profile page
+$avatar_url = '';
+if (!empty($profile_data['profile_image']) && ($profile_data['avatar_source'] ?? 'gravatar') === 'custom') {
+    $avatar_url = VT_Image_Manager::getImageUrl($profile_data['profile_image']);
+} elseif (!empty($user_obj->email)) {
+    $hash = md5(strtolower(trim($user_obj->email)));
+    $avatar_url = "https://www.gravatar.com/avatar/{$hash}?s=" . intval($args['avatar_size']) . "&d=identicon";
+}
+
+// Fallback to default gravatar if no URL
+if (!$avatar_url) {
+    $fallback_hash = md5('default@vivalatable.com');
+    $avatar_url = "https://www.gravatar.com/avatar/{$fallback_hash}?s=" . intval($args['avatar_size']) . "&d=identicon";
+}
+
+// Generate avatar HTML with actual image
+$avatar_html = '<img src="' . vt_service('validation.validator')->escUrl($avatar_url) . '" ' .
+               'alt="' . vt_service('validation.validator')->escHtml($display_name) . '" ' .
+               'class="vt-avatar vt-avatar-sm vt-rounded-full" ' .
+               'style="width: ' . intval($args['avatar_size']) . 'px; height: ' . intval($args['avatar_size']) . 'px; object-fit: cover;">';
 ?>
 
 <div class="<?php echo vt_service('validation.validator')->escHtml($args['class']); ?> vt-flex vt-items-center vt-gap">
