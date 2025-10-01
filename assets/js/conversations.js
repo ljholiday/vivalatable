@@ -9,7 +9,10 @@
 	const list = document.getElementById('vt-convo-list');
 	const circleStatus = document.getElementById('vt-circle-status');
 
+	console.log('[Conversations] Script loaded', { nav, list, circleStatus });
+
 	if (!nav || !list) {
+		console.error('[Conversations] Missing required elements', { nav, list });
 		return;
 	}
 
@@ -20,6 +23,8 @@
 		const circle = options.circle || 'inner';
 		const filter = options.filter || '';
 		const page = options.page || 1;
+
+		console.log('[Conversations] loadConversations called', { circle, filter, page });
 
 		// Add loading state with visual feedback
 		list.classList.add('vt-is-loading');
@@ -39,11 +44,15 @@
 		}
 
 		// Make AJAX request
+		console.log('[Conversations] Fetching /ajax/conversations', { nonce, circle, page, filter });
 		fetch('/ajax/conversations', {
 			method: 'POST',
 			body: formData
 		})
-		.then(response => response.json())
+		.then(response => {
+			console.log('[Conversations] Response received', response);
+			return response.json();
+		})
 		.then(data => {
 			if (data.success) {
 				list.innerHTML = data.data.html;
@@ -72,12 +81,15 @@
 
 	// Handle button clicks
 	nav.addEventListener('click', function(e) {
+		console.log('[Conversations] Click detected', e.target);
 		const button = e.target.closest('button[data-circle]');
+		console.log('[Conversations] Button found:', button);
 		if (!button) return;
 
 		e.preventDefault();
 
 		const circle = button.dataset.circle;
+		console.log('[Conversations] Loading circle:', circle);
 
 		// Update button states
 		nav.querySelectorAll('button[data-circle]').forEach(btn => {
