@@ -6,7 +6,7 @@
 
 // Define constants
 define('VT_VERSION', '1.0.0');
-define('VT_PLUGIN_DIR', dirname(__DIR__));
+define('VT_ROOT_DIR', dirname(__DIR__));
 define('VT_INCLUDES_DIR', __DIR__);
 
 // Error reporting - log all errors but don't display them (prevents JSON corruption)
@@ -19,8 +19,8 @@ ini_set('error_log', dirname(__DIR__) . '/error.log');
 date_default_timezone_set('UTC');
 
 // Load environment variables if .env file exists
-if (file_exists(VT_PLUGIN_DIR . '/.env')) {
-    $lines = file(VT_PLUGIN_DIR . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+if (file_exists(VT_ROOT_DIR . '/.env')) {
+    $lines = file(VT_ROOT_DIR . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos($line, '=') !== false && $line[0] !== '#') {
             list($key, $value) = explode('=', $line, 2);
@@ -77,7 +77,7 @@ foreach ($class_files as $file) {
 }
 
 // Initialize configuration system
-VT_Config::setDatabaseConfig(include VT_PLUGIN_DIR . '/config/database.php');
+VT_Config::setDatabaseConfig(include VT_ROOT_DIR . '/config/database.php');
 
 // Initialize default configuration
 VT_Config::initializeDefaults();

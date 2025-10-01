@@ -170,7 +170,7 @@ class VT_Mail {
 
     // Template-based email sending
     public static function sendTemplate($to, $template, $variables = []) {
-        $template_path = VT_PLUGIN_DIR . '/templates/emails/' . $template . '.php';
+        $template_path = VT_ROOT_DIR . '/templates/emails/' . $template . '.php';
 
         if (!file_exists($template_path)) {
             error_log("Email template not found: $template");

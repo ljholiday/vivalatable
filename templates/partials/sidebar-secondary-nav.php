@@ -78,7 +78,7 @@ $is_logged_in = vt_service('auth.service')->isLoggedIn();
             // Include member display with larger avatar
             $user_id = $current_user->id;
             $args = array('avatar_size' => 56);
-            include VT_PLUGIN_DIR . '/templates/partials/member-display.php';
+            include VT_ROOT_DIR . '/templates/partials/member-display.php';
             ?>
             <div class="vt-flex-1">
                 <?php if ($profile_data && $profile_data['location']) : ?>

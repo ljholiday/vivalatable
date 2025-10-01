@@ -682,7 +682,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 1. **No Circular Dependencies**: Database and Config classes must be independent
 2. **MySQL Socket Paths**: Check actual MySQL configuration before assuming standard connections
 3. **Session Management**: Use `session_status()` check before `session_start()`
-4. **Absolute Paths Always**: Use `VT_PLUGIN_DIR . '/path'` for all file includes
+4. **Absolute Paths Always**: Use `VT_ROOT_DIR . '/path'` for all file includes
 5. **Method Signatures**: Verify static vs instance methods before calling
 
 ### Database Operations

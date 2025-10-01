@@ -616,7 +616,7 @@ class VT_Pages {
 		}
 
 		// Content template path
-		$templates_path = VT_Config::get('templates_path', VT_PLUGIN_DIR . '/templates');
+		$templates_path = VT_Config::get('templates_path', VT_ROOT_DIR . '/templates');
 		$content_template = $templates_path . '/' . $template . '-content.php';
 
 		if (!file_exists($content_template)) {
@@ -633,7 +633,7 @@ class VT_Pages {
 		// For two-column layout, capture sidebar using standardized sidebar
 		$sidebar_content = '';
 		if ($base_template === 'two-column') {
-			$sidebar_template = VT_Config::get('templates_path', VT_PLUGIN_DIR . '/templates') . '/partials/sidebar-secondary-nav.php';
+			$sidebar_template = VT_Config::get('templates_path', VT_ROOT_DIR . '/templates') . '/partials/sidebar-secondary-nav.php';
 			if (file_exists($sidebar_template)) {
 				ob_start();
 				include $sidebar_template;
@@ -642,7 +642,7 @@ class VT_Pages {
 		}
 
 		// Load base template
-		$templates_path = VT_Config::get('templates_path', VT_PLUGIN_DIR . '/templates');
+		$templates_path = VT_Config::get('templates_path', VT_ROOT_DIR . '/templates');
 		$base_template_path = $templates_path . '/base/template-' . $base_template . '.php';
 
 		if (!file_exists($base_template_path)) {

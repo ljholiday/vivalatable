@@ -5,7 +5,7 @@
  * Ported from PartyMinder WordPress plugin
  *
  * Usage:
- * include VT_PLUGIN_DIR . '/templates/partials/member-display.php';
+ * include VT_ROOT_DIR . '/templates/partials/member-display.php';
  *
  * Required variables:
  * - $user_id (int): User ID or user object/email
