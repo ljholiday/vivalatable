@@ -88,9 +88,9 @@ $breadcrumbs = array();
 		</button>
 
 		<!-- Type Filters -->
-		<a href="/conversations?filter=events" class="vt-btn <?php echo ($active_filter === 'events') ? 'is-active' : ''; ?>">
+		<button class="vt-btn <?php echo ($active_filter === 'events') ? 'is-active' : ''; ?>" data-filter="events" role="button" aria-controls="vt-convo-list">
 			Events
-		</a>
+		</button>
 	</div>
 </div>
 <?php endif; ?>
