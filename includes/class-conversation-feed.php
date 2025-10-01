@@ -43,7 +43,8 @@ class VT_Conversation_Feed {
 		}
 
 		// Build and execute the feed query
-		$feed_data = self::executeFeedQuery($viewer_id, $creator_ids, $options);
+		// Pass circle type and communities for proper filtering
+		$feed_data = self::executeFeedQuery($viewer_id, $creator_ids, $options, $circle, $circles);
 
 		// Add circle classification to each conversation
 		$feed_data['conversations'] = self::addVisibilityMarkers(
@@ -178,7 +179,7 @@ class VT_Conversation_Feed {
 	/**
 	 * Execute the main feed query with permission gates
 	 */
-	private static function executeFeedQuery($viewer_id, $creator_ids, $options) {
+	private static function executeFeedQuery($viewer_id, $creator_ids, $options, $circle = 'all', $circles = null) {
 		$db = VT_Database::getInstance();
 
 		$conversations_table = $db->prefix . 'conversations';
@@ -210,6 +211,35 @@ class VT_Conversation_Feed {
 			$content_type_filter = 'AND conv.community_id IS NOT NULL AND conv.community_id > 0';
 		}
 
+		// INNER circle uses membership filter, TRUSTED/EXTENDED use creator filter
+		$circle_filter = '';
+		$circle_params = array();
+
+		if ($circle === 'inner' && $circles && !empty($circles['inner']['communities'])) {
+			// Inner: Only communities user is a MEMBER of
+			$community_placeholders = implode(',', array_fill(0, count($circles['inner']['communities']), '%d'));
+			$circle_filter = "
+				(
+					(conv.community_id IN ($community_placeholders))
+					OR
+					-- Include general conversations from inner circle members
+					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
+				)
+			";
+			$circle_params = array_merge($circles['inner']['communities'], $creator_ids);
+		} else {
+			// Trusted/Extended: Communities CREATED BY circle members
+			$circle_filter = "
+				(
+					(com.creator_id IN ($creator_placeholders))
+					OR
+					-- Include general conversations from creators in circles
+					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
+				)
+			";
+			$circle_params = array_merge($creator_ids, $creator_ids);
+		}
+
 		// Simplified main query
 		$query = "
 			SELECT
@@ -226,13 +256,8 @@ class VT_Conversation_Feed {
 			LEFT JOIN $communities_table com ON conv.community_id = com.id
 			LEFT JOIN $events_table ev ON conv.event_id = ev.id
 			WHERE
-				-- Filter by creator circles
-				(
-					(com.creator_id IN ($creator_placeholders))
-					OR
-					-- Include general conversations from creators in circles
-					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
-				)
+				-- Filter by circle (membership for inner, creator for trusted/extended)
+				$circle_filter
 				AND
 				-- Apply permission gates
 				(
@@ -260,8 +285,7 @@ class VT_Conversation_Feed {
 
 		// Prepare parameters
 		$params = array_merge(
-			$creator_ids, // For community creators
-			$creator_ids, // For general conversation authors
+			$circle_params, // Community IDs (inner) or creator IDs (trusted/extended)
 			array($viewer_id), // For permission gates
 			array($options['per_page'], $offset) // For pagination
 		);
@@ -275,11 +299,7 @@ class VT_Conversation_Feed {
 			FROM $conversations_table conv
 			LEFT JOIN $communities_table com ON conv.community_id = com.id
 			WHERE
-				(
-					(com.creator_id IN ($creator_placeholders))
-					OR
-					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
-				)
+				$circle_filter
 				AND
 				(
 					(com.visibility = 'public')
@@ -298,7 +318,7 @@ class VT_Conversation_Feed {
 
 		$total_count = $db->getVar($db->prepare(
 			$count_query,
-			array_merge($creator_ids, $creator_ids, array($viewer_id))
+			array_merge($circle_params, array($viewer_id))
 		));
 
 		return array(
