@@ -7,6 +7,7 @@
 
 	const nav = document.querySelector('.vt-conversations-nav');
 	const list = document.getElementById('vt-convo-list');
+	const circleStatus = document.getElementById('vt-circle-status');
 
 	if (!nav || !list) {
 		return;
@@ -20,8 +21,13 @@
 		const filter = options.filter || '';
 		const page = options.page || 1;
 
-		// Add loading state
+		// Add loading state with visual feedback
 		list.classList.add('vt-is-loading');
+		list.style.opacity = '0.5';
+
+		if (circleStatus) {
+			circleStatus.innerHTML = '<span class="vt-text-muted">Loading ' + circle + ' circle...</span>';
+		}
 
 		// Prepare form data
 		const formData = new FormData();
@@ -41,6 +47,15 @@
 		.then(data => {
 			if (data.success) {
 				list.innerHTML = data.data.html;
+
+				// Update circle status with metadata
+				if (circleStatus && data.data.meta) {
+					const meta = data.data.meta;
+					const circleLabel = circle.charAt(0).toUpperCase() + circle.slice(1);
+					circleStatus.innerHTML =
+						'<strong class="vt-text-primary">' + circleLabel + ' Circle</strong> ' +
+						'<span class="vt-text-muted">(' + meta.count + ' conversation' + (meta.count !== 1 ? 's' : '') + ')</span>';
+				}
 			} else {
 				list.innerHTML = '<div class="vt-text-center vt-p-4"><p class="vt-text-muted">Error: ' + (data.message || 'Unknown error') + '</p></div>';
 			}
@@ -51,6 +66,7 @@
 		})
 		.finally(() => {
 			list.classList.remove('vt-is-loading');
+			list.style.opacity = '1';
 		});
 	}
 
@@ -64,7 +80,7 @@
 		const circle = button.dataset.circle;
 
 		// Update button states
-		nav.querySelectorAll('button').forEach(btn => {
+		nav.querySelectorAll('button[data-circle]').forEach(btn => {
 			btn.classList.remove('is-active');
 			btn.setAttribute('aria-selected', 'false');
 		});
@@ -76,8 +92,6 @@
 		loadConversations({ circle: circle });
 	});
 
-	// Load initial conversations on page load
-	const activeButton = nav.querySelector('button.is-active');
-	const initialCircle = activeButton?.dataset.circle || 'inner';
-	loadConversations({ circle: initialCircle });
+	// Don't reload on page load - use server-rendered content
+	// Only reload when user clicks buttons
 })();
