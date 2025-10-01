@@ -89,7 +89,7 @@ $breadcrumbs = array();
 
 		<!-- Type Filters -->
 		<a href="/conversations" class="vt-btn <?php echo ($active_filter === '') ? 'is-active' : ''; ?>">
-			All Types
+			All
 		</a>
 		<a href="/conversations?filter=events" class="vt-btn <?php echo ($active_filter === 'events') ? 'is-active' : ''; ?>">
 			Events
