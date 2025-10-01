@@ -52,8 +52,9 @@
 				if (circleStatus && data.data.meta) {
 					const meta = data.data.meta;
 					const circleLabel = circle.charAt(0).toUpperCase() + circle.slice(1);
+					const labelText = circle === 'all' ? 'All' : circleLabel + ' Circle';
 					circleStatus.innerHTML =
-						'<strong class="vt-text-primary">' + circleLabel + ' Circle</strong> ' +
+						'<strong class="vt-text-primary">' + labelText + '</strong> ' +
 						'<span class="vt-text-muted">(' + meta.count + ' conversation' + (meta.count !== 1 ? 's' : '') + ')</span>';
 				}
 			} else {
