@@ -34,8 +34,8 @@ $event_conversations = $conversation_manager->getEventConversations($event->id);
 
 <!-- Event Header -->
 <div class="vt-section">
-    <div class="vt-flex vt-justify-between vt-align-start vt-mb-4">
-        <div>
+    <div class="vt-flex vt-align-start vt-mb-4">
+        <div class="vt-flex-1">
             <h1 class="vt-heading vt-heading-lg vt-mb-2"><?php echo vt_service('validation.sanitizer')->richText($event->title); ?></h1>
             <div class="vt-flex vt-gap vt-items-center vt-mb-2">
                 <span class="vt-text-muted"><?php echo date('F j, Y', strtotime($event->event_date)); ?></span>
@@ -45,7 +45,7 @@ $event_conversations = $conversation_manager->getEventConversations($event->id);
             </div>
         </div>
 
-        <div class="vt-flex vt-flex-column vt-items-end" style="gap: 0.5rem;">
+        <div class="vt-flex vt-flex-column vt-items-end" style="gap: 0.5rem; margin-left: 2rem;">
             <?php if ($is_host): ?>
                 <a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-primary">Manage</a>
             <?php endif; ?>
