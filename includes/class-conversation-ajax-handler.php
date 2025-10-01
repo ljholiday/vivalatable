@@ -40,7 +40,7 @@ class VT_Conversation_Ajax_Handler {
 
 		// Get filter parameter
 		$filter = $_POST['filter'] ?? '';
-		$allowed_filters = array('', 'events', 'communities');
+		$allowed_filters = array('', 'my-events', 'all-events', 'communities');
 		if (!in_array($filter, $allowed_filters, true)) {
 			$filter = '';
 		}

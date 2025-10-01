@@ -88,8 +88,11 @@ $breadcrumbs = array();
 		</button>
 
 		<!-- Type Filters -->
-		<button class="vt-btn <?php echo ($active_filter === 'events') ? 'is-active' : ''; ?>" data-filter="events" role="button" aria-controls="vt-convo-list">
-			Events
+		<button class="vt-btn <?php echo ($active_filter === 'my-events') ? 'is-active' : ''; ?>" data-filter="my-events" role="button" aria-controls="vt-convo-list">
+			My Events
+		</button>
+		<button class="vt-btn <?php echo ($active_filter === 'all-events') ? 'is-active' : ''; ?>" data-filter="all-events" role="button" aria-controls="vt-convo-list">
+			All Events
 		</button>
 	</div>
 </div>

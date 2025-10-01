@@ -60,11 +60,23 @@
 				// Update circle status with metadata
 				if (circleStatus && data.data.meta) {
 					const meta = data.data.meta;
-					const circleLabel = circle.charAt(0).toUpperCase() + circle.slice(1);
-					const labelText = circle === 'all' ? 'All' : circleLabel + ' Circle';
-					const filterText = filter ? ' - ' + filter.charAt(0).toUpperCase() + filter.slice(1) : '';
+
+					// Format display text
+					let displayText = '';
+					if (filter === 'my-events') {
+						displayText = 'My Events';
+					} else if (filter === 'all-events') {
+						displayText = 'All Events';
+					} else {
+						const circleLabel = circle.charAt(0).toUpperCase() + circle.slice(1);
+						displayText = circle === 'all' ? 'All' : circleLabel + ' Circle';
+						if (filter) {
+							displayText += ' - ' + filter.charAt(0).toUpperCase() + filter.slice(1);
+						}
+					}
+
 					circleStatus.innerHTML =
-						'<strong class="vt-text-primary">' + labelText + filterText + '</strong> ' +
+						'<strong class="vt-text-primary">' + displayText + '</strong> ' +
 						'<span class="vt-text-muted">(' + meta.count + ' conversation' + (meta.count !== 1 ? 's' : '') + ')</span>';
 				}
 			} else {
@@ -99,26 +111,39 @@
 			circleButton.classList.add('is-active');
 			circleButton.setAttribute('aria-selected', 'true');
 
-			// Load conversations for selected circle, keeping current filter
-			loadConversations({ circle: circle, filter: currentFilter });
+			// Clear event filters when clicking circles
+			nav.querySelectorAll('button[data-filter]').forEach(btn => {
+				btn.classList.remove('is-active');
+			});
+
+			// Load conversations for selected circle without filters
+			loadConversations({ circle: circle, filter: '' });
 		} else if (filterButton) {
 			e.preventDefault();
 			const filter = filterButton.dataset.filter;
 
-			// Toggle filter on/off
-			const newFilter = (currentFilter === filter) ? '' : filter;
+			// Event filters don't toggle - they stay on when clicked
+			// Only switch between event filters or turn them off via circle buttons
+			const isEventFilter = (filter === 'my-events' || filter === 'all-events');
 
 			// Update filter button state
 			nav.querySelectorAll('button[data-filter]').forEach(btn => {
 				btn.classList.remove('is-active');
 			});
+			filterButton.classList.add('is-active');
 
-			if (newFilter) {
-				filterButton.classList.add('is-active');
+			// Event filters are independent of circles - deactivate all circle buttons
+			if (isEventFilter) {
+				nav.querySelectorAll('button[data-circle]').forEach(btn => {
+					btn.classList.remove('is-active');
+					btn.setAttribute('aria-selected', 'false');
+				});
+				// Load event conversations without circle filtering
+				loadConversations({ circle: 'all', filter: filter });
+			} else {
+				// Other filters - keep current circle
+				loadConversations({ circle: currentCircle, filter: filter });
 			}
-
-			// Load conversations with new filter, keeping current circle
-			loadConversations({ circle: currentCircle, filter: newFilter });
 		}
 	});
 

@@ -212,8 +212,25 @@ class VT_Conversation_Feed {
 
 		// Build content type filter based on options
 		$content_type_filter = '';
-		if ($options['filter'] === 'events') {
+		$is_event_filter = ($options['filter'] === 'my-events' || $options['filter'] === 'all-events');
+		$is_my_events = ($options['filter'] === 'my-events');
+
+		if ($is_event_filter) {
 			$content_type_filter = 'AND conv.event_id IS NOT NULL AND conv.event_id > 0';
+
+			// For "my-events", add filter for events user hosts or attends
+			if ($is_my_events) {
+				$guests_table = $db->prefix . 'guests';
+				$content_type_filter .= " AND (
+					ev.author_id = $viewer_id
+					OR EXISTS (
+						SELECT 1 FROM $guests_table g
+						WHERE g.event_id = conv.event_id
+						AND g.converted_user_id = $viewer_id
+						AND g.status = 'confirmed'
+					)
+				)";
+			}
 		} elseif ($options['filter'] === 'communities') {
 			$content_type_filter = 'AND conv.community_id IS NOT NULL AND conv.community_id > 0';
 		}
@@ -254,7 +271,7 @@ class VT_Conversation_Feed {
 					(conv.community_id IN ($community_placeholders))
 					OR
 					-- Include general conversations from circle members
-					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
+					((conv.community_id IS NULL OR conv.community_id = 0) AND conv.author_id IN ($creator_placeholders))
 				)
 			";
 			$circle_params = array_merge($circle_communities, $creator_ids);
@@ -263,7 +280,7 @@ class VT_Conversation_Feed {
 			$circle_filter = "
 				(
 					-- Only general conversations from circle members
-					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
+					((conv.community_id IS NULL OR conv.community_id = 0) AND conv.author_id IN ($creator_placeholders))
 				)
 			";
 			$circle_params = $creator_ids;
@@ -301,8 +318,9 @@ class VT_Conversation_Feed {
 						AND mem.status = 'active'
 					)
 					OR
-					-- General conversations (no community)
-					(conv.community_id IS NULL)
+					-- General conversations (no community, excluding events which are handled by circle filter)
+					(conv.community_id IS NULL AND (conv.event_id IS NULL OR conv.event_id = 0))
+					" . ($is_event_filter ? "OR (conv.community_id = 0 AND conv.event_id > 0)" : "") . "
 				)
 				$content_type_filter
 			ORDER BY COALESCE(conv.last_reply_date, conv.created_at) DESC
@@ -327,6 +345,7 @@ class VT_Conversation_Feed {
 			SELECT COUNT(DISTINCT conv.id)
 			FROM $conversations_table conv
 			LEFT JOIN $communities_table com ON conv.community_id = com.id
+			LEFT JOIN $events_table ev ON conv.event_id = ev.id
 			WHERE
 				$circle_filter
 				AND
@@ -340,7 +359,8 @@ class VT_Conversation_Feed {
 						AND mem.status = 'active'
 					)
 					OR
-					(conv.community_id IS NULL)
+					(conv.community_id IS NULL AND (conv.event_id IS NULL OR conv.event_id = 0))
+					" . ($is_event_filter ? "OR (conv.community_id = 0 AND conv.event_id > 0)" : "") . "
 				)
 				$content_type_filter
 		";
