@@ -1,24 +1,20 @@
 <?php
 /**
  * VivalaTable Profile Content Template
- * User profile display and editing page
- * Ported from PartyMinder WordPress plugin
+ * Display-only template for user profiles
+ * Form processing handled in VT_Pages::profile()
  */
 
-// Get user ID from query parameter or default to current user
-$user_id = $_GET['user'] ?? null;
+// Accept variables from controller
+$user_id = $user_id ?? null;
+$user_data = $user_data ?? null;
+$profile_data = $profile_data ?? array();
+$is_own_profile = $is_own_profile ?? false;
+$is_editing = $is_editing ?? false;
+$profile_updated = $profile_updated ?? false;
+$form_errors = $form_errors ?? array();
 $current_user = vt_service('auth.service')->getCurrentUser();
-$current_user_id = $current_user ? $current_user->id : null;
 
-if (!$user_id && $current_user_id) {
-	$user_id = $current_user_id;
-}
-
-$is_own_profile = ($user_id == $current_user_id);
-$is_editing = $is_own_profile && isset($_GET['edit']);
-
-// Get user data
-$user_data = vt_service('auth.user_repository')->getUserById($user_id);
 if (!$user_data) {
 	echo '<div class="vt-section vt-text-center">';
 	echo '<h3 class="vt-heading vt-heading-md">Profile Not Found</h3>';
@@ -26,9 +22,6 @@ if (!$user_data) {
 	echo '</div>';
 	return;
 }
-
-// Get VivalaTable profile data
-$profile_data = VT_Profile_Manager::getUserProfile($user_id);
 
 // Get avatar URL using existing logic from member display
 $avatar_url = '';
@@ -43,41 +36,6 @@ if (!$avatar_url) {
 	$fallback_hash = md5('default@vivalatable.com');
 	$avatar_url = "https://www.gravatar.com/avatar/{$fallback_hash}?s=120&d=identicon";
 }
-
-// Handle profile form submission
-$profile_updated = false;
-$form_errors = array();
-
-if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_profile_nonce'])) {
-	if (vt_service('security.service')->verifyNonce($_POST['vt_profile_nonce'], 'vt_profile_update')) {
-		$result = VT_Profile_Manager::updateProfile($user_id, $_POST);
-		if ($result['success']) {
-			$profile_updated = true;
-			// Refresh profile data
-			$profile_data = VT_Profile_Manager::getUserProfile($user_id);
-		} else {
-			$form_errors = $result['errors'];
-		}
-	} else {
-		$form_errors[] = 'Security verification failed. Please try again.';
-	}
-}
-
-// Set up template variables
-$page_title = $is_editing
-	? 'Edit Profile'
-	: $user_data->display_name;
-$page_description = $is_editing
-	? 'Update your information, preferences, and privacy settings'
-	: sprintf('%s\'s profile and activity', $user_data->display_name);
-
-$breadcrumbs = array(
-	array(
-		'title' => 'Dashboard',
-		'url' => '/dashboard'
-	),
-	array('title' => 'Profile')
-);
 
 // If editing, use form template
 if ($is_editing) {

@@ -264,15 +264,84 @@ class VT_Pages {
 	 */
 	public static function editEventBySlug($params) {
 		self::requireAuth();
-		// Get event by slug, then pass event_id to template
+
+		$errors = array();
+		$messages = array();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+
+		// Get event by slug
 		$event_manager = new VT_Event_Manager();
-		$event = $event_manager->getEventBySlug($params['slug']);
+		$event_slug = $params['slug'] ?? null;
+
+		if (!$event_slug) {
+			self::notFound();
+			return;
+		}
+
+		$event = $event_manager->getEventBySlug($event_slug);
 		if (!$event) {
 			self::notFound();
 			return;
 		}
-		$event_id = $event->id;
-		self::renderPage('edit-event', 'Edit Event', null, 'form', compact('event_id'));
+
+		// Check permissions
+		if ($event->author_id != $current_user->id) {
+			http_response_code(403);
+			self::renderPage('403', 'Access Denied', 'You don\'t have permission to edit this event', 'page');
+			return;
+		}
+
+		// Get user's communities for dropdown
+		$community_manager = new VT_Community_Manager();
+		$user_communities = $community_manager->getUserCommunities($current_user->id);
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['edit_event_nonce'] ?? '', 'vt_edit_event')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('edit-event', 'Edit Event', null, 'form', compact('errors', 'messages', 'event', 'user_communities'));
+				return;
+			}
+
+			// Prepare event data
+			$event_data = array(
+				'title' => vt_service('validation.validator')->textField($_POST['title'] ?? ''),
+				'description' => vt_service('validation.sanitizer')->richText($_POST['description'] ?? ''),
+				'event_date' => vt_service('validation.validator')->textField($_POST['event_date'] ?? ''),
+				'venue_info' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
+				'guest_limit' => vt_service('validation.validator')->integer($_POST['guest_limit'] ?? 0),
+				'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
+				'community_id' => vt_service('validation.validator')->integer($_POST['community_id'] ?? 0)
+			);
+
+			// Basic validation
+			if (empty($event_data['title'])) {
+				$errors[] = 'Event title is required.';
+			}
+			if (empty($event_data['event_date'])) {
+				$errors[] = 'Event date is required.';
+			}
+
+			// If no validation errors, update the event
+			if (empty($errors)) {
+				$result = $event_manager->updateEvent($event->id, $event_data);
+				if ($result) {
+					// Redirect to event page on success
+					VT_Router::redirect('/events/' . $event_slug);
+					return;
+				} else {
+					$errors[] = 'Failed to update event. Please try again.';
+				}
+			}
+
+			// If we reach here, update failed - render with errors
+			self::renderPage('edit-event', 'Edit Event', null, 'form', compact('errors', 'messages', 'event', 'user_communities'));
+			return;
+		}
+
+		// GET request - show form
+		self::renderPage('edit-event', 'Edit Event', null, 'form', compact('errors', 'messages', 'event', 'user_communities'));
 	}
 
 	/**
@@ -556,14 +625,60 @@ class VT_Pages {
 	 * User profile page
 	 */
 	public static function profile($params = array()) {
-		$user_id = isset($params['id']) ? $params['id'] : vt_service('auth.service')->getCurrentUserId();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+		$current_user_id = $current_user ? $current_user->id : null;
 
-		if (!$user_id && !isset($params['id'])) {
+		// Get user ID from params or query parameter or default to current user
+		$user_id = $params['id'] ?? $_GET['user'] ?? null;
+
+		if (!$user_id && $current_user_id) {
+			$user_id = $current_user_id;
+		}
+
+		if (!$user_id) {
 			self::requireAuth();
 			$user_id = vt_service('auth.service')->getCurrentUserId();
 		}
 
-		self::renderPage('profile', 'Profile', null, 'two-column', compact('user_id'));
+		$is_own_profile = ($user_id == $current_user_id);
+		$is_editing = $is_own_profile && isset($_GET['edit']);
+
+		// Get user data
+		$user_data = vt_service('auth.user_repository')->getUserById($user_id);
+		if (!$user_data) {
+			self::notFound();
+			return;
+		}
+
+		// Get profile data
+		$profile_data = VT_Profile_Manager::getUserProfile($user_id);
+
+		$profile_updated = false;
+		$form_errors = array();
+
+		// Handle profile update POST
+		if ($is_own_profile && $_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['vt_profile_nonce'] ?? '', 'vt_profile_update')) {
+				$form_errors[] = 'Security verification failed. Please try again.';
+			} else {
+				$result = VT_Profile_Manager::updateProfile($user_id, $_POST);
+				if ($result['success']) {
+					// Redirect to profile view on success
+					VT_Router::redirect('/profile?updated=1');
+					return;
+				} else {
+					$form_errors = $result['errors'];
+				}
+			}
+
+			// If we reach here, update failed - render with errors
+			self::renderPage('profile', 'Profile', null, 'two-column', compact('user_id', 'user_data', 'profile_data', 'is_own_profile', 'is_editing', 'profile_updated', 'form_errors'));
+			return;
+		}
+
+		// GET request - show profile
+		self::renderPage('profile', 'Profile', null, 'two-column', compact('user_id', 'user_data', 'profile_data', 'is_own_profile', 'is_editing', 'profile_updated', 'form_errors'));
 	}
 
 	/**

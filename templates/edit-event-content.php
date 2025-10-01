@@ -1,27 +1,15 @@
 <?php
 /**
  * VivalaTable Edit Event Content Template
- * Edit existing event details and settings
- * Ported from PartyMinder WordPress plugin
+ * Display-only template for editing events
+ * Form processing handled in VT_Pages::editEventBySlug()
  */
 
-// Get event slug from route parameter
-$event_slug = VT_Router::getParam('slug');
-
-if (!$event_slug) {
-	?>
-	<div class="vt-section vt-text-center">
-		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Event Not Found</h3>
-		<p class="vt-text-muted vt-mb-4">Event slug is required to edit an event.</p>
-		<a href="/events" class="vt-btn">Back to Events</a>
-	</div>
-	<?php
-	return;
-}
-
-// Load event manager and get event
-$event_manager = new VT_Event_Manager();
-$event = $event_manager->getEventBySlug($event_slug);
+// Accept variables from controller
+$errors = $errors ?? array();
+$messages = $messages ?? array();
+$event = $event ?? null;
+$user_communities = $user_communities ?? array();
 
 if (!$event) {
 	?>
@@ -33,71 +21,17 @@ if (!$event) {
 	<?php
 	return;
 }
-
-// Check if current user can edit this event
-$current_user = vt_service('auth.service')->getCurrentUser();
-if (!$current_user || $event->author_id != $current_user->id) {
-	?>
-	<div class="vt-section vt-text-center">
-		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Access Denied</h3>
-		<p class="vt-text-muted vt-mb-4">You don't have permission to edit this event.</p>
-		<a href="/events" class="vt-btn">Back to Events</a>
-	</div>
-	<?php
-	return;
-}
-
-// Handle form submission
-$errors = array();
-$messages = array();
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && vt_service('security.service')->verifyNonce($_POST['edit_event_nonce'], 'vt_edit_event')) {
-	$event_data = array(
-		'title' => vt_service('validation.validator')->textField($_POST['title'] ?? ''),
-		'description' => vt_service('validation.sanitizer')->richText($_POST['description'] ?? ''),
-		'event_date' => vt_service('validation.validator')->textField($_POST['event_date'] ?? ''),
-		'venue_info' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
-		'guest_limit' => vt_service('validation.validator')->integer($_POST['guest_limit'] ?? 0),
-		'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
-		'community_id' => vt_service('validation.validator')->integer($_POST['community_id'] ?? 0)
-	);
-
-	// Basic validation
-	if (empty($event_data['title'])) {
-		$errors[] = 'Event title is required.';
-	}
-	if (empty($event_data['event_date'])) {
-		$errors[] = 'Event date is required.';
-	}
-
-	// If no validation errors, update the event
-	if (empty($errors)) {
-		$result = $event_manager->updateEvent($event->id, $event_data);
-		if ($result) {
-			$messages[] = 'Event updated successfully!';
-			// Refresh event data
-			$event = $event_manager->getEventBySlug($event_slug);
-		} else {
-			$errors[] = 'Failed to update event. Please try again.';
-		}
-	}
-}
-
-// Get user's communities for the dropdown
-$community_manager = new VT_Community_Manager();
-$user_communities = $community_manager->getUserCommunities($current_user->id);
-
-// Set up template variables
-$page_title = 'Edit Event: ' . htmlspecialchars($event->title);
-$page_description = 'Update your event details and settings';
 ?>
 
 <!-- Error Messages -->
 <?php if (!empty($errors)) : ?>
 	<div class="vt-alert vt-alert-error vt-mb-4">
-		<?php foreach ($errors as $error) : ?>
-			<p><?php echo htmlspecialchars($error); ?></p>
-		<?php endforeach; ?>
+		<h4 class="vt-heading vt-heading-sm vt-mb-4">Please fix the following errors:</h4>
+		<ul>
+			<?php foreach ($errors as $error) : ?>
+				<li><?php echo htmlspecialchars($error); ?></li>
+			<?php endforeach; ?>
+		</ul>
 	</div>
 <?php endif; ?>
 
@@ -188,3 +122,38 @@ $page_description = 'Update your event details and settings';
 		</div>
 	</form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	// Form validation
+	const form = document.querySelector('.vt-form');
+
+	if (form) {
+		form.addEventListener('submit', function(e) {
+			const requiredFields = form.querySelectorAll('[required]');
+			let isValid = true;
+
+			requiredFields.forEach(field => {
+				if (!field.value.trim()) {
+					field.style.borderColor = '#ef4444';
+					isValid = false;
+				} else {
+					field.style.borderColor = '';
+				}
+			});
+
+			if (!isValid) {
+				e.preventDefault();
+				alert('Please fill in all required fields.');
+			}
+		});
+	}
+
+	// Set minimum date to today for future events
+	const dateInput = document.getElementById('event_date');
+	if (dateInput) {
+		const today = new Date().toISOString().split('T')[0];
+		dateInput.setAttribute('min', today);
+	}
+});
+</script>
