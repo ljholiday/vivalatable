@@ -84,7 +84,7 @@ class VT_Event_Form_Handler {
 			'event_date' => vt_service('validation.sanitizer')->textField($event_datetime),
 			'venue_info' => vt_service('validation.sanitizer')->textField($post_data['venue_info'] ?? ''),
 			'guest_limit' => intval($post_data['guest_limit'] ?? 10),
-			'host_email' => vt_service('validation.validator')->email($post_data['host_email']),
+			'host_email' => vt_service('validation.sanitizer')->email($post_data['host_email']),
 			'host_notes' => vt_service('validation.sanitizer')->richText($post_data['host_notes'] ?? ''),
 			'author_id' => vt_service('auth.service')->getCurrentUserId(),
 			'all_day' => !empty($post_data['all_day']) ? 1 : 0,

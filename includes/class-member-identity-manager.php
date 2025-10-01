@@ -73,7 +73,7 @@ class VT_Member_Identity_Manager {
 				$this->db->update(
 					'member_identities',
 					array(
-						'display_name' => vt_service('validation.validator')->textField($vt_user->display_name),
+						'display_name' => vt_service('validation.sanitizer')->textField($vt_user->display_name),
 						'updated_at' => VT_Time::currentTime('mysql'),
 					),
 					array('user_id' => $user_id)
@@ -89,8 +89,8 @@ class VT_Member_Identity_Manager {
 		// Create identity record
 		$insert_data = array(
 			'user_id' => $user_id,
-			'email' => vt_service('validation.validator')->email($email),
-			'display_name' => vt_service('validation.validator')->textField($vt_user->display_name),
+			'email' => vt_service('validation.sanitizer')->email($email),
+			'display_name' => vt_service('validation.sanitizer')->textField($vt_user->display_name),
 			'at_protocol_did' => $did,
 			'at_protocol_handle' => $handle,
 			'pds_url' => $this->getDefaultPds(),
@@ -368,7 +368,7 @@ class VT_Member_Identity_Manager {
 		$result = $this->db->update(
 			'member_identities',
 			array(
-				'pds_url' => vt_service('validation.validator')->url($pds_url),
+				'pds_url' => vt_service('validation.sanitizer')->url($pds_url),
 				'updated_at' => VT_Time::currentTime('mysql'),
 			),
 			array('user_id' => $user_id)
@@ -424,7 +424,7 @@ class VT_Member_Identity_Manager {
 		}
 
 		$profile_data = $identity->at_protocol_data;
-		$profile_data['sync_status']['last_error'] = vt_service('validation.validator')->textField($error_message);
+		$profile_data['sync_status']['last_error'] = vt_service('validation.sanitizer')->textField($error_message);
 		$profile_data['sync_status']['last_error_at'] = VT_Time::currentTime('mysql');
 
 		return $this->updateat_protocol_data($user_id, $profile_data);

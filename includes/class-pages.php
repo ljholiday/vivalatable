@@ -306,13 +306,13 @@ class VT_Pages {
 
 			// Prepare event data
 			$event_data = array(
-				'title' => vt_service('validation.validator')->textField($_POST['title'] ?? ''),
+				'title' => vt_service('validation.sanitizer')->textField($_POST['title'] ?? ''),
 				'description' => vt_service('validation.sanitizer')->richText($_POST['description'] ?? ''),
-				'event_date' => vt_service('validation.validator')->textField($_POST['event_date'] ?? ''),
-				'venue_info' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
-				'guest_limit' => vt_service('validation.validator')->integer($_POST['guest_limit'] ?? 0),
-				'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
-				'community_id' => vt_service('validation.validator')->integer($_POST['community_id'] ?? 0)
+				'event_date' => vt_service('validation.sanitizer')->textField($_POST['event_date'] ?? ''),
+				'venue_info' => vt_service('validation.sanitizer')->textField($_POST['venue_info'] ?? ''),
+				'guest_limit' => vt_service('validation.sanitizer')->integer($_POST['guest_limit'] ?? 0),
+				'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
+				'community_id' => vt_service('validation.sanitizer')->integer($_POST['community_id'] ?? 0)
 			);
 
 			// Basic validation

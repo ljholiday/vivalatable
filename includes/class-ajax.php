@@ -23,7 +23,7 @@ class VT_Ajax {
             self::sendError('No action specified');
         }
 
-        $action = vt_service('validation.validator')->textField($_POST['action']);
+        $action = vt_service('validation.sanitizer')->textField($_POST['action']);
 
         if (!isset(self::$registered_actions[$action])) {
             self::sendError('Unknown action');

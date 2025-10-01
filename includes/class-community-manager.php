@@ -34,10 +34,10 @@ class VT_Community_Manager {
 		}
 
 		// Sanitize input data
-		$name = vt_service('validation.validator')->textField($community_data['name']);
+		$name = vt_service('validation.sanitizer')->textField($community_data['name']);
 		$description = vt_service('validation.sanitizer')->richText($community_data['description'] ?? '');
 		$visibility = $this->validatePrivacySetting($community_data['visibility'] ?? 'public');
-		$creator_email = vt_service('validation.validator')->email($community_data['creator_email']);
+		$creator_email = vt_service('validation.sanitizer')->email($community_data['creator_email']);
 
 		// Generate unique slug
 		$slug = vt_service('validation.sanitizer')->slug($name);
@@ -170,7 +170,7 @@ class VT_Community_Manager {
 			if (in_array($field, $allowed_fields)) {
 				switch ($field) {
 					case 'name':
-						$sanitized_data[$field] = vt_service('validation.validator')->textField($value);
+						$sanitized_data[$field] = vt_service('validation.sanitizer')->textField($value);
 						break;
 					case 'description':
 						$sanitized_data[$field] = vt_service('validation.sanitizer')->richText($value);
@@ -243,8 +243,8 @@ class VT_Community_Manager {
 		$sanitized_data = array(
 			'community_id' => $community_id,
 			'user_id' => $user_id,
-			'email' => vt_service('validation.validator')->email($member_data['email']),
-			'display_name' => vt_service('validation.validator')->textField($member_data['display_name'] ?? ''),
+			'email' => vt_service('validation.sanitizer')->email($member_data['email']),
+			'display_name' => vt_service('validation.sanitizer')->textField($member_data['display_name'] ?? ''),
 			'role' => in_array($member_data['role'] ?? 'member', array('admin', 'member')) ? $member_data['role'] : 'member',
 			'status' => in_array($member_data['status'] ?? 'active', array('active', 'inactive')) ? $member_data['status'] : 'active',
 			'joined_at' => VT_Time::currentTime('mysql')
@@ -295,7 +295,7 @@ class VT_Community_Manager {
 			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT id FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
-					$community_id, vt_service('validation.validator')->email($email), 'active'
+					$community_id, vt_service('validation.sanitizer')->email($email), 'active'
 				)
 			);
 		} else {
@@ -334,7 +334,7 @@ class VT_Community_Manager {
 			$member = $this->db->getRow(
 				$this->db->prepare(
 					"SELECT role FROM {$this->db->prefix}community_members WHERE community_id = %d AND email = %s AND status = %s",
-					$community_id, vt_service('validation.validator')->email($email), 'active'
+					$community_id, vt_service('validation.sanitizer')->email($email), 'active'
 				)
 			);
 		} else {
@@ -404,7 +404,7 @@ class VT_Community_Manager {
 			$this->db->prepare(
 				"SELECT id FROM {$this->db->prefix}community_invitations
 				 WHERE community_id = %d AND invited_email = %s AND status = 'pending'",
-				$community_id, vt_service('validation.validator')->email($invitation_data['invited_email'])
+				$community_id, vt_service('validation.sanitizer')->email($invitation_data['invited_email'])
 			)
 		);
 
@@ -422,8 +422,8 @@ class VT_Community_Manager {
 		// Prepare invitation data
 		$insert_data = array(
 			'community_id' => $community_id,
-			'invited_email' => vt_service('validation.validator')->email($invitation_data['invited_email']),
-			'invited_display_name' => vt_service('validation.validator')->textField($invitation_data['invited_display_name'] ?? ''),
+			'invited_email' => vt_service('validation.sanitizer')->email($invitation_data['invited_email']),
+			'invited_display_name' => vt_service('validation.sanitizer')->textField($invitation_data['invited_display_name'] ?? ''),
 			'invitation_token' => $invitation_token,
 			'invited_by_member_id' => $inviter_member->id,
 			'personal_message' => vt_service('validation.sanitizer')->richText($invitation_data['personal_message'] ?? ''),
@@ -638,7 +638,7 @@ class VT_Community_Manager {
 	private function validatePrivacySetting($privacy) {
 		$allowed_privacy_settings = array('public', 'private');
 
-		$privacy = vt_service('validation.validator')->textField($privacy);
+		$privacy = vt_service('validation.sanitizer')->textField($privacy);
 
 		if (!in_array($privacy, $allowed_privacy_settings)) {
 			return 'public'; // Default to public if invalid

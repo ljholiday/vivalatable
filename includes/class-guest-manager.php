@@ -38,7 +38,7 @@ class VT_Guest_Manager {
 		$existing_guest = $this->db->getRow(
 			$this->db->prepare(
 				"SELECT * FROM {$this->db->prefix}guests WHERE event_id = %d AND email = %s",
-				$event_id, vt_service('validation.validator')->email($email)
+				$event_id, vt_service('validation.sanitizer')->email($email)
 			)
 		);
 
@@ -64,12 +64,12 @@ class VT_Guest_Manager {
 			// Create new guest
 			$guest_data = array(
 				'event_id' => $event_id,
-				'email' => vt_service('validation.validator')->email($email),
+				'email' => vt_service('validation.sanitizer')->email($email),
 				'name' => '', // Will be filled when they RSVP
 				'rsvp_token' => $rsvp_token,
 				'temporary_guest_id' => $temporary_guest_id,
 				'status' => 'pending',
-				'invitation_source' => vt_service('validation.validator')->textField($invitation_source),
+				'invitation_source' => vt_service('validation.sanitizer')->textField($invitation_source),
 				'invited_at' => VT_Time::currentTime('mysql'),
 				'created_at' => VT_Time::currentTime('mysql'),
 				'updated_at' => VT_Time::currentTime('mysql')
@@ -136,12 +136,12 @@ class VT_Guest_Manager {
 		// Sanitize guest data
 		$sanitized_data = array(
 			'status' => $status,
-			'name' => vt_service('validation.validator')->textField($guest_data['name'] ?? ''),
-			'phone' => vt_service('validation.validator')->textField($guest_data['phone'] ?? ''),
-			'dietary_restrictions' => vt_service('validation.validator')->textField($guest_data['dietary_restrictions'] ?? ''),
+			'name' => vt_service('validation.sanitizer')->textField($guest_data['name'] ?? ''),
+			'phone' => vt_service('validation.sanitizer')->textField($guest_data['phone'] ?? ''),
+			'dietary_restrictions' => vt_service('validation.sanitizer')->textField($guest_data['dietary_restrictions'] ?? ''),
 			'plus_one' => intval($guest_data['plus_one'] ?? 0),
-			'plus_one_name' => vt_service('validation.validator')->textField($guest_data['plus_one_name'] ?? ''),
-			'notes' => vt_service('validation.validator')->textField($guest_data['notes'] ?? ''),
+			'plus_one_name' => vt_service('validation.sanitizer')->textField($guest_data['plus_one_name'] ?? ''),
+			'notes' => vt_service('validation.sanitizer')->textField($guest_data['notes'] ?? ''),
 			'rsvp_date' => VT_Time::currentTime('mysql'),
 			'updated_at' => VT_Time::currentTime('mysql')
 		);
@@ -252,10 +252,10 @@ class VT_Guest_Manager {
 		// Create user account
 		$user_manager = new VT_User_Manager();
 		$user_id = $user_manager->createUser(
-			vt_service('validation.validator')->textField($user_data['username']),
+			vt_service('validation.sanitizer')->textField($user_data['username']),
 			$guest->email,
 			$user_data['password'],
-			$guest->name ?: vt_service('validation.validator')->textField($user_data['display_name'] ?? '')
+			$guest->name ?: vt_service('validation.sanitizer')->textField($user_data['display_name'] ?? '')
 		);
 
 		if (is_vt_error($user_id)) {
@@ -426,36 +426,36 @@ class VT_Guest_Manager {
 		<html>
 		<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
 			<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-				<h2 style="color: #2c5aa0;">You're invited to <?php echo vt_service('validation.validator')->escHtml($event->title); ?></h2>
+				<h2 style="color: #2c5aa0;">You're invited to <?php echo vt_service('validation.sanitizer')->escHtml($event->title); ?></h2>
 
 				<p>Hi there!</p>
 
-				<p><?php echo vt_service('validation.validator')->escHtml($host_name); ?> has invited you to join their event.</p>
+				<p><?php echo vt_service('validation.sanitizer')->escHtml($host_name); ?> has invited you to join their event.</p>
 
 				<div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-					<h3 style="margin-top: 0; color: #2c5aa0;"><?php echo vt_service('validation.validator')->escHtml($event->title); ?></h3>
+					<h3 style="margin-top: 0; color: #2c5aa0;"><?php echo vt_service('validation.sanitizer')->escHtml($event->title); ?></h3>
 
 					<p><strong>📅 Date:</strong> <?php echo date('l, F j, Y', strtotime($event->event_date)); ?></p>
 
 					<?php if ($event->event_time): ?>
-					<p><strong>🕐 Time:</strong> <?php echo vt_service('validation.validator')->escHtml($event->event_time); ?></p>
+					<p><strong>🕐 Time:</strong> <?php echo vt_service('validation.sanitizer')->escHtml($event->event_time); ?></p>
 					<?php endif; ?>
 
 					<?php if ($event->venue_info): ?>
-					<p><strong>📍 Location:</strong> <?php echo vt_service('validation.validator')->escHtml($event->venue_info); ?></p>
+					<p><strong>📍 Location:</strong> <?php echo vt_service('validation.sanitizer')->escHtml($event->venue_info); ?></p>
 					<?php endif; ?>
 
 					<?php if ($event->description): ?>
 					<div style="margin-top: 15px;">
 						<strong>About this event:</strong>
-						<p><?php echo nl2br(vt_service('validation.validator')->escHtml(substr($event->description, 0, 300))); ?>
+						<p><?php echo nl2br(vt_service('validation.sanitizer')->escHtml(substr($event->description, 0, 300))); ?>
 						<?php if (strlen($event->description) > 300): ?>...<?php endif; ?></p>
 					</div>
 					<?php endif; ?>
 				</div>
 
 				<div style="text-align: center; margin: 30px 0;">
-					<a href="<?php echo vt_service('validation.validator')->escUrl($rsvp_url); ?>"
+					<a href="<?php echo vt_service('validation.sanitizer')->escUrl($rsvp_url); ?>"
 					   style="background: #2c5aa0; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
 						RSVP Now
 					</a>
@@ -463,13 +463,13 @@ class VT_Guest_Manager {
 
 				<p style="font-size: 14px; color: #666;">
 					Can't click the button? Copy and paste this link into your browser:<br>
-					<?php echo vt_service('validation.validator')->escUrl($rsvp_url); ?>
+					<?php echo vt_service('validation.sanitizer')->escUrl($rsvp_url); ?>
 				</p>
 
 				<hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
 
 				<p style="font-size: 12px; color: #999;">
-					This invitation was sent by <?php echo vt_service('validation.validator')->escHtml($host_name); ?> through VivalaTable.
+					This invitation was sent by <?php echo vt_service('validation.sanitizer')->escHtml($host_name); ?> through VivalaTable.
 					If you have questions about this event, please contact the host directly.
 				</p>
 			</div>
@@ -524,21 +524,21 @@ class VT_Guest_Manager {
 			<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
 				<h2 style="color: #2c5aa0;">RSVP Confirmation</h2>
 
-				<p>Hi <?php echo vt_service('validation.validator')->escHtml($guest->name ?: 'there'); ?>!</p>
+				<p>Hi <?php echo vt_service('validation.sanitizer')->escHtml($guest->name ?: 'there'); ?>!</p>
 
 				<p>Thank you for your RSVP. You have <strong><?php echo $status_message; ?></strong> for:</p>
 
 				<div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-					<h3 style="margin-top: 0; color: #2c5aa0;"><?php echo vt_service('validation.validator')->escHtml($guest->event_title); ?></h3>
+					<h3 style="margin-top: 0; color: #2c5aa0;"><?php echo vt_service('validation.sanitizer')->escHtml($guest->event_title); ?></h3>
 
 					<p><strong>📅 Date:</strong> <?php echo date('l, F j, Y', strtotime($guest->event_date)); ?></p>
 
 					<?php if ($guest->event_time): ?>
-					<p><strong>🕐 Time:</strong> <?php echo vt_service('validation.validator')->escHtml($guest->event_time); ?></p>
+					<p><strong>🕐 Time:</strong> <?php echo vt_service('validation.sanitizer')->escHtml($guest->event_time); ?></p>
 					<?php endif; ?>
 
 					<?php if ($guest->venue_info): ?>
-					<p><strong>📍 Location:</strong> <?php echo vt_service('validation.validator')->escHtml($guest->venue_info); ?></p>
+					<p><strong>📍 Location:</strong> <?php echo vt_service('validation.sanitizer')->escHtml($guest->venue_info); ?></p>
 					<?php endif; ?>
 
 					<p><strong>Your RSVP Status:</strong>
@@ -548,7 +548,7 @@ class VT_Guest_Manager {
 					</p>
 
 					<?php if ($guest->plus_one > 0): ?>
-					<p><strong>Plus One:</strong> <?php echo vt_service('validation.validator')->escHtml($guest->plus_one_name ?: 'Yes'); ?></p>
+					<p><strong>Plus One:</strong> <?php echo vt_service('validation.sanitizer')->escHtml($guest->plus_one_name ?: 'Yes'); ?></p>
 					<?php endif; ?>
 				</div>
 
@@ -557,14 +557,14 @@ class VT_Guest_Manager {
 					<p style="margin: 0; color: #155724;">
 						<strong>Great!</strong> We're excited to see you at the event.
 						<?php if ($guest->host_email): ?>
-						If you have any questions, feel free to contact the host at <?php echo vt_service('validation.validator')->escHtml($guest->host_email); ?>.
+						If you have any questions, feel free to contact the host at <?php echo vt_service('validation.sanitizer')->escHtml($guest->host_email); ?>.
 						<?php endif; ?>
 					</p>
 				</div>
 				<?php endif; ?>
 
 				<div style="text-align: center; margin: 30px 0;">
-					<a href="<?php echo vt_service('validation.validator')->escUrl($event_url); ?>"
+					<a href="<?php echo vt_service('validation.sanitizer')->escUrl($event_url); ?>"
 					   style="background: #2c5aa0; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
 						View Event Details
 					</a>

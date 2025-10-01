@@ -213,7 +213,7 @@ class VT_Http {
             return array_map([self::class, 'sanitizeInput'], $input);
         }
 
-        return vt_service('validation.validator')->textField($input);
+        return vt_service('validation.sanitizer')->textField($input);
     }
 
     public static function validateReferer() {

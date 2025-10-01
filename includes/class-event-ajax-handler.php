@@ -70,14 +70,14 @@ class VT_Event_Ajax_Handler {
 			}
 
 			$event_data = array(
-				'title' => vt_service('validation.validator')->textField($_POST['event_title']),
+				'title' => vt_service('validation.sanitizer')->textField($_POST['event_title']),
 				'description' => vt_service('validation.sanitizer')->richText($_POST['event_description'] ?? ''),
-				'event_date' => vt_service('validation.validator')->textField($_POST['event_date']),
-				'venue' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
+				'event_date' => vt_service('validation.sanitizer')->textField($_POST['event_date']),
+				'venue' => vt_service('validation.sanitizer')->textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-				'host_email' => vt_service('validation.validator')->email($_POST['host_email']),
+				'host_email' => vt_service('validation.sanitizer')->email($_POST['host_email']),
 				'host_notes' => vt_service('validation.sanitizer')->richText($_POST['host_notes'] ?? ''),
-				'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
+				'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
 				'community_id' => intval($_POST['community_id'] ?? 0),
 			);
 		}
@@ -162,14 +162,14 @@ class VT_Event_Ajax_Handler {
 			}
 
 			$event_data = array(
-				'title' => vt_service('validation.validator')->textField($_POST['event_title']),
+				'title' => vt_service('validation.sanitizer')->textField($_POST['event_title']),
 				'description' => vt_service('validation.sanitizer')->richText($_POST['event_description'] ?? ''),
-				'event_date' => vt_service('validation.validator')->textField($_POST['event_date']),
-				'venue' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
+				'event_date' => vt_service('validation.sanitizer')->textField($_POST['event_date']),
+				'venue' => vt_service('validation.sanitizer')->textField($_POST['venue_info'] ?? ''),
 				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-				'host_email' => vt_service('validation.validator')->email($_POST['host_email']),
+				'host_email' => vt_service('validation.sanitizer')->email($_POST['host_email']),
 				'host_notes' => vt_service('validation.sanitizer')->richText($_POST['host_notes'] ?? ''),
-				'privacy' => vt_service('validation.validator')->textField($_POST['privacy'] ?? 'public'),
+				'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
 			);
 		}
 
@@ -219,8 +219,8 @@ class VT_Event_Ajax_Handler {
 			$user_name = $current_user->display_name;
 			$user_id = vt_service('auth.service')->getCurrentUserId();
 		} else {
-			$user_email = vt_service('validation.validator')->email($_POST['guest_email'] ?? '');
-			$user_name = vt_service('validation.validator')->textField($_POST['guest_name'] ?? '');
+			$user_email = vt_service('validation.sanitizer')->email($_POST['guest_email'] ?? '');
+			$user_name = vt_service('validation.sanitizer')->textField($_POST['guest_name'] ?? '');
 
 			if (empty($user_email) || empty($user_name)) {
 				VT_Ajax::sendError('Email and name are required for guest access.');
@@ -246,8 +246,8 @@ class VT_Event_Ajax_Handler {
 		}
 
 		$event_id = intval($_POST['event_id']);
-		$email = vt_service('validation.validator')->email($_POST['email']);
-		$message = vt_service('validation.validator')->textarea($_POST['message'] ?? '');
+		$email = vt_service('validation.sanitizer')->email($_POST['email']);
+		$message = vt_service('validation.sanitizer')->textarea($_POST['message'] ?? '');
 
 		if (!$event_id || !$email) {
 			VT_Ajax::sendError('Event ID and email are required.');
@@ -654,12 +654,12 @@ class VT_Event_Ajax_Handler {
 		}
 
 		$event_data = array(
-			'title' => vt_service('validation.validator')->textField($_POST['event_title']),
+			'title' => vt_service('validation.sanitizer')->textField($_POST['event_title']),
 			'description' => vt_service('validation.sanitizer')->richText($_POST['event_description'] ?? ''),
-			'event_date' => vt_service('validation.validator')->textField($_POST['event_date']),
-			'venue' => vt_service('validation.validator')->textField($_POST['venue_info'] ?? ''),
+			'event_date' => vt_service('validation.sanitizer')->textField($_POST['event_date']),
+			'venue' => vt_service('validation.sanitizer')->textField($_POST['venue_info'] ?? ''),
 			'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-			'host_email' => vt_service('validation.validator')->email($_POST['host_email']),
+			'host_email' => vt_service('validation.sanitizer')->email($_POST['host_email']),
 			'host_notes' => vt_service('validation.sanitizer')->richText($_POST['host_notes'] ?? ''),
 			'community_id' => $community_id,
 			// Privacy will be inherited from community - no need to pass it
