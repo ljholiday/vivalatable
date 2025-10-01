@@ -1,92 +1,32 @@
 <?php
 /**
  * VivalaTable Registration Content Template
- * User registration form
- * Ported from PartyMinder WordPress plugin
+ * Display-only template for registration form
+ * Form processing handled in VT_Pages::register()
  */
 
-// Check if user is already logged in
-if (vt_service('auth.service')->isLoggedIn()) {
-	header('Location: /');
-	exit;
-}
-
-// Handle guest token conversion
-$guest_token = $_GET['guest_token'] ?? '';
-$guest_data = null;
-if ($guest_token) {
-	$guest_manager = new VT_Guest_Manager();
-	$guest_data = $guest_manager->getGuestByToken($guest_token);
-}
-
-// Handle form submissions
-$errors = array();
-$messages = array();
-
-// Handle registration
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-		$username = $_POST['username'] ?? '';
-		$email = $_POST['email'] ?? '';
-		$password = $_POST['password'] ?? '';
-		$confirm_password = $_POST['confirm_password'] ?? '';
-		$display_name = $_POST['display_name'] ?? '';
-		$guest_token = $_POST['guest_token'] ?? $guest_token;
-
-		// Basic validation
-		if (empty($username) || empty($email) || empty($password) || empty($display_name)) {
-			$errors[] = 'All fields are required.';
-		}
-
-		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-			$errors[] = 'Please enter a valid email address.';
-		}
-
-		if (strlen($password) < 8) {
-			$errors[] = 'Password must be at least 8 characters long.';
-		}
-
-		if ($password !== $confirm_password) {
-			$errors[] = 'Passwords do not match.';
-		}
-
-		// If no validation errors, attempt registration
-		if (empty($errors)) {
-			$user_id = vt_service('auth.service')->register($username, $email, $password, $display_name);
-
-			if ($user_id) {
-				// Handle guest token conversion if applicable
-				if ($guest_token && $guest_data) {
-					$guest_manager = new VT_Guest_Manager();
-					$conversion_result = $guest_manager->convertGuestToUser($guest_data->id, [
-						'user_id' => $user_id,
-						'username' => $username,
-						'password' => $password
-					]);
-				}
-
-				$messages[] = 'Account created successfully! You can now log in.';
-				// Redirect to login page after successful registration
-				header('Location: /login?registered=1');
-				exit;
-			} else {
-				$errors[] = 'Registration failed. Username or email may already exist.';
-			}
-		}
-}
+// Accept variables from controller
+$errors = $errors ?? array();
+$messages = $messages ?? array();
+$guest_token = $guest_token ?? '';
+$guest_data = $guest_data ?? null;
 ?>
 
 <!-- Error Messages -->
 <?php if (!empty($errors)) : ?>
-	<div class="vt-alert vt-alert-error">
-		<?php foreach ($errors as $error) : ?>
-			<p><?php echo htmlspecialchars($error); ?></p>
-		<?php endforeach; ?>
+	<div class="vt-alert vt-alert-error vt-mb-4">
+		<h4 class="vt-heading vt-heading-sm vt-mb-4">Please fix the following errors:</h4>
+		<ul>
+			<?php foreach ($errors as $error) : ?>
+				<li><?php echo htmlspecialchars($error); ?></li>
+			<?php endforeach; ?>
+		</ul>
 	</div>
 <?php endif; ?>
 
 <!-- Success Messages -->
 <?php if (!empty($messages)) : ?>
-	<div class="vt-alert vt-alert-success">
+	<div class="vt-alert vt-alert-success vt-mb-4">
 		<?php foreach ($messages as $message) : ?>
 			<p><?php echo htmlspecialchars($message); ?></p>
 		<?php endforeach; ?>
@@ -98,6 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Create Account</h2>
 
 	<form method="post" class="vt-form">
+		<?php echo vt_service('security.service')->nonceField('vt_register', 'vt_register_nonce'); ?>
+
 		<?php if ($guest_token) : ?>
 			<input type="hidden" name="guest_token" value="<?php echo htmlspecialchars($guest_token); ?>">
 		<?php endif; ?>
@@ -133,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			<label for="confirm_password" class="vt-form-label">Confirm Password</label>
 			<input type="password" id="confirm_password" name="confirm_password" class="vt-form-input"
 				   placeholder="Confirm your password" required>
+			<div id="password-match-indicator" style="display: none; margin-top: 8px;"></div>
 		</div>
 
 		<div class="vt-form-group">
@@ -144,3 +87,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<p>Already have an account? <a href="/login" class="vt-text-primary">Sign in here</a></p>
 	</div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	// Form validation
+	const form = document.querySelector('.vt-form');
+
+	if (form) {
+		form.addEventListener('submit', function(e) {
+			const requiredFields = form.querySelectorAll('[required]');
+			let isValid = true;
+
+			requiredFields.forEach(field => {
+				if (!field.value.trim()) {
+					field.style.borderColor = '#ef4444';
+					isValid = false;
+				} else {
+					field.style.borderColor = '';
+				}
+			});
+
+			if (!isValid) {
+				e.preventDefault();
+				alert('Please fill in all required fields.');
+			}
+		});
+	}
+
+	// Password confirmation validation with visual feedback
+	const confirmPassword = document.getElementById('confirm_password');
+	const password = document.getElementById('password');
+	const matchIndicator = document.getElementById('password-match-indicator');
+
+	if (confirmPassword && password && matchIndicator) {
+		function updatePasswordMatchIndicator() {
+			const passwordValue = password.value;
+			const confirmValue = confirmPassword.value;
+
+			// Only show indicator if confirm password has content
+			if (confirmValue.length === 0) {
+				matchIndicator.style.display = 'none';
+				confirmPassword.setCustomValidity('');
+				return;
+			}
+
+			matchIndicator.style.display = 'block';
+
+			if (passwordValue === confirmValue) {
+				// Passwords match
+				matchIndicator.className = 'vt-text-success';
+				matchIndicator.innerHTML = '<span>✓</span> <span>Passwords match</span>';
+				confirmPassword.setCustomValidity('');
+			} else {
+				// Passwords don't match
+				matchIndicator.className = 'vt-text-error';
+				matchIndicator.innerHTML = '<span>✗</span> <span>Passwords do not match</span>';
+				confirmPassword.setCustomValidity('Passwords do not match');
+			}
+		}
+
+		confirmPassword.addEventListener('input', updatePasswordMatchIndicator);
+		password.addEventListener('input', updatePasswordMatchIndicator);
+	}
+});
+</script>

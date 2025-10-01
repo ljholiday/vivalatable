@@ -1,87 +1,30 @@
 <?php
 /**
  * VivalaTable Create Conversation Content Template
- * Form to start a new discussion topic
- * Ported from PartyMinder WordPress plugin
+ * Display-only template for conversation creation form
+ * Form processing handled in VT_Pages::createConversation()
  */
 
-// Require authentication
-if (!vt_service('auth.service')->isLoggedIn()) {
-	VT_Router::redirect('/login');
-	exit;
-}
-
-$current_user = vt_service('auth.service')->getCurrentUser();
-
-// Get optional community or event context
-$community_id = intval($_GET['community_id'] ?? 0);
-$event_id = intval($_GET['event_id'] ?? 0);
-
-// Load managers
-$conversation_manager = new VT_Conversation_Manager();
-$community_manager = new VT_Community_Manager();
-$event_manager = new VT_Event_Manager();
-
-// Get context data
-$community = null;
-$event = null;
-$user_communities = $community_manager->getUserCommunities($current_user->id);
-
-if ($community_id) {
-	$community = $community_manager->getCommunity($community_id);
-}
-if ($event_id) {
-	$event = $event_manager->getEvent($event_id);
-}
-
-// Handle form submission
-$errors = array();
-$messages = array();
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && vt_service('security.service')->verifyNonce($_POST['create_conversation_nonce'], 'vt_create_conversation')) {
-	$conversation_data = array(
-		'title' => vt_service('validation.sanitizer')->textField($_POST['title'] ?? ''),
-		'content' => vt_service('validation.sanitizer')->richText($_POST['content'] ?? ''),
-		'community_id' => intval($_POST['community_id'] ?? 0),
-		'event_id' => intval($_POST['event_id'] ?? 0),
-		'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
-		'author_id' => $current_user->id,
-		'author_name' => $current_user->display_name ?: $current_user->username,
-		'author_email' => $current_user->email
-	);
-
-	// Basic validation
-	if (empty($conversation_data['title'])) {
-		$errors[] = 'Conversation title is required.';
-	}
-	if (empty($conversation_data['content'])) {
-		$errors[] = 'Conversation content is required.';
-	}
-
-	// If no validation errors, create the conversation
-	if (empty($errors)) {
-		$conversation_id = $conversation_manager->createConversation($conversation_data);
-		if ($conversation_id) {
-			$conversation = $conversation_manager->getConversation($conversation_id);
-			VT_Router::redirect('/conversations/' . $conversation->slug);
-			exit;
-		} else {
-			$errors[] = 'Failed to create conversation. Please try again.';
-		}
-	}
-}
-
-// Set up template variables
-$page_title = 'Start a Conversation';
-$page_description = 'Share your thoughts and start a discussion';
+// Accept variables from controller
+$errors = $errors ?? array();
+$messages = $messages ?? array();
+$current_user = $current_user ?? null;
+$community_id = $community_id ?? 0;
+$event_id = $event_id ?? 0;
+$community = $community ?? null;
+$event = $event ?? null;
+$user_communities = $user_communities ?? array();
 ?>
 
 <!-- Error Messages -->
 <?php if (!empty($errors)) : ?>
 	<div class="vt-alert vt-alert-error vt-mb-4">
-		<?php foreach ($errors as $error) : ?>
-			<p><?php echo htmlspecialchars($error); ?></p>
-		<?php endforeach; ?>
+		<h4 class="vt-heading vt-heading-sm vt-mb-4">Please fix the following errors:</h4>
+		<ul>
+			<?php foreach ($errors as $error) : ?>
+				<li><?php echo htmlspecialchars($error); ?></li>
+			<?php endforeach; ?>
+		</ul>
 	</div>
 <?php endif; ?>
 
@@ -156,28 +99,55 @@ $page_description = 'Share your thoughts and start a discussion';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+	// Form validation
+	const form = document.querySelector('.vt-form');
+
+	if (form) {
+		form.addEventListener('submit', function(e) {
+			const requiredFields = form.querySelectorAll('[required]');
+			let isValid = true;
+
+			requiredFields.forEach(field => {
+				if (!field.value.trim()) {
+					field.style.borderColor = '#ef4444';
+					isValid = false;
+				} else {
+					field.style.borderColor = '';
+				}
+			});
+
+			if (!isValid) {
+				e.preventDefault();
+				alert('Please fill in all required fields.');
+			}
+		});
+	}
+
+	// Privacy options logic
 	const communitySelect = document.getElementById('community_id');
 	const privacySelect = document.getElementById('privacy');
 
-	// Update privacy options based on community selection
-	communitySelect.addEventListener('change', function() {
-		if (this.value === '0') {
-			// General discussion - show all privacy options
-			privacySelect.innerHTML = `
-				<option value="public">Public - Anyone can participate</option>
-				<option value="members">Members Only - Limited to community members</option>
-			`;
-		} else {
-			// Community discussion - default to members only
-			privacySelect.innerHTML = `
-				<option value="members">Members Only - Community members can participate</option>
-				<option value="public">Public - Anyone can participate</option>
-			`;
-			privacySelect.value = 'members';
-		}
-	});
+	if (communitySelect && privacySelect) {
+		// Update privacy options based on community selection
+		communitySelect.addEventListener('change', function() {
+			if (this.value === '0') {
+				// General discussion - show all privacy options
+				privacySelect.innerHTML = `
+					<option value="public">Public - Anyone can participate</option>
+					<option value="members">Members Only - Limited to community members</option>
+				`;
+			} else {
+				// Community discussion - default to members only
+				privacySelect.innerHTML = `
+					<option value="members">Members Only - Community members can participate</option>
+					<option value="public">Public - Anyone can participate</option>
+				`;
+				privacySelect.value = 'members';
+			}
+		});
 
-	// Trigger change event on page load
-	communitySelect.dispatchEvent(new Event('change'));
+		// Trigger change event on page load
+		communitySelect.dispatchEvent(new Event('change'));
+	}
 });
 </script>

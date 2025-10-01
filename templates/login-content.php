@@ -1,110 +1,13 @@
 <?php
 /**
  * VivalaTable Login Content Template
- * Branded login/register page with profile setup flow
- * Ported from PartyMinder WordPress plugin
+ * Display-only template for login form
+ * Form processing handled in VT_Pages::login()
  */
 
-// Check if user is already logged in
-if (vt_service('auth.service')->isLoggedIn()) {
-	header('Location: /dashboard');
-	exit;
-}
-
-// Handle form submissions
-$action = $_GET['action'] ?? 'login';
-$errors = array();
-$messages = array();
-
-// Handle registration
-if ($action === 'register' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vt_register_nonce'])) {
-	if (vt_service('security.service')->verifyNonce($_POST['vt_register_nonce'], 'vt_register')) {
-		$username = VT_Sanitizer::sanitizeUsername($_POST['username']);
-		$email = VT_Sanitizer::sanitizeEmail($_POST['email']);
-		$password = $_POST['password'];
-		$confirm_password = $_POST['confirm_password'];
-		$display_name = VT_Sanitizer::sanitizeTextField($_POST['display_name']);
-
-		// Validation
-		if (empty($username) || empty($email) || empty($password) || empty($display_name)) {
-			$errors[] = 'All fields are required.';
-		}
-
-		if (!VT_Validator::isEmail($email)) {
-			$errors[] = 'Please enter a valid email address.';
-		}
-
-		if (vt_service('auth.user_repository')->existsByUsername($username)) {
-			$errors[] = 'Username already exists.';
-		}
-
-		if (vt_service('auth.user_repository')->existsByEmail($email)) {
-			$errors[] = 'Email address is already registered.';
-		}
-
-		if (strlen($password) < 8) {
-			$errors[] = 'Password must be at least 8 characters long.';
-		}
-
-		if ($password !== $confirm_password) {
-			$errors[] = 'Passwords do not match.';
-		}
-
-		// Create user if no errors
-		if (empty($errors)) {
-			$user_id = vt_service('auth.service')->register($username, $password, $email, $display_name);
-
-			if ($user_id) {
-				// Create profile
-				VT_Profile_Manager::createDefaultProfile($user_id);
-
-				// Auto-login the user
-				vt_service('auth.service')->loginById($user_id);
-
-				// Redirect to profile setup
-				header('Location: /profile?setup=1');
-				exit;
-			} else {
-				$errors[] = 'Error creating account. Please try again.';
-			}
-		}
-	}
-}
-
-// Handle login
-if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-		$username = trim($_POST['username'] ?? '');
-		$password = $_POST['password'];
-		$remember = isset($_POST['remember']);
-
-		if (empty($username) || empty($password)) {
-			$errors[] = 'Username and password are required.';
-		} else {
-			$user = vt_service('auth.service')->login($username, $password);
-
-			if ($user) {
-				$redirect_to = $_GET['redirect_to'] ?? '/dashboard';
-				header('Location: ' . $redirect_to);
-				exit;
-			} else {
-				$errors[] = 'Invalid username or password.';
-			}
-		}
-}
-
-// Set up template variables
-$page_title = $action === 'register' ? 'Welcome to VivalaTable' : 'Welcome Back';
-$page_description = $action === 'register'
-	? 'Create your account to start hosting amazing events and connecting with your community.'
-	: 'Sign in to manage your events, join conversations, and connect with fellow party enthusiasts.';
-
-$breadcrumbs = array(
-	array(
-		'title' => 'Dashboard',
-		'url' => '/dashboard'
-	),
-	array('title' => $action === 'register' ? 'Register' : 'Login')
-);
+// Accept variables from controller
+$errors = $errors ?? array();
+$messages = $messages ?? array();
 ?>
 
 <!-- Error Messages -->
@@ -128,76 +31,12 @@ $breadcrumbs = array(
 </div>
 <?php endif; ?>
 
-<?php if ($action === 'register') : ?>
-<!-- Registration Form -->
-<div class="vt-section">
-	<h2 class="vt-heading vt-heading-md vt-mb-4">Create Account</h2>
-
-	<form method="post" class="vt-form">
-		<?php echo vt_service('security.service')->nonceField('vt_register', 'vt_register_nonce'); ?>
-
-		<div class="vt-form-group">
-			<label for="display_name" class="vt-form-label">Your Name</label>
-			<input type="text" id="display_name" name="display_name" class="vt-form-input"
-					value="<?php echo htmlspecialchars($_POST['display_name'] ?? ''); ?>"
-					placeholder="How should we address you?" required>
-		</div>
-
-		<div class="vt-form-group">
-			<label for="username" class="vt-form-label">Username</label>
-			<input type="text" id="username" name="username" class="vt-form-input"
-					value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>"
-					placeholder="Choose a unique username" required>
-		</div>
-
-		<div class="vt-form-group">
-			<label for="email" class="vt-form-label">Email Address</label>
-			<input type="email" id="email" name="email" class="vt-form-input"
-					value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-					placeholder="your@email.com" required>
-		</div>
-
-		<div class="vt-form-row">
-			<div class="vt-form-group">
-				<label for="password" class="vt-form-label">Password</label>
-				<input type="password" id="password" name="password" class="vt-form-input"
-						placeholder="At least 8 characters" required>
-			</div>
-
-			<div class="vt-form-group">
-				<label for="confirm_password" class="vt-form-label">Confirm Password</label>
-				<div>
-					<input type="password" id="confirm_password" name="confirm_password" class="vt-form-input"
-							placeholder="Repeat your password" required>
-					<div id="password-match-indicator" style="display: none;">
-						<span></span>
-						<span></span>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="vt-text-center">
-			<button type="submit" class="vt-btn vt-btn-lg">
-				<span></span>
-				Create Account & Setup Profile
-			</button>
-		</div>
-	</form>
-
-	<div class="vt-text-center vt-mt-4">
-		<p class="vt-text-muted">Already have an account?
-			<a href="<?php echo htmlspecialchars(remove_query_arg('action')); ?>" class="vt-text-primary">Sign In</a>
-		</p>
-	</div>
-</div>
-
-<?php else : ?>
 <!-- Login Form -->
 <div class="vt-section">
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Sign In</h2>
 
 	<form method="post" class="vt-form">
+		<?php echo vt_service('security.service')->nonceField('vt_login', 'vt_login_nonce'); ?>
 
 		<div class="vt-form-group">
 			<label for="username" class="vt-form-label">Username or Email</label>
@@ -235,7 +74,6 @@ $breadcrumbs = array(
 		<p><a href="/reset-password" class="vt-text-primary">Forgot your password?</a></p>
 	</div>
 </div>
-<?php endif; ?>
 
 <!-- Features Preview -->
 <div class="vt-section vt-mt-4">
@@ -264,10 +102,10 @@ $breadcrumbs = array(
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-	// Form validation and enhancements
-	const forms = document.querySelectorAll('.vt-form');
+	// Form validation
+	const form = document.querySelector('.vt-form');
 
-	forms.forEach(form => {
+	if (form) {
 		form.addEventListener('submit', function(e) {
 			const requiredFields = form.querySelectorAll('[required]');
 			let isValid = true;
@@ -286,42 +124,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				alert('Please fill in all required fields.');
 			}
 		});
-	});
-
-	// Password confirmation validation with visual feedback
-	const confirmPassword = document.getElementById('confirm_password');
-	const password = document.getElementById('password');
-	const matchIndicator = document.getElementById('password-match-indicator');
-
-	if (confirmPassword && password && matchIndicator) {
-		function updatePasswordMatchIndicator() {
-			const passwordValue = password.value;
-			const confirmValue = confirmPassword.value;
-
-			// Only show indicator if confirm password has content
-			if (confirmValue.length === 0) {
-				matchIndicator.style.display = 'none';
-				confirmPassword.setCustomValidity('');
-				return;
-			}
-
-			matchIndicator.style.display = 'block';
-
-			if (passwordValue === confirmValue) {
-				// Passwords match
-				matchIndicator.className = 'vt-text-success';
-				matchIndicator.innerHTML = '<span>✓</span> <span>Passwords match</span>';
-				confirmPassword.setCustomValidity('');
-			} else {
-				// Passwords don't match
-				matchIndicator.className = 'vt-text-error';
-				matchIndicator.innerHTML = '<span>✗</span> <span>Passwords do not match</span>';
-				confirmPassword.setCustomValidity('Passwords do not match');
-			}
-		}
-
-		confirmPassword.addEventListener('input', updatePasswordMatchIndicator);
-		password.addEventListener('input', updatePasswordMatchIndicator);
 	}
 });
 </script>

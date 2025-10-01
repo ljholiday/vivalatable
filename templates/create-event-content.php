@@ -1,67 +1,30 @@
 <?php
 /**
  * VivalaTable Create Event Content Template
- * Form for creating new events
+ * Display-only template for event creation form
+ * Form processing handled in VT_Pages::createEvent()
  */
 
-// Handle form submissions
-$errors = array();
-$messages = array();
-$event_created = false;
-
-// Handle event creation
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	$event_data = [
-		'title' => trim($_POST['title'] ?? ''),
-		'description' => trim($_POST['description'] ?? ''),
-		'event_date' => $_POST['event_date'] ?? '',
-		'event_time' => $_POST['event_time'] ?? '',
-		'venue' => trim($_POST['venue_info'] ?? ''),
-		'guest_limit' => intval($_POST['guest_limit'] ?? 0),
-		'privacy' => $_POST['privacy'] ?? 'public'
-	];
-
-	// Basic validation
-	if (empty($event_data['title'])) {
-		$errors[] = 'Event title is required.';
-	}
-	if (empty($event_data['description'])) {
-		$errors[] = 'Event description is required.';
-	}
-	if (empty($event_data['event_date'])) {
-		$errors[] = 'Event date is required.';
-	}
-
-	// If no validation errors, create event
-	if (empty($errors)) {
-		$event_manager = new VT_Event_Manager();
-		$result = $event_manager->createEventForm($event_data);
-
-		if (isset($result['success']) && $result['success']) {
-			$messages[] = 'Event created successfully!';
-			$event_created = true;
-			$new_event_id = $result['event_id'];
-		} elseif (isset($result['error'])) {
-			$errors[] = $result['error'];
-		} else {
-			$errors[] = 'Failed to create event. Please try again.';
-		}
-	}
-}
+// Accept variables from controller
+$errors = $errors ?? array();
+$messages = $messages ?? array();
 ?>
 
 <!-- Error Messages -->
 <?php if (!empty($errors)) : ?>
-	<div class="vt-alert vt-alert-error">
-		<?php foreach ($errors as $error) : ?>
-			<p><?php echo htmlspecialchars($error); ?></p>
-		<?php endforeach; ?>
+	<div class="vt-alert vt-alert-error vt-mb-4">
+		<h4 class="vt-heading vt-heading-sm vt-mb-4">Please fix the following errors:</h4>
+		<ul>
+			<?php foreach ($errors as $error) : ?>
+				<li><?php echo htmlspecialchars($error); ?></li>
+			<?php endforeach; ?>
+		</ul>
 	</div>
 <?php endif; ?>
 
 <!-- Success Messages -->
 <?php if (!empty($messages)) : ?>
-	<div class="vt-alert vt-alert-success">
+	<div class="vt-alert vt-alert-success vt-mb-4">
 		<?php foreach ($messages as $message) : ?>
 			<p><?php echo htmlspecialchars($message); ?></p>
 		<?php endforeach; ?>
@@ -73,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<h2 class="vt-heading vt-heading-md vt-mb-4">Create New Event</h2>
 
 	<form method="post" class="vt-form">
+		<?php echo vt_service('security.service')->nonceField('vt_create_event', 'vt_create_event_nonce'); ?>
+
 		<div class="vt-form-group">
 			<label for="title" class="vt-form-label">Event Title</label>
 			<input type="text" id="title" name="title" class="vt-form-input"
@@ -127,10 +92,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			<button type="submit" class="vt-btn vt-btn-lg" style="width: 100%;">Create Event</button>
 		</div>
 	</form>
-
-	<?php if ($event_created): ?>
-		<div class="vt-text-center vt-mt-4">
-			<a href="/events" class="vt-btn vt-btn-secondary">View All Events</a>
-		</div>
-	<?php endif; ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	// Form validation
+	const form = document.querySelector('.vt-form');
+
+	if (form) {
+		form.addEventListener('submit', function(e) {
+			const requiredFields = form.querySelectorAll('[required]');
+			let isValid = true;
+
+			requiredFields.forEach(field => {
+				if (!field.value.trim()) {
+					field.style.borderColor = '#ef4444';
+					isValid = false;
+				} else {
+					field.style.borderColor = '';
+				}
+			});
+
+			if (!isValid) {
+				e.preventDefault();
+				alert('Please fill in all required fields.');
+			}
+		});
+	}
+
+	// Set minimum date to today
+	const dateInput = document.getElementById('event_date');
+	if (dateInput) {
+		const today = new Date().toISOString().split('T')[0];
+		dateInput.setAttribute('min', today);
+	}
+});
+</script>

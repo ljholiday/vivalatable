@@ -18,20 +18,136 @@ class VT_Pages {
 	 * Login page
 	 */
 	public static function login() {
+		// Check if already logged in
 		if (vt_service('auth.service')->isLoggedIn()) {
-			VT_Router::redirect('/');
+			VT_Router::redirect('/dashboard');
 		}
-		self::renderPage('login', 'Login', 'Sign in to your account', 'form');
+
+		$errors = array();
+		$messages = array();
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['vt_login_nonce'] ?? '', 'vt_login')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('login', 'Login', 'Sign in to your account', 'form', compact('errors', 'messages'));
+				return;
+			}
+
+			// Sanitize and validate
+			$username = trim($_POST['username'] ?? '');
+			$password = $_POST['password'] ?? '';
+
+			if (empty($username) || empty($password)) {
+				$errors[] = 'Username and password are required.';
+			} else {
+				// Attempt login
+				$user = vt_service('auth.service')->login($username, $password);
+
+				if ($user) {
+					// Login successful - redirect before any output
+					$redirect_to = $_GET['redirect_to'] ?? '/dashboard';
+					VT_Router::redirect($redirect_to);
+					return;
+				} else {
+					$errors[] = 'Invalid username or password.';
+				}
+			}
+
+			// If we reach here, login failed - render with errors
+			self::renderPage('login', 'Login', 'Sign in to your account', 'form', compact('errors', 'messages'));
+			return;
+		}
+
+		// GET request - just show form
+		self::renderPage('login', 'Login', 'Sign in to your account', 'form', compact('errors', 'messages'));
 	}
 
 	/**
 	 * Register page
 	 */
 	public static function register() {
+		// Check if already logged in
 		if (vt_service('auth.service')->isLoggedIn()) {
-			VT_Router::redirect('/');
+			VT_Router::redirect('/dashboard');
 		}
-		self::renderPage('register', 'Create Account', 'Join VivalaTable', 'form');
+
+		$errors = array();
+		$messages = array();
+
+		// Handle guest token conversion
+		$guest_token = $_GET['guest_token'] ?? '';
+		$guest_data = null;
+		if ($guest_token) {
+			$guest_manager = new VT_Guest_Manager();
+			$guest_data = $guest_manager->getGuestByToken($guest_token);
+		}
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['vt_register_nonce'] ?? '', 'vt_register')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('register', 'Create Account', 'Join VivalaTable', 'form', compact('errors', 'messages', 'guest_token', 'guest_data'));
+				return;
+			}
+
+			// Sanitize and validate
+			$username = trim($_POST['username'] ?? '');
+			$email = trim($_POST['email'] ?? '');
+			$password = $_POST['password'] ?? '';
+			$confirm_password = $_POST['confirm_password'] ?? '';
+			$display_name = trim($_POST['display_name'] ?? '');
+			$guest_token = $_POST['guest_token'] ?? $guest_token;
+
+			// Basic validation
+			if (empty($username) || empty($email) || empty($password) || empty($display_name)) {
+				$errors[] = 'All fields are required.';
+			}
+
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				$errors[] = 'Please enter a valid email address.';
+			}
+
+			if (strlen($password) < 8) {
+				$errors[] = 'Password must be at least 8 characters long.';
+			}
+
+			if ($password !== $confirm_password) {
+				$errors[] = 'Passwords do not match.';
+			}
+
+			// If no validation errors, attempt registration
+			if (empty($errors)) {
+				$user_id = vt_service('auth.service')->register($username, $email, $password, $display_name);
+
+				if ($user_id) {
+					// Handle guest token conversion if applicable
+					if ($guest_token && $guest_data) {
+						$guest_manager = new VT_Guest_Manager();
+						$guest_manager->convertGuestToUser($guest_data->id, array(
+							'user_id' => $user_id,
+							'username' => $username,
+							'password' => $password
+						));
+					}
+
+					// Redirect to login page after successful registration
+					VT_Router::redirect('/login?registered=1');
+					return;
+				} else {
+					$errors[] = 'Registration failed. Username or email may already exist.';
+				}
+			}
+
+			// If we reach here, registration failed - render with errors
+			self::renderPage('register', 'Create Account', 'Join VivalaTable', 'form', compact('errors', 'messages', 'guest_token', 'guest_data'));
+			return;
+		}
+
+		// GET request - just show form
+		self::renderPage('register', 'Create Account', 'Join VivalaTable', 'form', compact('errors', 'messages', 'guest_token', 'guest_data'));
 	}
 
 	/**
@@ -46,7 +162,65 @@ class VT_Pages {
 	 */
 	public static function createEvent() {
 		self::requireAuth();
-		self::renderPage('create-event', 'Create Event', 'Plan your perfect event', 'form');
+
+		$errors = array();
+		$messages = array();
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['vt_create_event_nonce'] ?? '', 'vt_create_event')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('create-event', 'Create Event', 'Plan your perfect event', 'form', compact('errors', 'messages'));
+				return;
+			}
+
+			// Prepare event data
+			$event_data = array(
+				'title' => trim($_POST['title'] ?? ''),
+				'description' => trim($_POST['description'] ?? ''),
+				'event_date' => $_POST['event_date'] ?? '',
+				'event_time' => $_POST['event_time'] ?? '',
+				'venue' => trim($_POST['venue_info'] ?? ''),
+				'guest_limit' => intval($_POST['guest_limit'] ?? 0),
+				'privacy' => $_POST['privacy'] ?? 'public'
+			);
+
+			// Basic validation
+			if (empty($event_data['title'])) {
+				$errors[] = 'Event title is required.';
+			}
+			if (empty($event_data['description'])) {
+				$errors[] = 'Event description is required.';
+			}
+			if (empty($event_data['event_date'])) {
+				$errors[] = 'Event date is required.';
+			}
+
+			// If no validation errors, create event
+			if (empty($errors)) {
+				$event_manager = new VT_Event_Manager();
+				$result = $event_manager->createEventForm($event_data);
+
+				if (isset($result['success']) && $result['success']) {
+					// Redirect to the new event page
+					$event_id = $result['event_id'];
+					VT_Router::redirect('/events/' . $event_id);
+					return;
+				} elseif (isset($result['error'])) {
+					$errors[] = $result['error'];
+				} else {
+					$errors[] = 'Failed to create event. Please try again.';
+				}
+			}
+
+			// If we reach here, event creation failed - render with errors
+			self::renderPage('create-event', 'Create Event', 'Plan your perfect event', 'form', compact('errors', 'messages'));
+			return;
+		}
+
+		// GET request - show empty form
+		self::renderPage('create-event', 'Create Event', 'Plan your perfect event', 'form', compact('errors', 'messages'));
 	}
 
 	/**
@@ -130,7 +304,62 @@ class VT_Pages {
 	 */
 	public static function createCommunity() {
 		self::requireAuth();
-		self::renderPage('create-community', 'Create Community', 'Build your community', 'form');
+
+		$errors = array();
+		$messages = array();
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['vt_create_community_nonce'] ?? '', 'vt_create_community')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('create-community', 'Create Community', 'Build your community', 'form', compact('errors', 'messages'));
+				return;
+			}
+
+			// Prepare community data
+			$community_data = array(
+				'name' => trim($_POST['name'] ?? ''),
+				'description' => trim($_POST['description'] ?? ''),
+				'visibility' => $_POST['visibility'] ?? 'public',
+				'creator_email' => vt_service('auth.service')->getCurrentUser()->email ?? ''
+			);
+
+			// Basic validation
+			if (empty($community_data['name'])) {
+				$errors[] = 'Community name is required.';
+			}
+			if (empty($community_data['description'])) {
+				$errors[] = 'Community description is required.';
+			}
+
+			// If no validation errors, create community
+			if (empty($errors)) {
+				$community_manager = new VT_Community_Manager();
+				$result = $community_manager->createCommunity($community_data);
+
+				if (is_vt_error($result)) {
+					// Handle VT_Error object
+					$errors[] = $result->get_error_message();
+				} elseif (is_array($result) && isset($result['error'])) {
+					$errors[] = $result['error'];
+				} elseif (is_numeric($result)) {
+					// Redirect to the new community page
+					$community_id = $result;
+					VT_Router::redirect('/communities/' . $community_id);
+					return;
+				} else {
+					$errors[] = 'Failed to create community. Please try again.';
+				}
+			}
+
+			// If we reach here, community creation failed - render with errors
+			self::renderPage('create-community', 'Create Community', 'Build your community', 'form', compact('errors', 'messages'));
+			return;
+		}
+
+		// GET request - show empty form
+		self::renderPage('create-community', 'Create Community', 'Build your community', 'form', compact('errors', 'messages'));
 	}
 
 	/**
@@ -229,7 +458,81 @@ class VT_Pages {
 	 */
 	public static function createConversation() {
 		self::requireAuth();
-		self::renderPage('create-conversation', 'Start Conversation', 'Share your thoughts', 'form');
+
+		$errors = array();
+		$messages = array();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+
+		// Get optional community or event context
+		$community_id = intval($_GET['community_id'] ?? 0);
+		$event_id = intval($_GET['event_id'] ?? 0);
+
+		// Load managers
+		$conversation_manager = new VT_Conversation_Manager();
+		$community_manager = new VT_Community_Manager();
+		$event_manager = new VT_Event_Manager();
+
+		// Get context data
+		$community = null;
+		$event = null;
+		$user_communities = $community_manager->getUserCommunities($current_user->id);
+
+		if ($community_id) {
+			$community = $community_manager->getCommunity($community_id);
+		}
+		if ($event_id) {
+			$event = $event_manager->getEvent($event_id);
+		}
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['create_conversation_nonce'] ?? '', 'vt_create_conversation')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('create-conversation', 'Start Conversation', 'Share your thoughts', 'form', compact('errors', 'messages', 'current_user', 'community_id', 'event_id', 'community', 'event', 'user_communities'));
+				return;
+			}
+
+			// Prepare conversation data
+			$conversation_data = array(
+				'title' => vt_service('validation.sanitizer')->textField($_POST['title'] ?? ''),
+				'content' => vt_service('validation.sanitizer')->richText($_POST['content'] ?? ''),
+				'community_id' => intval($_POST['community_id'] ?? 0),
+				'event_id' => intval($_POST['event_id'] ?? 0),
+				'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
+				'author_id' => $current_user->id,
+				'author_name' => $current_user->display_name ?: $current_user->username,
+				'author_email' => $current_user->email
+			);
+
+			// Basic validation
+			if (empty($conversation_data['title'])) {
+				$errors[] = 'Conversation title is required.';
+			}
+			if (empty($conversation_data['content'])) {
+				$errors[] = 'Conversation content is required.';
+			}
+
+			// If no validation errors, create the conversation
+			if (empty($errors)) {
+				$conversation_id = $conversation_manager->createConversation($conversation_data);
+				if ($conversation_id) {
+					$conversation = $conversation_manager->getConversation($conversation_id);
+					// Redirect to the new conversation
+					VT_Router::redirect('/conversations/' . $conversation->slug);
+					return;
+				} else {
+					$errors[] = 'Failed to create conversation. Please try again.';
+				}
+			}
+
+			// If we reach here, conversation creation failed - render with errors
+			self::renderPage('create-conversation', 'Start Conversation', 'Share your thoughts', 'form', compact('errors', 'messages', 'current_user', 'community_id', 'event_id', 'community', 'event', 'user_communities'));
+			return;
+		}
+
+		// GET request - show empty form
+		self::renderPage('create-conversation', 'Start Conversation', 'Share your thoughts', 'form', compact('errors', 'messages', 'current_user', 'community_id', 'event_id', 'community', 'event', 'user_communities'));
 	}
 
 	/**
