@@ -211,33 +211,47 @@ class VT_Conversation_Feed {
 			$content_type_filter = 'AND conv.community_id IS NOT NULL AND conv.community_id > 0';
 		}
 
-		// INNER circle uses membership filter, TRUSTED/EXTENDED use creator filter
+		// ALL circles use membership filter (community_id)
+		// Conversations appear if they're IN communities within that circle
 		$circle_filter = '';
 		$circle_params = array();
 
+		$circle_communities = array();
 		if ($circle === 'inner' && $circles && !empty($circles['inner']['communities'])) {
-			// Inner: Only communities user is a MEMBER of
-			$community_placeholders = implode(',', array_fill(0, count($circles['inner']['communities']), '%d'));
+			$circle_communities = $circles['inner']['communities'];
+		} elseif ($circle === 'trusted' && $circles && !empty($circles['trusted']['communities'])) {
+			$circle_communities = $circles['trusted']['communities'];
+		} elseif ($circle === 'extended' && $circles && !empty($circles['extended']['communities'])) {
+			$circle_communities = $circles['extended']['communities'];
+		} elseif ($circles) {
+			// 'all' circle - merge all communities
+			$circle_communities = array_unique(array_merge(
+				$circles['inner']['communities'] ?? array(),
+				$circles['trusted']['communities'] ?? array(),
+				$circles['extended']['communities'] ?? array()
+			));
+		}
+
+		if (!empty($circle_communities)) {
+			$community_placeholders = implode(',', array_fill(0, count($circle_communities), '%d'));
 			$circle_filter = "
 				(
 					(conv.community_id IN ($community_placeholders))
 					OR
-					-- Include general conversations from inner circle members
+					-- Include general conversations from circle members
 					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
 				)
 			";
-			$circle_params = array_merge($circles['inner']['communities'], $creator_ids);
+			$circle_params = array_merge($circle_communities, $creator_ids);
 		} else {
-			// Trusted/Extended: Communities CREATED BY circle members
+			// Fallback if no communities
 			$circle_filter = "
 				(
-					(com.creator_id IN ($creator_placeholders))
-					OR
-					-- Include general conversations from creators in circles
+					-- Only general conversations from circle members
 					(conv.community_id IS NULL AND conv.author_id IN ($creator_placeholders))
 				)
 			";
-			$circle_params = array_merge($creator_ids, $creator_ids);
+			$circle_params = $creator_ids;
 		}
 
 		// Simplified main query
