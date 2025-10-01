@@ -190,7 +190,8 @@ class VT_Conversation_Feed {
 		$members_table = $db->prefix . 'community_members';
 		$events_table = $db->prefix . 'events';
 
-		if (empty($creator_ids)) {
+		// Skip empty check for 'all' circle (global feed has no creator restrictions)
+		if (empty($creator_ids) && $circle !== 'all') {
 			return array(
 				'conversations' => array(),
 				'meta' => array(
