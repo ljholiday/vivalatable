@@ -38,7 +38,8 @@ class VT_Conversation_Feed {
 		// Get creator IDs based on circle filter
 		$creator_ids = self::getCreatorIdsForCircle($circles, $circle);
 
-		if (empty($creator_ids)) {
+		// Skip empty check for 'all' circle (global feed has no creator restrictions)
+		if (empty($creator_ids) && $circle !== 'all') {
 			return self::getEmptyFeed('No creators in selected circle');
 		}
 
