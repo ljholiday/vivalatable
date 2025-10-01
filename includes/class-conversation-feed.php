@@ -167,8 +167,8 @@ class VT_Conversation_Feed {
 					$circles['extended']['creators']
 				));
 			case 'all':
-				// Global feed - return sentinel value to signal no creator filtering
-				return array(-1); // Sentinel: don't filter by creator
+				// Global feed - return empty array to skip filtering, will be handled specially
+				return array();
 			default:
 				return array_unique(array_merge(
 					$circles['inner']['creators'],
@@ -202,8 +202,11 @@ class VT_Conversation_Feed {
 			);
 		}
 
-		// Build creator filter
-		$creator_placeholders = implode(',', array_fill(0, count($creator_ids), '%d'));
+		// Build creator filter (only if we have creator IDs)
+		$creator_placeholders = '';
+		if (!empty($creator_ids)) {
+			$creator_placeholders = implode(',', array_fill(0, count($creator_ids), '%d'));
+		}
 
 		// Build content type filter based on options
 		$content_type_filter = '';
