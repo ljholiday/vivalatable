@@ -34,7 +34,7 @@ $event_conversations = $conversation_manager->getEventConversations($event->id);
 
 <!-- Event Header -->
 <div class="vt-section">
-    <div class="vt-flex vt-justify-between vt-align-center vt-mb-4">
+    <div class="vt-flex vt-justify-between vt-align-start vt-mb-4">
         <div>
             <h1 class="vt-heading vt-heading-lg vt-mb-2"><?php echo vt_service('validation.sanitizer')->richText($event->title); ?></h1>
             <div class="vt-flex vt-gap vt-items-center vt-mb-2">
@@ -42,17 +42,17 @@ $event_conversations = $conversation_manager->getEventConversations($event->id);
                 <?php if ($event->event_time): ?>
                     <span class="vt-text-muted">at <?php echo vt_service('validation.sanitizer')->richText($event->event_time); ?></span>
                 <?php endif; ?>
-                <span class="vt-badge vt-badge-<?php echo $event->privacy === 'private' ? 'secondary' : 'success'; ?>">
-                    <?php echo vt_service('validation.validator')->escHtml(ucfirst($event->privacy)); ?>
-                </span>
             </div>
         </div>
 
-        <?php if ($is_host): ?>
-            <div>
+        <div class="vt-flex vt-flex-col vt-items-end vt-gap-2">
+            <?php if ($is_host): ?>
                 <a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-primary">Manage</a>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
+            <span class="vt-badge vt-badge-<?php echo $event->privacy === 'private' ? 'secondary' : 'success'; ?>">
+                <?php echo vt_service('validation.validator')->escHtml(ucfirst($event->privacy)); ?>
+            </span>
+        </div>
     </div>
 
     <?php if ($event->venue_info): ?>
