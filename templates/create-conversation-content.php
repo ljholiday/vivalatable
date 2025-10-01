@@ -78,14 +78,6 @@ $user_communities = $user_communities ?? array();
 			<input type="hidden" name="event_id" value="<?php echo $event_id; ?>">
 		<?php endif; ?>
 
-		<div class="vt-form-group">
-			<label for="privacy" class="vt-form-label">Privacy</label>
-			<select id="privacy" name="privacy" class="vt-form-input">
-				<option value="public">Public - Anyone can participate</option>
-				<option value="members">Members Only - Limited to community members</option>
-			</select>
-		</div>
-
 		<div class="vt-form-actions">
 			<button type="submit" class="vt-btn vt-btn-primary vt-btn-lg">
 				Start Conversation
