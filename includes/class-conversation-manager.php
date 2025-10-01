@@ -120,16 +120,8 @@ class VT_Conversation_Manager {
 	public function createConversation($data) {
 		$conversations_table = $this->db->prefix . 'conversations';
 
-		// If no community specified, default to author's personal community
+		// Community ID is now required (or event ID for event conversations)
 		$community_id = $data['community_id'] ?? null;
-		if ((!$community_id || $community_id == 0) && !empty($data['author_id']) && VT_Config::get('general_convo_default_to_personal', true)) {
-			if (class_exists('VT_Personal_Community_Service')) {
-				$personal_community = VT_Personal_Community_Service::getPersonalCommunityForUser($data['author_id']);
-				if ($personal_community) {
-					$community_id = $personal_community->id;
-				}
-			}
-		}
 
 		// Generate slug from title
 		$slug = $this->generateConversationSlug($data['title']);

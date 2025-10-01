@@ -586,6 +586,9 @@ class VT_Pages {
 			if (empty($conversation_data['content'])) {
 				$errors[] = 'Conversation content is required.';
 			}
+			if (empty($conversation_data['community_id']) && empty($conversation_data['event_id'])) {
+				$errors[] = 'Please select a community for this conversation.';
+			}
 
 			// If no validation errors, create the conversation
 			if (empty($errors)) {

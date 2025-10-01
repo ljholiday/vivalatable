@@ -59,9 +59,9 @@ $user_communities = $user_communities ?? array();
 		</div>
 
 		<div class="vt-form-group">
-			<label for="community_id" class="vt-form-label">Community (Optional)</label>
-			<select id="community_id" name="community_id" class="vt-form-input">
-				<option value="0">General Discussion</option>
+			<label for="community_id" class="vt-form-label">Community</label>
+			<select id="community_id" name="community_id" class="vt-form-input" required>
+				<option value="">Select a community...</option>
 				<?php foreach ($user_communities as $user_community) : ?>
 					<option value="<?php echo $user_community->id; ?>"
 							<?php echo ($user_community->id == $community_id) ? 'selected' : ''; ?>>
@@ -70,7 +70,7 @@ $user_communities = $user_communities ?? array();
 				<?php endforeach; ?>
 			</select>
 			<small class="vt-form-help">
-				Choose a community to limit discussion to community members only.
+				All conversations must be in a community. Choose where this conversation should live.
 			</small>
 		</div>
 
