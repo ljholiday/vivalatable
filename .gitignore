@@ -26,6 +26,7 @@ tmp/
 *.sqlite
 *.bak
 *.swp
+error_log
 
 # -------------------------------------------------
 # Composer, Node, and dependency directories
