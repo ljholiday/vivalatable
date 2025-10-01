@@ -68,6 +68,8 @@ Desktop.ini
 # -------------------------------------------------
 # Tests and local scripts (optional)
 # -------------------------------------------------
+tests/
+test.sh
 tests/.phpunit.result.cache
 phpunit.xml
 phpunit.xml.dist
