@@ -26,6 +26,10 @@ if (!$event_manager->canUserViewEvent($event)) {
 
 $current_user = vt_service('auth.service')->getCurrentUser();
 $is_host = $current_user && $current_user->id == $event->author_id;
+
+// Get event conversations
+$conversation_manager = new VT_Conversation_Manager();
+$event_conversations = $conversation_manager->getEventConversations($event->id);
 ?>
 
 <!-- Event Header -->
@@ -46,7 +50,7 @@ $is_host = $current_user && $current_user->id == $event->author_id;
 
         <?php if ($is_host): ?>
             <div>
-                <a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn vt-btn-secondary vt-btn-sm">Edit Event</a>
+                <a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-primary">Manage</a>
             </div>
         <?php endif; ?>
     </div>
@@ -95,6 +99,57 @@ $is_host = $current_user && $current_user->id == $event->author_id;
     </div>
 </div>
 
+<!-- Event Conversations -->
+<div class="vt-section">
+    <div class="vt-flex vt-flex-between vt-mb-4">
+        <h3 class="vt-heading vt-heading-sm">Event Conversations</h3>
+        <?php if (vt_service('auth.service')->isLoggedIn()): ?>
+            <a href="/conversations/create?event_id=<?php echo $event->id; ?>" class="vt-btn vt-btn-sm">
+                Create Conversation
+            </a>
+        <?php endif; ?>
+    </div>
+
+    <?php if (!empty($event_conversations)): ?>
+        <div class="vt-grid vt-grid-2 vt-gap">
+            <?php foreach ($event_conversations as $conversation): ?>
+                <div class="vt-section">
+                    <div class="vt-flex vt-flex-between vt-mb-4">
+                        <h3 class="vt-heading vt-heading-sm">
+                            <a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>" class="vt-text-primary">
+                                <?php echo htmlspecialchars($conversation_manager->getDisplayTitle($conversation)); ?>
+                            </a>
+                        </h3>
+                    </div>
+
+                    <?php if ($conversation->content): ?>
+                        <div class="vt-mb-4">
+                            <p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncateWords($conversation->content, 15)); ?></p>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="vt-flex vt-flex-between">
+                        <div class="vt-stat">
+                            <div class="vt-stat-number vt-text-primary"><?php echo intval($conversation->reply_count); ?></div>
+                            <div class="vt-stat-label">Replies</div>
+                        </div>
+                        <a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>" class="vt-btn vt-btn-sm">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div class="vt-text-center vt-p-4">
+            <p class="vt-text-muted">No conversations started yet for this event.</p>
+            <?php if (vt_service('auth.service')->isLoggedIn()): ?>
+                <p class="vt-text-muted">Be the first to start planning and discussing ideas!</p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+</div>
+
 <!-- RSVP Section -->
 <?php if (vt_service('auth.service')->isLoggedIn()): ?>
     <div class="vt-section">
@@ -115,19 +170,6 @@ $is_host = $current_user && $current_user->id == $event->author_id;
     <div class="vt-section">
         <div class="vt-alert vt-alert-info">
             <p><a href="/login">Log in</a> to RSVP to this event.</p>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Host Actions -->
-<?php if ($is_host): ?>
-    <div class="vt-section">
-        <h3 class="vt-heading vt-heading-sm vt-mb-3">Host Actions</h3>
-
-        <div class="vt-flex vt-gap-2">
-            <a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn vt-btn-primary">Edit Event</a>
-            <a href="/events/<?php echo $event->slug; ?>/invite" class="vt-btn vt-btn-secondary">Invite Guests</a>
-            <a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-outline">Manage RSVPs</a>
         </div>
     </div>
 <?php endif; ?>
