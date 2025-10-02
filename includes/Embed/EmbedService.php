@@ -1,18 +1,16 @@
 <?php
 /**
  * Embed Service
- * Main service for fetching and caching embed data from URLs
- * Tries oEmbed first, falls back to Open Graph, caches results
+ * Fetches Open Graph metadata for simple link preview cards
  */
 
 class VT_Embed_Service {
 
 	private const CACHE_PREFIX = 'embed_';
-	private const CACHE_DURATION = 86400; // 24 hours
+	private const CACHE_DURATION = 604800; // 7 days
 
 	/**
 	 * Build embed data from URL
-	 * Tries oEmbed first, then Open Graph, then returns null
 	 */
 	public static function buildEmbedFromUrl(string $url): ?array {
 		if (empty($url)) {
@@ -20,69 +18,128 @@ class VT_Embed_Service {
 		}
 
 		// Check cache first
-		$cached = self::getCachedEmbed($url);
-		if ($cached !== null) {
+		$cacheKey = self::getCacheKey($url);
+		$cached = VT_Transient::get($cacheKey);
+
+		if ($cached !== false) {
+			// If we cached a failure, return null
+			if (isset($cached['type']) && $cached['type'] === 'none') {
+				return null;
+			}
 			return $cached;
 		}
 
-		// Try oEmbed first (richer data, better embeds)
-		$embedData = VT_Embed_OEmbedProvider::fetch($url);
-
-		if ($embedData) {
-			$embedData['source_url'] = $url;
-			self::cacheEmbed($url, $embedData);
-			return $embedData;
+		// Try oEmbed ONLY for known video providers
+		$embed = null;
+		if (VT_Embed_OEmbedProvider::isSupported($url)) {
+			$oembedData = VT_Embed_OEmbedProvider::fetch($url);
+			// Only use oEmbed if it's a video type
+			if ($oembedData && ($oembedData['oembed_type'] ?? '') === 'video') {
+				$embed = $oembedData;
+			}
 		}
 
-		// Fallback to Open Graph
-		$embedData = VT_Embed_OpenGraphProvider::fetch($url);
-
-		if ($embedData) {
-			$embedData['source_url'] = $url;
-			self::cacheEmbed($url, $embedData);
-			return $embedData;
+		// If no video embed, use Open Graph for nice cards
+		if (!$embed) {
+			$embed = self::fetchOpenGraph($url);
 		}
 
-		// Cache null result to avoid repeated failures
-		self::cacheEmbed($url, ['type' => 'none', 'source_url' => $url]);
+		if ($embed) {
+			// Cache success
+			VT_Transient::set($cacheKey, $embed, self::CACHE_DURATION);
+			return $embed;
+		}
+
+		// Cache failure to avoid repeated attempts
+		VT_Transient::set($cacheKey, ['type' => 'none'], self::CACHE_DURATION);
 
 		return null;
 	}
 
 	/**
-	 * Get cached embed data
+	 * Fetch Open Graph metadata from URL
 	 */
-	public static function getCachedEmbed(string $url): ?array {
-		$cacheKey = self::getCacheKey($url);
-		$cached = VT_Transient::get($cacheKey);
+	private static function fetchOpenGraph(string $url): ?array {
+		// Fetch HTML
+		$response = VT_Http_Client::get($url, [
+			'timeout' => 4,
+			'max_redirects' => 3,
+		]);
 
-		if ($cached === false) {
+		if (!$response['success'] || empty($response['body'])) {
 			return null;
 		}
 
-		// If we cached a failure, return null
-		if (isset($cached['type']) && $cached['type'] === 'none') {
+		$html = $response['body'];
+
+		// Parse OG tags with regex (fast, simple)
+		$title = null;
+		$description = null;
+		$image = null;
+
+		// OG tags
+		if (preg_match('/<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']/i', $html, $m)) {
+			$title = $m[1];
+		}
+		if (preg_match('/<meta\s+property=["\']og:description["\']\s+content=["\']([^"\']+)["\']/i', $html, $m)) {
+			$description = $m[1];
+		}
+		if (preg_match('/<meta\s+property=["\']og:image(?::secure_url)?["\']\s+content=["\']([^"\']+)["\']/i', $html, $m)) {
+			$image = $m[1];
+		}
+
+		// Fallbacks
+		if (!$title && preg_match('/<title>\s*(.*?)\s*<\/title>/si', $html, $m)) {
+			$title = strip_tags($m[1]);
+		}
+		if (!$description && preg_match('/<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']/i', $html, $m)) {
+			$description = $m[1];
+		}
+
+		// Require image (partyminder approach)
+		if (!$image) {
 			return null;
 		}
 
-		return $cached;
+		// Make image URL absolute if needed
+		$image = self::makeAbsoluteUrl($image, $url);
+
+		return [
+			'type' => 'opengraph',
+			'title' => $title ? strip_tags($title) : '',
+			'description' => $description ? strip_tags($description) : '',
+			'image' => $image,
+			'url' => $url,
+			'fetched_at' => time(),
+		];
 	}
 
 	/**
-	 * Cache embed data
+	 * Convert relative URL to absolute
 	 */
-	public static function cacheEmbed(string $url, array $data): void {
-		$cacheKey = self::getCacheKey($url);
-
-		// Determine cache duration
-		$duration = self::CACHE_DURATION;
-
-		// Use provider's cache_age if available
-		if (isset($data['cache_age']) && is_numeric($data['cache_age'])) {
-			$duration = (int)$data['cache_age'];
+	private static function makeAbsoluteUrl(string $maybeRelative, string $base): string {
+		// Already absolute
+		if (preg_match('~^https?://~i', $maybeRelative)) {
+			return $maybeRelative;
 		}
 
-		VT_Transient::set($cacheKey, $data, $duration);
+		$parsed = parse_url($base);
+		if (!$parsed || empty($parsed['scheme']) || empty($parsed['host'])) {
+			return $maybeRelative;
+		}
+
+		$scheme = $parsed['scheme'];
+		$host = $parsed['host'];
+		$port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+
+		// Absolute path
+		if (strpos($maybeRelative, '/') === 0) {
+			return "{$scheme}://{$host}{$port}{$maybeRelative}";
+		}
+
+		// Relative path
+		$path = isset($parsed['path']) ? rtrim(dirname($parsed['path']), '/') : '';
+		return "{$scheme}://{$host}{$port}{$path}/{$maybeRelative}";
 	}
 
 	/**
@@ -104,93 +161,20 @@ class VT_Embed_Service {
 	 * Clear all embed caches
 	 */
 	public static function clearAllCaches(): void {
-		// Get all transient keys starting with embed_
-		$db = VT_Database::getInstance();
-		$prefix = $db->prefix;
-
-		$db->query(
-			$db->prepare(
-				"DELETE FROM {$prefix}transients WHERE transient_key LIKE %s",
-				self::CACHE_PREFIX . '%'
-			)
-		);
-	}
-
-	/**
-	 * Check if URL can be embedded
-	 */
-	public static function canEmbed(string $url): bool {
-		// Check if it's a valid URL
-		if (!filter_var($url, FILTER_VALIDATE_URL)) {
-			return false;
+		// Clear from session storage
+		if (session_status() === PHP_SESSION_NONE) {
+			session_start();
 		}
 
-		// Check if oEmbed is supported
-		if (VT_Embed_OEmbedProvider::isSupported($url)) {
-			return true;
+		if (!isset($_SESSION['vt_transients'])) {
+			return;
 		}
 
-		// For Open Graph, we need to fetch to check
-		// Don't do this in canEmbed - too expensive
-		// Let buildEmbedFromUrl handle it
-		return true;
-	}
-
-	/**
-	 * Get embed stats (for debugging)
-	 */
-	public static function getStats(): array {
-		$db = VT_Database::getInstance();
-		$prefix = $db->prefix;
-
-		$total = $db->getVar(
-			$db->prepare(
-				"SELECT COUNT(*) FROM {$prefix}transients WHERE transient_key LIKE %s",
-				self::CACHE_PREFIX . '%'
-			)
-		);
-
-		$expired = $db->getVar(
-			$db->prepare(
-				"SELECT COUNT(*) FROM {$prefix}transients
-				WHERE transient_key LIKE %s AND expires_at < NOW()",
-				self::CACHE_PREFIX . '%'
-			)
-		);
-
-		return [
-			'total_cached' => (int)$total,
-			'expired' => (int)$expired,
-			'active' => (int)$total - (int)$expired,
-		];
-	}
-
-	/**
-	 * Process multiple URLs from text
-	 */
-	public static function processTextEmbeds(string $text, int $maxEmbeds = 1): array {
-		$urls = VT_Text::extractUrls($text);
-
-		if (empty($urls)) {
-			return [];
-		}
-
-		$embeds = [];
-		$count = 0;
-
-		foreach ($urls as $url) {
-			if ($count >= $maxEmbeds) {
-				break;
-			}
-
-			$embed = self::buildEmbedFromUrl($url);
-
-			if ($embed) {
-				$embeds[] = $embed;
-				$count++;
+		// Remove all keys starting with embed_
+		foreach (array_keys($_SESSION['vt_transients']) as $key) {
+			if (strpos($key, self::CACHE_PREFIX) === 0) {
+				unset($_SESSION['vt_transients'][$key]);
 			}
 		}
-
-		return $embeds;
 	}
 }

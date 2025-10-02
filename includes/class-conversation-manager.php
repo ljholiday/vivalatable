@@ -791,27 +791,32 @@ class VT_Conversation_Manager {
 			return '';
 		}
 
-		// Store original content for URL detection
-		$original_content = $content;
+		try {
+			// Store original content for URL detection
+			$original_content = $content;
 
-		// Escape HTML to prevent XSS from user content
-		$content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
+			// Escape HTML to prevent XSS from user content
+			$content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
 
-		// Apply paragraph formatting (works with escaped content)
-		$content = VT_Text::autop($content);
+			// Apply paragraph formatting (works with escaped content)
+			$content = VT_Text::autop($content);
 
-		// Check for URLs and add embed cards
-		$url = VT_Text::firstUrlInText($original_content);
+			// Check for URLs and add embed cards
+			$url = VT_Text::firstUrlInText($original_content);
 
-		if ($url) {
-			$embed = VT_Embed_Service::buildEmbedFromUrl($url);
-			if ($embed && VT_Embed_Renderer::shouldRender($embed)) {
-				// Add the embed after the content (embed HTML is already safely escaped in renderer)
-				$content .= VT_Embed_Renderer::render($embed);
+			if ($url) {
+				$embed = VT_Embed_Service::buildEmbedFromUrl($url);
+				if ($embed && VT_Embed_Renderer::shouldRender($embed)) {
+					$content .= VT_Embed_Renderer::render($embed);
+				}
 			}
-		}
 
-		return $content;
+			return $content;
+		} catch (Exception $e) {
+			// Log error but return original content to avoid breaking page
+			error_log('processContentEmbeds error: ' . $e->getMessage());
+			return htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
+		}
 	}
 
 	/**

@@ -166,6 +166,8 @@ class VT_Embed_OEmbedProvider {
 				$normalized['html'] = $data['html'] ?? null;
 				$normalized['width'] = $data['width'] ?? null;
 				$normalized['height'] = $data['height'] ?? null;
+				// Also set image_url from thumbnail for preview
+				$normalized['image_url'] = $data['thumbnail_url'] ?? null;
 				break;
 
 			case 'link':
