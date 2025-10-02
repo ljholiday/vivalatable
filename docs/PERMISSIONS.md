@@ -22,10 +22,12 @@ VivalaTable treats **Events** and **Conversations** with different permission mo
 
 ### Events (Structured, High Stakes)
 
-- **Can I create an event in someone else's community?** → **NO**
-- **Rationale:** Events are real-world commitments (venue, time, RSVPs)
-- **Alternative:** "Suggest an Event" feature (admin approval required)
-- **Precedent:** You don't announce parties at someone else's house
+- **Can I create an event in someone else's community?** → **DEPENDS ON PRIVACY**
+  - **Public communities:** YES (any member)
+  - **Private communities:** NO (owner/admin only)
+- **Rationale:** Public communities self-organize; private communities maintain control
+- **Alternative (Private):** "Suggest an Event" feature (admin approval required) - FUTURE
+- **Precedent:** Meetup.com public groups vs private invitation-only spaces
 
 ### Conversations (Freeform, Low Stakes)
 
@@ -71,11 +73,18 @@ VivalaTable treats **Events** and **Conversations** with different permission mo
 
 #### 5. Can I create an event in someone else's community?
 
-**NO** - Only community admins can create events
+**DEPENDS ON PRIVACY:**
 
-- **Alternative:** "Suggest an Event" feature (member can suggest, admin approves)
-- **Precedent:** Events require real-world coordination
-- **Rationale:** Events are high-stakes commitments (venue, time, RSVPs); admins manage their space
+- **Public communities:** YES - Any member can create events
+  - **Rationale:** Public communities develop organically; members know each other and can self-organize
+  - **Precedent:** Meetup.com public groups allow member-created events
+  - **Example:** 1965 Mustangs community develops soul over years; members organize their own meetups
+  - **Example:** Popular party host's public community; members know each other, anyone can throw events
+
+- **Private communities:** NO - Only community owner/admin can create events
+  - **Alternative:** "Suggest an Event" feature (member can suggest, admin approves) - FUTURE
+  - **Rationale:** Private communities are controlled spaces; owner maintains quality and intent
+  - **Precedent:** Private spaces require approval for announcements
 
 #### 6. Can I invite others to a community I'm a member of (but don't admin)?
 

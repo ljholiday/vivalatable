@@ -371,6 +371,41 @@ class VT_Community_Manager {
 	}
 
 	/**
+	 * Check if user can create an event in a community
+	 * Public communities: Any member can create events
+	 * Private communities: Only owner/admin can create events
+	 */
+	public function canCreateEvent($community_id, $user_id = null) {
+		if (!$user_id) {
+			$user_id = vt_service('auth.service')->getCurrentUserId();
+		}
+
+		if (!$user_id) {
+			return false; // Guest users cannot create events
+		}
+
+		// User must be a member
+		if (!$this->isMember($community_id, $user_id)) {
+			return false;
+		}
+
+		// Get community
+		$community = $this->getCommunity($community_id);
+		if (!$community) {
+			return false;
+		}
+
+		// Public communities: any member can create events
+		if ($community->visibility === 'public') {
+			return true;
+		}
+
+		// Private communities: only owner/admin can create events
+		$role = $this->getMemberRole($community_id, $user_id);
+		return in_array($role, ['owner', 'admin']);
+	}
+
+	/**
 	 * Check if current user can manage a community
 	 */
 	public function canManageCommunity($community_id, $user_id = null) {

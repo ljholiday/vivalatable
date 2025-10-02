@@ -173,7 +173,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 	<div class="vt-section">
 		<div class="vt-flex vt-flex-between vt-mb-4">
 			<h3 class="vt-heading vt-heading-md">Community Events</h3>
-			<?php if ($is_member) : ?>
+			<?php if ($community_manager->canCreateEvent($community->id)) : ?>
 				<a href="/events/create?community_id=<?php echo $community->id; ?>" class="vt-btn">
 					Create Event
 				</a>
@@ -210,7 +210,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 		<?php else : ?>
 			<div class="vt-text-center vt-p-4">
 				<p class="vt-text-muted vt-mb-4">No events have been created yet.</p>
-				<?php if ($is_member) : ?>
+				<?php if ($community_manager->canCreateEvent($community->id)) : ?>
 					<a href="/events/create?community_id=<?php echo $community->id; ?>" class="vt-btn">
 						Create the First Event
 					</a>
