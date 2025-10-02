@@ -2069,3 +2069,136 @@ body.vt-modal-open {
   line-height: 1.6;
   color: var(--vt-text);
 }
+
+/* ========================================
+   Embed Cards & Rich Media
+   ======================================== */
+
+.vt-embed {
+  margin: var(--vt-space-lg) 0;
+  border: 1px solid var(--vt-border);
+  border-radius: var(--vt-radius-md);
+  overflow: hidden;
+  background: var(--vt-surface);
+}
+
+/* Link Preview Card */
+.vt-embed-card {
+  transition: box-shadow 0.2s ease;
+}
+
+.vt-embed-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.vt-embed-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.vt-embed-image-wrapper {
+  position: relative;
+  width: 100%;
+  max-height: 300px;
+  overflow: hidden;
+  background: var(--vt-background);
+}
+
+.vt-embed-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.vt-embed-content {
+  padding: var(--vt-space-lg);
+}
+
+.vt-embed-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--vt-text);
+  margin-bottom: var(--vt-space-sm);
+  line-height: 1.3;
+}
+
+.vt-embed-card .vt-embed-title:hover {
+  color: var(--vt-primary);
+}
+
+.vt-embed-description {
+  color: var(--vt-text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin-bottom: var(--vt-space-sm);
+}
+
+.vt-embed-provider {
+  color: var(--vt-text-muted);
+  font-size: 0.8125rem;
+  margin-top: var(--vt-space-sm);
+}
+
+.vt-embed-provider a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.vt-embed-provider a:hover {
+  color: var(--vt-primary);
+}
+
+/* Rich Media / Video Embeds */
+.vt-embed-rich .vt-embed-iframe {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.vt-embed-rich .vt-embed-iframe iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.vt-embed-meta {
+  padding: var(--vt-space-md);
+  background: var(--vt-background);
+  border-top: 1px solid var(--vt-border);
+}
+
+/* Photo Embeds */
+.vt-embed-photo {
+  background: #000;
+}
+
+.vt-embed-photo .vt-embed-image {
+  max-height: 600px;
+  margin: 0 auto;
+}
+
+.vt-embed-photo a {
+  display: block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .vt-embed-title {
+    font-size: 1rem;
+  }
+
+  .vt-embed-description {
+    font-size: 0.875rem;
+  }
+
+  .vt-embed-content {
+    padding: var(--vt-space-md);
+  }
+}

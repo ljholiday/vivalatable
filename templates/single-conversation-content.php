@@ -160,7 +160,7 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 <div class="vt-section vt-mb-6">
 	<div class="vt-conversation-content">
 		<div class="vt-content">
-			<?php echo nl2br(htmlspecialchars($conversation->content)); ?>
+			<?php echo $conversation_manager->processContentEmbeds($conversation->content); ?>
 		</div>
 	</div>
 </div>
@@ -239,7 +239,7 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 						</div>
 					</div>
 					<div class="vt-reply-content">
-						<?php echo nl2br(htmlspecialchars($reply->content)); ?>
+						<?php echo $conversation_manager->processContentEmbeds($reply->content); ?>
 					</div>
 				</div>
 			<?php endforeach; ?>

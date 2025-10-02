@@ -799,39 +799,16 @@ class VT_Conversation_Manager {
 
 		// Check for URLs and add embed cards
 		$url = VT_Text::firstUrlInText($original_content);
-		$embed = null;
 
-		if ($url && class_exists('VT_Embed')) {
-			$embed = VT_Embed::buildEmbedFromUrl($url);
-			if ($embed) {
-				// Add the embed card after the content
-				$content .= VT_Embed::renderEmbedCard($embed);
+		if ($url) {
+			$embed = VT_Embed_Service::buildEmbedFromUrl($url);
+			if ($embed && VT_Embed_Renderer::shouldRender($embed)) {
+				// Add the embed after the content
+				$content .= VT_Embed_Renderer::render($embed);
 			}
 		}
 
-		// Sanitize content but allow embeds
-		$allowed_html = vt_service('validation.sanitizer')->getAllowedHtml();
-
-		// Add iframe support for embeds
-		$allowed_html['iframe'] = array(
-			'src' => true, 'width' => true, 'height' => true, 'frameborder' => true,
-			'allowfullscreen' => true, 'allow' => true, 'referrerpolicy' => true,
-			'title' => true, 'class' => true, 'sandbox' => true, 'security' => true,
-			'style' => true, 'marginwidth' => true, 'marginheight' => true,
-			'scrolling' => true, 'data-secret' => true,
-		);
-
-		// Add blockquote and div support for embeds
-		$allowed_html['blockquote']['class'] = true;
-		$allowed_html['blockquote']['data-secret'] = true;
-		$allowed_html['div']['class'] = true;
-		$allowed_html['div']['data-vt-source'] = true;
-		$allowed_html['img']['loading'] = true;
-		$allowed_html['img']['decoding'] = true;
-		$allowed_html['a']['target'] = true;
-		$allowed_html['a']['rel'] = true;
-
-		return vt_service('validation.sanitizer')->richText($content);
+		return $content;
 	}
 
 	/**

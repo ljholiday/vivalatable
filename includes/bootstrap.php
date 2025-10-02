@@ -35,11 +35,16 @@ require_once __DIR__ . '/Database/Connection.php';
 require_once __DIR__ . '/Database/QueryBuilder.php';
 require_once __DIR__ . '/Http/Request.php';
 require_once __DIR__ . '/Http/Response.php';
+require_once __DIR__ . '/Http/Client.php';
 require_once __DIR__ . '/Auth/UserRepository.php';
 require_once __DIR__ . '/Auth/AuthenticationService.php';
 require_once __DIR__ . '/Validation/InputSanitizer.php';
 require_once __DIR__ . '/Validation/ValidatorService.php';
 require_once __DIR__ . '/Security/SecurityService.php';
+require_once __DIR__ . '/Embed/OEmbedProvider.php';
+require_once __DIR__ . '/Embed/OpenGraphProvider.php';
+require_once __DIR__ . '/Embed/EmbedService.php';
+require_once __DIR__ . '/Embed/Renderer.php';
 
 // Load legacy VT classes (for gradual migration)
 require_once __DIR__ . '/class-config.php';

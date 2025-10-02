@@ -108,4 +108,64 @@ class VT_Text {
 	public static function randomToken($length = 32) {
 		return bin2hex(random_bytes($length / 2));
 	}
+
+	/**
+	 * Extract first URL from text
+	 */
+	public static function firstUrlInText($text) {
+		if (empty($text)) {
+			return null;
+		}
+
+		// Match URLs with http/https protocol
+		preg_match('/https?:\/\/[^\s<>"\']+/i', $text, $matches);
+
+		return $matches[0] ?? null;
+	}
+
+	/**
+	 * Convert double line breaks to paragraphs (like WordPress autop)
+	 */
+	public static function autop($text) {
+		if (empty($text)) {
+			return '';
+		}
+
+		// Normalize line breaks
+		$text = str_replace(["\r\n", "\r"], "\n", $text);
+
+		// Remove leading/trailing whitespace
+		$text = trim($text);
+
+		// Split by double line breaks
+		$paragraphs = preg_split('/\n\s*\n/', $text);
+
+		// Wrap each paragraph in <p> tags
+		$paragraphs = array_map(function($paragraph) {
+			$paragraph = trim($paragraph);
+			if (empty($paragraph)) {
+				return '';
+			}
+			// Don't wrap if already wrapped in block-level tags
+			if (preg_match('/^<(div|blockquote|ul|ol|pre|table|h[1-6])/i', $paragraph)) {
+				return $paragraph;
+			}
+			return '<p>' . $paragraph . '</p>';
+		}, $paragraphs);
+
+		return implode("\n\n", array_filter($paragraphs));
+	}
+
+	/**
+	 * Extract all URLs from text
+	 */
+	public static function extractUrls($text) {
+		if (empty($text)) {
+			return [];
+		}
+
+		preg_match_all('/https?:\/\/[^\s<>"\']+/i', $text, $matches);
+
+		return $matches[0] ?? [];
+	}
 }
