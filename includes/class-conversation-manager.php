@@ -542,6 +542,126 @@ class VT_Conversation_Manager {
 	}
 
 	/**
+	 * Check if user can edit a conversation
+	 * Author, community admin, or site admin can edit
+	 */
+	public function canEditConversation($conversation_id, $user_id = null) {
+		if (!$user_id) {
+			$user_id = vt_service('auth.service')->getCurrentUserId();
+		}
+
+		if (!$user_id) {
+			return false;
+		}
+
+		// Site admins can edit anything
+		if (vt_service('auth.service')->isSiteAdmin()) {
+			return true;
+		}
+
+		// Get conversation
+		$conversation = $this->getConversation($conversation_id);
+		if (!$conversation) {
+			return false;
+		}
+
+		// Author can edit
+		if ($conversation->author_id == $user_id) {
+			return true;
+		}
+
+		// Community admin can edit
+		if ($conversation->community_id) {
+			$community_manager = new VT_Community_Manager();
+			if ($community_manager->canManageCommunity($conversation->community_id, $user_id)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if user can delete a conversation
+	 * Author can delete if no replies, community admin or site admin can always delete
+	 */
+	public function canDeleteConversation($conversation_id, $user_id = null) {
+		if (!$user_id) {
+			$user_id = vt_service('auth.service')->getCurrentUserId();
+		}
+
+		if (!$user_id) {
+			return false;
+		}
+
+		// Site admins can delete anything
+		if (vt_service('auth.service')->isSiteAdmin()) {
+			return true;
+		}
+
+		// Get conversation
+		$conversation = $this->getConversation($conversation_id);
+		if (!$conversation) {
+			return false;
+		}
+
+		// Community admin can delete
+		if ($conversation->community_id) {
+			$community_manager = new VT_Community_Manager();
+			if ($community_manager->canManageCommunity($conversation->community_id, $user_id)) {
+				return true;
+			}
+		}
+
+		// Author can delete only if no replies
+		if ($conversation->author_id == $user_id) {
+			$replies_table = $this->db->prefix . 'conversation_replies';
+			$reply_count = $this->db->getVar(
+				$this->db->prepare(
+					"SELECT COUNT(*) FROM $replies_table WHERE conversation_id = %d",
+					$conversation_id
+				)
+			);
+			return $reply_count == 0;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if user can pin a conversation
+	 * Only community admin or site admin
+	 */
+	public function canPinConversation($conversation_id, $user_id = null) {
+		if (!$user_id) {
+			$user_id = vt_service('auth.service')->getCurrentUserId();
+		}
+
+		if (!$user_id) {
+			return false;
+		}
+
+		// Site admins can pin anything
+		if (vt_service('auth.service')->isSiteAdmin()) {
+			return true;
+		}
+
+		// Get conversation
+		$conversation = $this->getConversation($conversation_id);
+		if (!$conversation) {
+			return false;
+		}
+
+		// Community admin can pin
+		if ($conversation->community_id) {
+			$community_manager = new VT_Community_Manager();
+			return $community_manager->canManageCommunity($conversation->community_id, $user_id);
+		}
+
+		return false;
+	}
+
+	/**
 	 * Get conversations created by a specific user
 	 */
 	public function getUserConversations($user_id, $limit = 10) {

@@ -254,6 +254,85 @@ class VT_Event_Manager {
         return ['total' => 0, 'attending' => 0, 'declined' => 0, 'pending' => 0];
     }
 
+    /**
+     * Check if user can edit an event
+     * Event creator, community admin, or site admin can edit
+     */
+    public function canEditEvent($event_id, $user_id = null) {
+        if (!$user_id) {
+            $user_id = vt_service('auth.service')->getCurrentUserId();
+        }
+
+        if (!$user_id) {
+            return false;
+        }
+
+        // Site admins can edit anything
+        if (vt_service('auth.service')->isSiteAdmin()) {
+            return true;
+        }
+
+        // Get event
+        $event = $this->getEvent($event_id);
+        if (!$event) {
+            return false;
+        }
+
+        // Event creator can edit
+        if ($event->author_id == $user_id) {
+            return true;
+        }
+
+        // Community admin can edit events in their community
+        if ($event->community_id) {
+            $community_manager = new VT_Community_Manager();
+            if ($community_manager->canManageCommunity($event->community_id, $user_id)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user can delete an event
+     * Event creator can delete if no RSVPs, site admin can always delete
+     */
+    public function canDeleteEvent($event_id, $user_id = null) {
+        if (!$user_id) {
+            $user_id = vt_service('auth.service')->getCurrentUserId();
+        }
+
+        if (!$user_id) {
+            return false;
+        }
+
+        // Site admins can delete anything
+        if (vt_service('auth.service')->isSiteAdmin()) {
+            return true;
+        }
+
+        // Get event
+        $event = $this->getEvent($event_id);
+        if (!$event) {
+            return false;
+        }
+
+        // Event creator can delete only if no confirmed RSVPs
+        if ($event->author_id == $user_id) {
+            $db = VT_Database::getInstance();
+            $confirmed_count = $db->getVar(
+                $db->prepare(
+                    "SELECT COUNT(*) FROM vt_guests WHERE event_id = %d AND status = 'confirmed'",
+                    $event_id
+                )
+            );
+            return $confirmed_count == 0;
+        }
+
+        return false;
+    }
+
     public function updateEvent($event_id, $event_data) {
         $db = VT_Database::getInstance();
 
