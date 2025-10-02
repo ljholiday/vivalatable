@@ -345,6 +345,32 @@ class VT_Community_Manager {
 	}
 
 	/**
+	 * Check if user can create a new community
+	 * Enforces max communities per user limit
+	 */
+	public function canCreateCommunity($user_id = null) {
+		if (!$user_id) {
+			$user_id = vt_service('auth.service')->getCurrentUserId();
+		}
+
+		if (!$user_id) {
+			return false; // Guest users cannot create communities
+		}
+
+		// Check if user has reached their limit (max 10 communities)
+		$max_communities = 10;
+		$communities_table = $this->db->prefix . 'communities';
+		$user_community_count = $this->db->getVar(
+			$this->db->prepare(
+				"SELECT COUNT(*) FROM $communities_table WHERE creator_id = %d AND is_active = 1",
+				$user_id
+			)
+		);
+
+		return $user_community_count < $max_communities;
+	}
+
+	/**
 	 * Check if current user can manage a community
 	 */
 	public function canManageCommunity($community_id, $user_id = null) {

@@ -12,6 +12,7 @@ if (!defined('VT_VERSION')) {
 
 $current_user = vt_service('auth.service')->getCurrentUser();
 $is_logged_in = vt_service('auth.service')->isLoggedIn();
+$community_manager = new VT_Community_Manager();
 ?>
 
 <div class="vt-sidebar-section vt-mb-4">
@@ -34,7 +35,7 @@ $is_logged_in = vt_service('auth.service')->isLoggedIn();
                 Create Conversation
             </a>
 
-            <?php if (VT_Feature_Flags::canUserCreateCommunity()) : ?>
+            <?php if ($community_manager->canCreateCommunity()) : ?>
                 <a href="/communities/create" class="vt-btn vt-btn-secondary">
                     Create Community
                 </a>
