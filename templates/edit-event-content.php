@@ -116,9 +116,6 @@ if (!$event) {
 			<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn vt-btn-secondary vt-btn-lg">
 				View Event
 			</a>
-			<a href="/events" class="vt-btn vt-btn-secondary vt-btn-lg">
-				Cancel
-			</a>
 		</div>
 	</form>
 </div>

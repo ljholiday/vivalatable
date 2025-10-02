@@ -113,25 +113,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 			<div class="vt-card">
 				<div class="vt-card-body">
 					<h4 class="vt-heading vt-heading-sm vt-mb-2">Event Status</h4>
-					<p class="vt-text-muted vt-mb-4">Current status: <strong><?php echo ucfirst($event->event_status); ?></strong></p>
-
-					<div class="vt-flex vt-gap">
-						<?php if ($event->event_status === 'active') : ?>
-							<form method="post" style="display: inline;">
-								<?php echo vt_service('security.service')->nonceField('vt_update_event_status', 'status_nonce'); ?>
-								<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
-								<input type="hidden" name="status" value="cancelled">
-								<button type="submit" class="vt-btn vt-btn-danger">Cancel Event</button>
-							</form>
-						<?php elseif ($event->event_status === 'cancelled') : ?>
-							<form method="post" style="display: inline;">
-								<?php echo vt_service('security.service')->nonceField('vt_update_event_status', 'status_nonce'); ?>
-								<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
-								<input type="hidden" name="status" value="active">
-								<button type="submit" class="vt-btn vt-btn-success">Reactivate Event</button>
-							</form>
-						<?php endif; ?>
-					</div>
+					<p class="vt-text-muted">Current status: <strong><?php echo ucfirst($event->event_status); ?></strong></p>
 				</div>
 			</div>
 
@@ -167,6 +149,29 @@ $page_description = 'Manage your event settings, guests, and invitations';
 				</div>
 			</div>
 		</div>
+
+		<!-- Danger Zone -->
+		<?php if ($event_manager->canDeleteEvent($event->id)) : ?>
+		<div class="vt-card vt-mt-6" style="border-color: #dc3545;">
+			<div class="vt-card-body">
+				<h4 class="vt-heading vt-heading-sm vt-mb-2" style="color: #dc3545;">Danger Zone</h4>
+				<p class="vt-text-muted vt-mb-4">
+					Once you delete this event, there is no going back. This action cannot be undone.
+					<?php if ($confirmed_count > 0) : ?>
+						<br><strong>Note:</strong> This event has <?php echo $confirmed_count; ?> confirmed guest(s) and cannot be deleted.
+					<?php endif; ?>
+				</p>
+				<?php if ($confirmed_count == 0) : ?>
+				<form method="post" onsubmit="return confirm('Are you sure you want to delete this event? This action cannot be undone.');">
+					<?php echo vt_service('security.service')->nonceField('vt_delete_event', 'delete_nonce'); ?>
+					<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
+					<input type="hidden" name="action" value="delete_event">
+					<button type="submit" class="vt-btn vt-btn-danger">Delete Event</button>
+				</form>
+				<?php endif; ?>
+			</div>
+		</div>
+		<?php endif; ?>
 	</div>
 
 <?php elseif ($active_tab === 'guests') : ?>

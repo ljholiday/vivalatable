@@ -121,9 +121,18 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 			</div>
 		<?php endif; ?>
 
-		<h1 class="vt-heading vt-heading-xl vt-text-primary vt-mb-4">
-			<?php echo htmlspecialchars($conversation->title); ?>
-		</h1>
+		<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap vt-mb-4">
+			<h1 class="vt-heading vt-heading-xl vt-text-primary">
+				<?php echo htmlspecialchars($conversation->title); ?>
+			</h1>
+			<?php if ($is_logged_in && $conversation_manager->canEditConversation($conversation->id)) : ?>
+			<div>
+				<a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>/edit" class="vt-btn">
+					Edit Conversation
+				</a>
+			</div>
+			<?php endif; ?>
+		</div>
 
 		<div class="vt-conversation-meta vt-mb-4">
 			<div class="vt-flex vt-gap vt-text-muted">

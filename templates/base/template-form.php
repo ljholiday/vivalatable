@@ -29,13 +29,18 @@
         // Smart back button based on current page
         $back_url = '/';
         $back_text = 'Back';
-        if (strpos(VT_Router::getCurrentUri(), '/create-event') !== false) {
+        $current_uri = VT_Router::getCurrentUri();
+
+        if (strpos($current_uri, '/edit') !== false && isset($event)) {
+            $back_url = '/events/' . $event->slug . '/manage';
+            $back_text = 'Back to Manage';
+        } elseif (strpos($current_uri, '/create-event') !== false) {
             $back_url = '/events';
             $back_text = 'Back to Events';
-        } elseif (strpos(VT_Router::getCurrentUri(), '/create-community') !== false) {
+        } elseif (strpos($current_uri, '/create-community') !== false) {
             $back_url = '/communities';
             $back_text = 'Back to Communities';
-        } elseif (strpos(VT_Router::getCurrentUri(), '/create-conversation') !== false) {
+        } elseif (strpos($current_uri, '/create-conversation') !== false) {
             $back_url = '/conversations';
             $back_text = 'Back to Conversations';
         }
