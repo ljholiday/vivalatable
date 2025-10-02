@@ -45,6 +45,10 @@ require_once __DIR__ . '/Embed/OEmbedProvider.php';
 require_once __DIR__ . '/Embed/OpenGraphProvider.php';
 require_once __DIR__ . '/Embed/EmbedService.php';
 require_once __DIR__ . '/Embed/Renderer.php';
+require_once __DIR__ . '/Image/ImageProcessor.php';
+require_once __DIR__ . '/Image/ImageService.php';
+require_once __DIR__ . '/Image/ImageRenderer.php';
+require_once __DIR__ . '/Image/AvatarGenerator.php';
 
 // Load legacy VT classes (for gradual migration)
 require_once __DIR__ . '/class-config.php';

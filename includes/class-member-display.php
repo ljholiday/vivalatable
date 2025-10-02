@@ -104,17 +104,28 @@ class VT_Member_Display {
 		$avatar_url = '';
 
 		// Check for custom profile image
-		if (!empty($profile['profile_image'])) {
+		if (!empty($profile['profile_image']) && ($profile['avatar_source'] ?? 'gravatar') === 'custom') {
 			$avatar_url = VT_Image_Manager::getImageUrl($profile['profile_image']);
-		} elseif ($profile['avatar_source'] === 'gravatar' && !empty($profile['email'])) {
+		} elseif (!empty($profile['email'])) {
 			// Use Gravatar
 			$hash = md5(strtolower(trim($profile['email'])));
-			$avatar_url = "https://www.gravatar.com/avatar/{$hash}?s={$size}&d=identicon";
+			$avatar_url = "https://www.gravatar.com/avatar/{$hash}?s={$size}&d=404";
 		}
 
+		// Fallback to generated avatar if Gravatar not found
+		if (!$avatar_url && !empty($profile['display_name'])) {
+			$userId = $profile['user_id'] ?? 0;
+			if ($userId && class_exists('VT_Avatar_Generator')) {
+				$avatar_url = VT_Avatar_Generator::generateAndCache($userId, $profile['display_name'], $size);
+			} elseif (class_exists('VT_Avatar_Generator')) {
+				$avatar_url = VT_Avatar_Generator::generate($profile['display_name'], $size);
+			}
+		}
+
+		// Final fallback to default Gravatar identicon
 		if (!$avatar_url) {
-			// Default avatar
-			$avatar_url = VT_Http::getBaseUrl() . '/assets/images/default-avatar.svg';
+			$hash = md5('default@vivalatable.com');
+			$avatar_url = "https://www.gravatar.com/avatar/{$hash}?s={$size}&d=identicon";
 		}
 
 		return sprintf(
