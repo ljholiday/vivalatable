@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 		$update_data = array(
 			'name' => vt_service('validation.sanitizer')->textField($_POST['community_name']),
 			'description' => vt_service('validation.sanitizer')->textarea($_POST['description']),
-			'visibility' => vt_service('validation.sanitizer')->textField($_POST['visibility']),
+			'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy']),
 		);
 
 		// Handle cover image removal
@@ -204,14 +204,14 @@ $page_description = 'Manage settings, members, and invitations for your communit
 		</div>
 
 		<div class="vt-form-group">
-			<label class="vt-form-label" for="visibility">
+			<label class="vt-form-label" for="privacy">
 				Privacy Setting
 			</label>
-			<select id="visibility" name="visibility" class="vt-form-input">
-				<option value="public" <?php echo ($community->visibility === 'public') ? 'selected' : ''; ?>>
+			<select id="privacy" name="privacy" class="vt-form-input">
+				<option value="public" <?php echo ($community->privacy === 'public') ? 'selected' : ''; ?>>
 					Public - Anyone can join
 				</option>
-				<option value="private" <?php echo ($community->visibility === 'private') ? 'selected' : ''; ?>>
+				<option value="private" <?php echo ($community->privacy === 'private') ? 'selected' : ''; ?>>
 					Private - Invite only
 				</option>
 			</select>

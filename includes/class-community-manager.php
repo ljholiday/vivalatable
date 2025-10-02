@@ -36,7 +36,7 @@ class VT_Community_Manager {
 		// Sanitize input data
 		$name = vt_service('validation.sanitizer')->textField($community_data['name']);
 		$description = vt_service('validation.sanitizer')->richText($community_data['description'] ?? '');
-		$visibility = $this->validatePrivacySetting($community_data['visibility'] ?? 'public');
+		$privacy = $this->validatePrivacySetting($community_data['privacy'] ?? 'public');
 		$creator_email = vt_service('validation.sanitizer')->email($community_data['creator_email']);
 
 		// Generate unique slug
@@ -54,7 +54,7 @@ class VT_Community_Manager {
 			'name' => $name,
 			'slug' => $slug,
 			'description' => $description,
-			'visibility' => $visibility,
+			'privacy' => $privacy,
 			'creator_id' => $current_user_id,
 			'creator_email' => $creator_email,
 			'created_by' => $current_user_id,
@@ -63,7 +63,7 @@ class VT_Community_Manager {
 			'created_at' => VT_Time::currentTime('mysql'),
 			'updated_at' => VT_Time::currentTime('mysql'),
 			'settings' => json_encode(array(
-				'allow_auto_join_on_reply' => ($visibility === 'public')
+				'allow_auto_join_on_reply' => ($privacy === 'public')
 			))
 		);
 
@@ -163,7 +163,7 @@ class VT_Community_Manager {
 		}
 
 		// Sanitize update data
-		$allowed_fields = array('name', 'description', 'visibility', 'settings');
+		$allowed_fields = array('name', 'description', 'privacy', 'settings');
 		$sanitized_data = array();
 
 		foreach ($update_data as $field => $value) {
@@ -175,7 +175,7 @@ class VT_Community_Manager {
 					case 'description':
 						$sanitized_data[$field] = vt_service('validation.sanitizer')->richText($value);
 						break;
-					case 'visibility':
+					case 'privacy':
 						$sanitized_data[$field] = $this->validatePrivacySetting($value);
 						break;
 					case 'settings':
@@ -396,7 +396,7 @@ class VT_Community_Manager {
 		}
 
 		// Public communities: any member can create events
-		if ($community->visibility === 'public') {
+		if ($community->privacy === 'public') {
 			return true;
 		}
 
@@ -818,7 +818,7 @@ class VT_Community_Manager {
 		}
 
 		// Default to true for all public communities
-		$default = ($community->visibility === 'public');
+		$default = ($community->privacy === 'public');
 
 		return $this->getCommunitySetting($community_id, 'allow_auto_join_on_reply', $default);
 	}
@@ -864,7 +864,7 @@ class VT_Community_Manager {
 		return $this->db->getRow(
 			$this->db->prepare(
 				"SELECT i.*, c.name as community_name, c.slug as community_slug,
-				        c.description as community_description, c.visibility, c.member_count,
+				        c.description as community_description, c.privacy, c.member_count,
 				        m.display_name as inviter_name
 				 FROM {$this->db->prefix}community_invitations i
 				 LEFT JOIN {$this->db->prefix}communities c ON i.community_id = c.id
@@ -958,7 +958,7 @@ class VT_Community_Manager {
 			 FROM $communities_table c
 			 LEFT JOIN $members_table m ON c.id = m.community_id AND m.status = 'active'
 			 LEFT JOIN $events_table e ON c.id = e.community_id AND e.event_status = 'active'
-			 WHERE c.visibility = 'public' AND c.is_active = 1
+			 WHERE c.privacy = 'public' AND c.is_active = 1
 			 GROUP BY c.id
 			 ORDER BY c.created_at DESC
 			 LIMIT %d OFFSET %d",

@@ -175,7 +175,7 @@ class VT_Community_Ajax_Handler {
 		$community_data = array(
 			'name' => vt_service('validation.sanitizer')->textField($_POST['name']),
 			'description' => vt_service('validation.sanitizer')->richText($_POST['description'] ?? ''),
-			'visibility' => vt_service('validation.sanitizer')->textField($_POST['visibility'] ?? 'public'),
+			'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
 		);
 
 		$community_manager = $this->getCommunityManager();
@@ -247,7 +247,7 @@ class VT_Community_Ajax_Handler {
 		$community_data = array(
 			'name' => vt_service('validation.sanitizer')->textField($_POST['name']),
 			'description' => vt_service('validation.sanitizer')->richText($_POST['description'] ?? ''),
-			'visibility' => vt_service('validation.sanitizer')->textField($_POST['visibility'] ?? 'public'),
+			'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
 		);
 
 		$result = $community_manager->updateCommunity($community_id, $community_data);
@@ -932,7 +932,7 @@ class VT_Community_Ajax_Handler {
 
 				// Badges
 				$html .= '<div class="vt-flex vt-gap vt-flex-wrap vt-mb-2">';
-				if ($community->visibility === 'private') {
+				if ($community->privacy === 'private') {
 					$html .= '<span class="vt-badge vt-badge-secondary">Private</span>';
 				}
 				$html .= '</div>';

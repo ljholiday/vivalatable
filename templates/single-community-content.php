@@ -42,7 +42,7 @@ if ($is_logged_in) {
 }
 
 // Check if user can view this community
-if ($community->visibility === 'private' && !$is_member) {
+if ($community->privacy === 'private' && !$is_member) {
 	?>
 	<div class="vt-section vt-text-center">
 		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Private Community</h3>
@@ -135,7 +135,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 				<span class="vt-badge vt-badge-secondary">
 					<?php echo $member_count; ?> member<?php echo $member_count !== 1 ? 's' : ''; ?>
 				</span>
-				<?php if ($community->visibility === 'private') : ?>
+				<?php if ($community->privacy === 'private') : ?>
 					<span class="vt-badge vt-badge-warning">Private</span>
 				<?php else : ?>
 					<span class="vt-badge vt-badge-success">Public</span>

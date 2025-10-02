@@ -52,10 +52,10 @@ $messages = $messages ?? array();
 		</div>
 
 		<div class="vt-form-group">
-			<label for="visibility" class="vt-form-label">Privacy</label>
-			<select id="visibility" name="visibility" class="vt-form-input">
-				<option value="public" <?php echo ($_POST['visibility'] ?? 'public') === 'public' ? 'selected' : ''; ?>>Public - Anyone can find and join</option>
-				<option value="private" <?php echo ($_POST['visibility'] ?? '') === 'private' ? 'selected' : ''; ?>>Private - Invite only</option>
+			<label for="privacy" class="vt-form-label">Privacy</label>
+			<select id="privacy" name="privacy" class="vt-form-input">
+				<option value="public" <?php echo ($_POST['privacy'] ?? 'public') === 'public' ? 'selected' : ''; ?>>Public - Anyone can find and join</option>
+				<option value="private" <?php echo ($_POST['privacy'] ?? '') === 'private' ? 'selected' : ''; ?>>Private - Invite only</option>
 			</select>
 		</div>
 

@@ -90,8 +90,8 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 											<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->role)); ?>
 										</span>
 										<?php endif; ?>
-										<span class="vt-badge vt-badge-<?php echo $community->visibility === 'private' ? 'secondary' : 'success'; ?>">
-											<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->visibility)); ?>
+										<span class="vt-badge vt-badge-<?php echo $community->privacy === 'private' ? 'secondary' : 'success'; ?>">
+											<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->privacy)); ?>
 										</span>
 									</div>
 									<div class="vt-text-muted">
@@ -162,8 +162,8 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 								<?php echo vt_service('validation.validator')->escHtml($community->name); ?>
 							</a>
 						</h3>
-						<div class="vt-badge vt-badge-<?php echo $community->visibility === 'public' ? 'success' : 'secondary'; ?>">
-							<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->visibility)); ?>
+						<div class="vt-badge vt-badge-<?php echo $community->privacy === 'public' ? 'success' : 'secondary'; ?>">
+							<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->privacy)); ?>
 						</div>
 					</div>
 					<div class="vt-mb-4">

@@ -191,17 +191,17 @@ class VT_Search_API {
 		$communities_table = $db->prefix . 'communities';
 		$search_pattern = '%' . $db->escLike($query) . '%';
 
-		$sql = "SELECT id, name, description, visibility, member_count
+		$sql = "SELECT id, name, description, privacy, member_count
 		        FROM $communities_table
 		        WHERE is_active = 1
 		        AND (name LIKE %s OR description LIKE %s)";
 
 		$params = array($search_pattern, $search_pattern);
 
-		// Add visibility filter for non-logged users
+		// Add privacy filter for non-logged users
 		$current_user_id = vt_service('auth.service')->getCurrentUserId();
 		if (!$current_user_id) {
-			$sql .= " AND visibility = 'public'";
+			$sql .= " AND privacy = 'public'";
 		}
 
 		$sql .= " ORDER BY

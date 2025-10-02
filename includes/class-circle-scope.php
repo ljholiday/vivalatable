@@ -183,7 +183,7 @@ class VT_Circle_Scope {
 		// Get all public communities
 		$public_communities = $db->getCol(
 			"SELECT id FROM $communities_table
-			 WHERE visibility = 'public' AND is_active = 1"
+			 WHERE privacy = 'public' AND is_active = 1"
 		);
 
 		return array(

@@ -700,7 +700,7 @@ The %s Team',
             // Check access to community
             $can_access_community = false;
 
-            if ($community->visibility === 'public') {
+            if ($community->privacy === 'public') {
                 $can_access_community = true;
             } elseif ($current_user_id && vt_service('auth.service')->isLoggedIn()) {
                 if ($community->creator_id == $current_user_id ||
@@ -747,7 +747,7 @@ The %s Team',
                     return ['error' => 'Community not found'];
                 }
 
-                return $community->visibility;
+                return $community->privacy;
             }
         }
 
@@ -764,9 +764,9 @@ The %s Team',
                 $community_manager = new VT_Community_Manager();
                 $community = $community_manager->getCommunity($community_id);
 
-                if ($community && $community->visibility !== $provided_privacy) {
+                if ($community && $community->privacy !== $provided_privacy) {
                     return VT_Http::jsonError(
-                        sprintf('Event privacy must match community privacy (%s)', $community->visibility),
+                        sprintf('Event privacy must match community privacy (%s)', $community->privacy),
                         'privacy_mismatch'
                     );
                 }
@@ -784,7 +784,7 @@ The %s Team',
                 $community = $community_manager->getCommunity($event->community_id);
 
                 if ($community) {
-                    return $community->visibility;
+                    return $community->privacy;
                 }
             }
         }

@@ -54,7 +54,6 @@ class VT_Personal_Community_Service {
 			'type' => 'circle',
 			'privacy' => 'private',
 			'personal_owner_user_id' => $user_id,
-			'visibility' => 'private',
 			'creator_id' => $user_id,
 			'creator_email' => $user->email,
 			'at_protocol_did' => $identity ? $identity->at_protocol_did : null,
@@ -136,7 +135,6 @@ class VT_Personal_Community_Service {
 			'type' => 'public',
 			'privacy' => 'public',
 			'personal_owner_user_id' => $user_id,
-			'visibility' => 'public',
 			'creator_id' => $user_id,
 			'creator_email' => $user->email,
 			'at_protocol_did' => $identity ? $identity->at_protocol_did : null,
@@ -356,7 +354,6 @@ class VT_Personal_Community_Service {
 					'description' => 'Private circle for ' . $user->display_name,
 					'type' => 'circle',
 					'privacy' => 'private',
-					'visibility' => 'private',
 					'updated_at' => date('Y-m-d H:i:s')
 				),
 				array('id' => $community->id)

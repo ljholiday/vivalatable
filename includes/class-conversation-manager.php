@@ -518,7 +518,7 @@ class VT_Conversation_Manager {
 		$communities_table = $this->db->prefix . 'communities';
 		$privacy = $this->db->getVar(
 			$this->db->prepare(
-				"SELECT visibility FROM $communities_table WHERE id = %d",
+				"SELECT privacy FROM $communities_table WHERE id = %d",
 				$community_id
 			)
 		);

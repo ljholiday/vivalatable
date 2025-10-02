@@ -395,7 +395,7 @@ class VT_Pages {
 			$community_data = array(
 				'name' => trim($_POST['name'] ?? ''),
 				'description' => trim($_POST['description'] ?? ''),
-				'visibility' => $_POST['visibility'] ?? 'public',
+				'privacy' => $_POST['privacy'] ?? 'public',
 				'creator_email' => vt_service('auth.service')->getCurrentUser()->email ?? ''
 			);
 

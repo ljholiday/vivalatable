@@ -292,7 +292,7 @@ class VT_Conversation_Feed {
 				conv.*,
 				com.name as community_name,
 				com.slug as community_slug,
-				com.visibility as community_visibility,
+				com.privacy as community_privacy,
 				com.creator_id as community_creator_id,
 				com.personal_owner_user_id,
 				ev.title as event_title,
@@ -308,7 +308,7 @@ class VT_Conversation_Feed {
 				-- Apply permission gates
 				(
 					-- Public communities
-					(com.visibility = 'public')
+					(com.privacy = 'public')
 					OR
 					-- User is a member of the community
 					EXISTS (
@@ -350,7 +350,7 @@ class VT_Conversation_Feed {
 				$circle_filter
 				AND
 				(
-					(com.visibility = 'public')
+					(com.privacy = 'public')
 					OR
 					EXISTS (
 						SELECT 1 FROM $members_table mem
@@ -423,7 +423,7 @@ class VT_Conversation_Feed {
 				$circle = 'extended';
 			}
 
-			if ($conversation->community_visibility === 'public') {
+			if ($conversation->community_privacy === 'public') {
 				return array(
 					'reason' => 'public_community',
 					'circle' => $circle,
