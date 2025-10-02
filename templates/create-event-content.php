@@ -61,7 +61,7 @@ $messages = $messages ?? array();
 			<div class="vt-form-group">
 				<label for="event_time" class="vt-form-label">Time</label>
 				<input type="time" id="event_time" name="event_time" class="vt-form-input"
-					   value="<?php echo htmlspecialchars($_POST['event_time'] ?? ''); ?>">
+					   value="<?php echo htmlspecialchars($_POST['event_time'] ?? '18:00'); ?>">
 			</div>
 		</div>
 
