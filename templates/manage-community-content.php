@@ -71,9 +71,9 @@ $error_message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	if ($_POST['action'] === 'update_community_settings' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_community_management')) {
 		$update_data = array(
-			'name' => vt_service('validation.validator')->textField($_POST['community_name']),
-			'description' => vt_service('validation.validator')->textarea($_POST['description']),
-			'visibility' => vt_service('validation.validator')->textField($_POST['visibility']),
+			'name' => vt_service('validation.sanitizer')->textField($_POST['community_name']),
+			'description' => vt_service('validation.sanitizer')->textarea($_POST['description']),
+			'visibility' => vt_service('validation.sanitizer')->textField($_POST['visibility']),
 		);
 
 		// Handle cover image removal
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 	// Handle community deletion
 	if ($_POST['action'] === 'delete_community' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_community_management')) {
-		$confirm_name = vt_service('validation.validator')->textField($_POST['confirm_name']);
+		$confirm_name = vt_service('validation.sanitizer')->textField($_POST['confirm_name']);
 
 		if ($confirm_name === $community->name) {
 			$result = $community_manager->deleteCommunity($community_id);
