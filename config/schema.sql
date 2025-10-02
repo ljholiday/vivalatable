@@ -98,7 +98,6 @@ CREATE TABLE `vt_communities` (
   `type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT 'standard',
   `privacy` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT 'public',
   `personal_owner_user_id` bigint unsigned DEFAULT NULL,
-  `visibility` enum('public','private') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL DEFAULT 'public',
   `member_count` int DEFAULT '0',
   `event_count` int DEFAULT '0',
   `creator_id` bigint unsigned NOT NULL,
@@ -121,7 +120,6 @@ CREATE TABLE `vt_communities` (
   KEY `type` (`type`),
   KEY `is_active` (`is_active`),
   KEY `personal_owner_user_id` (`personal_owner_user_id`),
-  KEY `visibility` (`visibility`),
   KEY `created_by` (`created_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
