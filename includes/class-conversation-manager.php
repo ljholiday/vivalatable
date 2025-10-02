@@ -794,10 +794,10 @@ class VT_Conversation_Manager {
 		// Store original content for URL detection
 		$original_content = $content;
 
-		// Sanitize user content first
-		$content = vt_service('validation.sanitizer')->richText($content);
+		// Escape HTML to prevent XSS from user content
+		$content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
 
-		// Apply paragraph formatting
+		// Apply paragraph formatting (works with escaped content)
 		$content = VT_Text::autop($content);
 
 		// Check for URLs and add embed cards
@@ -806,7 +806,7 @@ class VT_Conversation_Manager {
 		if ($url) {
 			$embed = VT_Embed_Service::buildEmbedFromUrl($url);
 			if ($embed && VT_Embed_Renderer::shouldRender($embed)) {
-				// Add the embed after the content (embed HTML is already escaped in renderer)
+				// Add the embed after the content (embed HTML is already safely escaped in renderer)
 				$content .= VT_Embed_Renderer::render($embed);
 			}
 		}
