@@ -61,7 +61,6 @@ $messages = $messages ?? array();
 
 		<div class="vt-text-center">
 			<button type="submit" class="vt-btn vt-btn-lg">
-				<span>🚪</span>
 				Sign In
 			</button>
 		</div>
