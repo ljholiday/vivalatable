@@ -418,9 +418,14 @@ class VT_Pages {
 				} elseif (is_array($result) && isset($result['error'])) {
 					$errors[] = $result['error'];
 				} elseif (is_numeric($result)) {
-					// Redirect to the new community page
+					// Get the community to retrieve its slug
 					$community_id = $result;
-					VT_Router::redirect('/communities/' . $community_id);
+					$community = $community_manager->getCommunity($community_id);
+					if ($community && isset($community->slug)) {
+						VT_Router::redirect('/communities/' . $community->slug);
+					} else {
+						VT_Router::redirect('/communities');
+					}
 					return;
 				} else {
 					$errors[] = 'Failed to create community. Please try again.';
