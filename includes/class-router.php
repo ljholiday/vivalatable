@@ -70,6 +70,8 @@ class VT_Router {
 		self::addRoute('GET', '/conversations', array('VT_Pages', 'conversationsList'));
 		self::addRoute('GET', '/conversations/create', array('VT_Pages', 'createConversation'));
 		self::addRoute('POST', '/conversations/create', array('VT_Pages', 'createConversation'));
+		self::addRoute('GET', '/conversations/{slug}/edit', array('VT_Pages', 'editConversationBySlug'));
+		self::addRoute('POST', '/conversations/{slug}/edit', array('VT_Pages', 'editConversationBySlug'));
 		self::addRoute('GET', '/conversations/{slug}', array('VT_Pages', 'singleConversation'));
 		self::addRoute('POST', '/conversations/{slug}', array('VT_Pages', 'singleConversation'));
 		self::addRoute('GET', '/create-conversation', array('VT_Pages', 'createConversation'));

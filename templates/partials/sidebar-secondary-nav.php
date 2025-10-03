@@ -31,10 +31,6 @@ $community_manager = new VT_Community_Manager();
                 Create Event
             </a>
 
-            <a href="/conversations/create" class="vt-btn vt-btn-secondary">
-                Create Conversation
-            </a>
-
             <?php if ($community_manager->canCreateCommunity()) : ?>
                 <a href="/communities/create" class="vt-btn vt-btn-secondary">
                     Create Community

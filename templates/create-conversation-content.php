@@ -58,24 +58,10 @@ $user_communities = $user_communities ?? array();
 					  required><?php echo isset($_POST['content']) ? htmlspecialchars($_POST['content']) : ''; ?></textarea>
 		</div>
 
-		<div class="vt-form-group">
-			<label for="community_id" class="vt-form-label">Community</label>
-			<select id="community_id" name="community_id" class="vt-form-input" required>
-				<option value="">Select a community...</option>
-				<?php foreach ($user_communities as $user_community) : ?>
-					<option value="<?php echo $user_community->id; ?>"
-							<?php echo ($user_community->id == $community_id) ? 'selected' : ''; ?>>
-						<?php echo htmlspecialchars($user_community->name); ?>
-					</option>
-				<?php endforeach; ?>
-			</select>
-			<small class="vt-form-help">
-				All conversations must be in a community. Choose where this conversation should live.
-			</small>
-		</div>
-
 		<?php if ($event_id && $event) : ?>
 			<input type="hidden" name="event_id" value="<?php echo $event_id; ?>">
+		<?php elseif ($community_id && $community) : ?>
+			<input type="hidden" name="community_id" value="<?php echo $community_id; ?>">
 		<?php endif; ?>
 
 		<div class="vt-form-actions">
@@ -113,33 +99,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				alert('Please fill in all required fields.');
 			}
 		});
-	}
-
-	// Privacy options logic
-	const communitySelect = document.getElementById('community_id');
-	const privacySelect = document.getElementById('privacy');
-
-	if (communitySelect && privacySelect) {
-		// Update privacy options based on community selection
-		communitySelect.addEventListener('change', function() {
-			if (this.value === '0') {
-				// General discussion - show all privacy options
-				privacySelect.innerHTML = `
-					<option value="public">Public - Anyone can participate</option>
-					<option value="members">Members Only - Limited to community members</option>
-				`;
-			} else {
-				// Community discussion - default to members only
-				privacySelect.innerHTML = `
-					<option value="members">Members Only - Community members can participate</option>
-					<option value="public">Public - Anyone can participate</option>
-				`;
-				privacySelect.value = 'members';
-			}
-		});
-
-		// Trigger change event on page load
-		communitySelect.dispatchEvent(new Event('change'));
 	}
 });
 </script>

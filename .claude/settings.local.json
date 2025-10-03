@@ -20,7 +20,9 @@
       "Bash(git reset:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:oembed.com)",
+      "WebFetch(domain:ogp.me)"
     ],
     "deny": [],
     "ask": []

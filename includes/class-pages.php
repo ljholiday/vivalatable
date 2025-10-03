@@ -572,12 +572,30 @@ class VT_Pages {
 				return;
 			}
 
-			// Prepare conversation data
+			// Prepare conversation data with mutual exclusivity
+			$posted_event_id = intval($_POST['event_id'] ?? 0);
+			$posted_community_id = intval($_POST['community_id'] ?? 0);
+
+			// Use if/elseif to ensure only one context is set
+			if (!empty($posted_event_id)) {
+				// Event conversation - event_id only
+				$final_event_id = $posted_event_id;
+				$final_community_id = null;
+			} elseif (!empty($posted_community_id)) {
+				// Community conversation - community_id only
+				$final_event_id = null;
+				$final_community_id = $posted_community_id;
+			} else {
+				// No context - will error below
+				$final_event_id = null;
+				$final_community_id = null;
+			}
+
 			$conversation_data = array(
 				'title' => vt_service('validation.sanitizer')->textField($_POST['title'] ?? ''),
 				'content' => vt_service('validation.sanitizer')->richText($_POST['content'] ?? ''),
-				'community_id' => intval($_POST['community_id'] ?? 0),
-				'event_id' => intval($_POST['event_id'] ?? 0),
+				'community_id' => $final_community_id,
+				'event_id' => $final_event_id,
 				'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
 				'author_id' => $current_user->id,
 				'author_name' => $current_user->display_name ?: $current_user->username,
@@ -592,7 +610,7 @@ class VT_Pages {
 				$errors[] = 'Conversation content is required.';
 			}
 			if (empty($conversation_data['community_id']) && empty($conversation_data['event_id'])) {
-				$errors[] = 'Please select a community for this conversation.';
+				$errors[] = 'Conversation must be created in an event or community.';
 			}
 
 			// If no validation errors, create the conversation
@@ -613,7 +631,13 @@ class VT_Pages {
 			return;
 		}
 
-		// GET request - show empty form
+		// GET request - redirect if no context
+		if (empty($event_id) && empty($community_id)) {
+			VT_Router::redirect('/conversations');
+			return;
+		}
+
+		// GET request - show form with context
 		self::renderPage('create-conversation', 'Start Conversation', 'Share your thoughts', 'form', compact('errors', 'messages', 'current_user', 'community_id', 'event_id', 'community', 'event', 'user_communities'));
 	}
 
@@ -632,6 +656,90 @@ class VT_Pages {
 		self::requireAuth();
 		$conversation_id = $params['id'];
 		self::renderPage('edit-conversation', 'Edit Conversation', null, 'form', compact('conversation_id'));
+	}
+
+	/**
+	 * Edit conversation page (route parameter version)
+	 */
+	public static function editConversationBySlug($params) {
+		self::requireAuth();
+
+		$errors = array();
+		$messages = array();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+
+		// Get conversation by slug
+		$conversation_manager = new VT_Conversation_Manager();
+		$conversation_slug = $params['slug'] ?? null;
+
+		if (!$conversation_slug) {
+			self::notFound();
+			return;
+		}
+
+		$conversation = $conversation_manager->getConversationBySlug($conversation_slug);
+		if (!$conversation) {
+			self::notFound();
+			return;
+		}
+
+		// Check permissions
+		if (!$conversation_manager->canEditConversation($conversation->id, $current_user->id)) {
+			http_response_code(403);
+			self::renderPage('403', 'Access Denied', 'You don\'t have permission to edit this conversation', 'page');
+			return;
+		}
+
+		// Get user's communities for dropdown
+		$community_manager = new VT_Community_Manager();
+		$user_communities = $community_manager->getUserCommunities($current_user->id);
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['edit_conversation_nonce'] ?? '', 'vt_edit_conversation')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('edit-conversation', 'Edit Conversation', null, 'form', compact('errors', 'messages', 'conversation', 'user_communities'));
+				return;
+			}
+
+			// Prepare conversation data
+			$conversation_data = array(
+				'title' => vt_service('validation.sanitizer')->textField($_POST['title'] ?? ''),
+				'content' => vt_service('validation.sanitizer')->richText($_POST['content'] ?? ''),
+				'community_id' => vt_service('validation.sanitizer')->integer($_POST['community_id'] ?? 0)
+			);
+
+			// Basic validation
+			if (empty($conversation_data['title'])) {
+				$errors[] = 'Conversation title is required.';
+			}
+			if (empty($conversation_data['content'])) {
+				$errors[] = 'Content is required.';
+			}
+			if (empty($conversation_data['community_id'])) {
+				$errors[] = 'Community is required.';
+			}
+
+			// If no validation errors, update the conversation
+			if (empty($errors)) {
+				$result = $conversation_manager->updateConversation($conversation->id, $conversation_data);
+				if ($result) {
+					// Redirect to conversation page on success
+					VT_Router::redirect('/conversations/' . $conversation_slug);
+					return;
+				} else {
+					$errors[] = 'Failed to update conversation. Please try again.';
+				}
+			}
+
+			// If we reach here, update failed - render with errors
+			self::renderPage('edit-conversation', 'Edit Conversation', null, 'form', compact('errors', 'messages', 'conversation', 'user_communities'));
+			return;
+		}
+
+		// GET request - show form
+		self::renderPage('edit-conversation', 'Edit Conversation', null, 'form', compact('errors', 'messages', 'conversation', 'user_communities'));
 	}
 
 	/**
