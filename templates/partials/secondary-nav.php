@@ -23,25 +23,22 @@ if (empty($tabs) || !is_array($tabs)) {
 }
 ?>
 
-<!-- Secondary Navigation Tabs -->
-<div class="vt-section vt-mb-4">
-    <div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
-        <?php foreach ($tabs as $tab) : ?>
-            <?php
-            $is_active = isset($tab['active']) ? $tab['active'] : false;
-            $label = $tab['label'] ?? '';
-            $url = $tab['url'] ?? '#';
-            $badge_count = $tab['badge_count'] ?? null;
-            ?>
-            <a href="<?php echo htmlspecialchars($url); ?>"
-               class="vt-btn <?php echo $is_active ? 'is-active' : ''; ?>"
-               role="tab"
-               aria-selected="<?php echo $is_active ? 'true' : 'false'; ?>">
-                <?php echo htmlspecialchars($label); ?>
-                <?php if ($badge_count !== null) : ?>
-                    <span class="vt-badge vt-badge-sm"><?php echo intval($badge_count); ?></span>
-                <?php endif; ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
+<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
+    <?php foreach ($tabs as $tab) : ?>
+        <?php
+        $is_active = isset($tab['active']) ? $tab['active'] : false;
+        $label = $tab['label'] ?? '';
+        $url = $tab['url'] ?? '#';
+        $badge_count = $tab['badge_count'] ?? null;
+        ?>
+        <a href="<?php echo htmlspecialchars($url); ?>"
+           class="vt-btn <?php echo $is_active ? 'is-active' : ''; ?>"
+           role="tab"
+           aria-selected="<?php echo $is_active ? 'true' : 'false'; ?>">
+            <?php echo htmlspecialchars($label); ?>
+            <?php if ($badge_count !== null) : ?>
+                <span class="vt-badge vt-badge-sm"><?php echo intval($badge_count); ?></span>
+            <?php endif; ?>
+        </a>
+    <?php endforeach; ?>
 </div>
