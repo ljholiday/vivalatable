@@ -320,7 +320,7 @@ class VT_Conversation_Feed {
 					OR
 					-- General conversations (no community, excluding events which are handled by circle filter)
 					(conv.community_id IS NULL AND (conv.event_id IS NULL OR conv.event_id = 0))
-					" . ($is_event_filter ? "OR (conv.community_id = 0 AND conv.event_id > 0)" : "") . "
+					" . ($is_event_filter ? "OR (conv.event_id IS NOT NULL AND conv.event_id > 0)" : "") . "
 				)
 				$content_type_filter
 			ORDER BY COALESCE(conv.last_reply_date, conv.created_at) DESC
@@ -360,7 +360,7 @@ class VT_Conversation_Feed {
 					)
 					OR
 					(conv.community_id IS NULL AND (conv.event_id IS NULL OR conv.event_id = 0))
-					" . ($is_event_filter ? "OR (conv.community_id = 0 AND conv.event_id > 0)" : "") . "
+					" . ($is_event_filter ? "OR (conv.event_id IS NOT NULL AND conv.event_id > 0)" : "") . "
 				)
 				$content_type_filter
 		";

@@ -79,52 +79,42 @@ class VT_Conversation_Ajax_Handler {
 			<?php
 		} else {
 			foreach ($conversations as $conversation) {
-				?>
-				<div class="vt-section">
-					<div class="vt-flex vt-flex-between vt-mb-4">
-						<h3 class="vt-heading vt-heading-sm">
-							<a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>" class="vt-text-primary">
-								<?php echo htmlspecialchars($conversation_manager->getDisplayTitle($conversation)); ?>
-							</a>
-						</h3>
-					</div>
+				// Determine conversation type
+				$conversation_type = '';
+				if ($conversation->event_id) {
+					$conversation_type = 'Event Discussion';
+				} elseif ($conversation->community_id) {
+					$conversation_type = 'Community Discussion';
+				} else {
+					$conversation_type = 'General Discussion';
+				}
 
-					<div class="vt-mb-4">
-						<div class="vt-flex vt-gap vt-mb-4">
-							<span class="vt-text-muted">
-								<?php
-								if ($conversation->event_id) {
-									echo 'Event Discussion';
-								} elseif ($conversation->community_id) {
-									echo 'Community Discussion';
-								} else {
-									echo 'General Discussion';
-								}
-								?>
-							</span>
-							<span class="vt-badge vt-badge-<?php echo $conversation->privacy === 'private' ? 'secondary' : 'success'; ?>">
-								<?php echo htmlspecialchars(ucfirst($conversation->privacy)); ?>
-							</span>
-						</div>
-					</div>
+				// Set up for entity card
+				$entity_type = 'conversation';
+				$entity = $conversation;
+				$entity->title = $conversation_manager->getDisplayTitle($conversation);
 
-					<?php if ($conversation->content) : ?>
-					<div class="vt-mb-4">
-						<p class="vt-text-muted"><?php echo htmlspecialchars(VT_Text::truncateWords($conversation->content, 15)); ?></p>
-					</div>
-					<?php endif; ?>
+				// Badges
+				$badges = [
+					['label' => $conversation_type, 'class' => 'vt-badge-secondary'],
+					['label' => ucfirst($conversation->privacy), 'class' => $conversation->privacy === 'private' ? 'vt-badge-secondary' : 'vt-badge-success']
+				];
 
-					<div class="vt-flex vt-flex-between">
-						<div class="vt-stat">
-							<div class="vt-stat-number vt-text-primary"><?php echo intval($conversation->reply_count); ?></div>
-							<div class="vt-stat-label">Replies</div>
-						</div>
-						<a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>" class="vt-btn">
-							View Details
-						</a>
-					</div>
-				</div>
-				<?php
+				// Stats
+				$stats = [
+					['value' => intval($conversation->reply_count), 'label' => 'Replies']
+				];
+
+				// Actions
+				$actions = [
+					['label' => 'View', 'url' => '/conversations/' . $conversation->slug]
+				];
+
+				// Description
+				$description = $conversation->content ?? '';
+
+				// Render entity card
+				include VT_INCLUDES_DIR . '/../templates/partials/entity-card.php';
 			}
 		}
 		$html = ob_get_clean();
