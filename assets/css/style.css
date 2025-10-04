@@ -1385,13 +1385,13 @@ body.vt-modal-open {
 }
 
 
-/* Conversations Navigation */
+/* Legacy Conversations Navigation - DEPRECATED, use .vt-tab-nav instead */
+/* Kept for backward compatibility only */
 .vt-conversations-nav {
     display: flex;
     gap: 0.5rem;
 }
 
-/* Combined navigation layout (circle filters + actions) */
 .vt-conversations-nav.vt-flex-between {
     align-items: flex-start;
 }
@@ -1414,7 +1414,6 @@ body.vt-modal-open {
     flex-shrink: 0;
 }
 
-/* Original navigation styles (for standalone nav) */
 .vt-conversations-nav:not(.vt-flex-between) .vt-btn {
     flex: 1;
     text-align: center;
@@ -1431,6 +1430,58 @@ body.vt-modal-open {
     background: var(--vt-background);
     border-color: var(--vt-primary);
     color: var(--vt-primary);
+}
+
+/* Tab Navigation (Standardized Navigation Component) */
+.vt-tab-nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.vt-tab-nav .vt-btn {
+    flex: 1;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.vt-tab-nav .vt-btn.is-active {
+    background: var(--vt-primary);
+    color: white;
+    border-color: var(--vt-primary);
+}
+
+.vt-tab-nav .vt-btn:not(.is-active):hover {
+    background: var(--vt-background);
+    border-color: var(--vt-primary);
+    color: var(--vt-primary);
+}
+
+/* Danger Zone Component */
+.vt-danger-zone {
+    border: 2px solid var(--vt-danger);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 3rem;
+    background: var(--vt-danger-light);
+}
+
+.vt-danger-zone-title {
+    color: var(--vt-danger);
+    font-weight: 600;
+}
+
+.vt-danger-zone-form {
+    margin-top: 1rem;
+}
+
+/* Entity Card Component */
+.vt-entity-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vt-entity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .vt-conversations-list.vt-is-loading {

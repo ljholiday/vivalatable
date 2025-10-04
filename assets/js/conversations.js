@@ -5,7 +5,7 @@
 (function() {
 	'use strict';
 
-	const nav = document.querySelector('.vt-conversations-nav');
+	const nav = document.querySelector('.vt-tab-nav');
 	const list = document.getElementById('vt-convo-list');
 	const circleStatus = document.getElementById('vt-circle-status');
 

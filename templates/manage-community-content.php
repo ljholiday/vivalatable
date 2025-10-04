@@ -142,7 +142,7 @@ $page_description = 'Manage settings, members, and invitations for your communit
 
 <!-- Tab Navigation -->
 <div class="vt-section vt-mb-4">
-	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<a href="?community_id=<?php echo $community_id; ?>&tab=settings" class="vt-btn <?php echo ($active_tab === 'settings') ? 'is-active' : ''; ?>">
 			Settings
 		</a>

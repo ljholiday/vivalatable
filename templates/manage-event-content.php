@@ -65,7 +65,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 
 <!-- Management Tabs -->
 <div class="vt-section vt-mb-4">
-	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<a href="/events/<?php echo $event->slug; ?>/manage?tab=settings"
 		   class="vt-btn <?php echo ($active_tab === 'settings') ? 'is-active' : ''; ?>">
 			Settings

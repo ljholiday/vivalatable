@@ -108,7 +108,35 @@ if ($conversation->community_id) {
 // Set up template variables
 $page_title = htmlspecialchars($conversation->title);
 $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation->content), 150));
+
+// Get active tab (conversation view doesn't really have tabs, but we use this pattern for consistency)
+$active_tab = $_GET['tab'] ?? 'conversation';
 ?>
+
+<!-- Conversation Secondary Navigation -->
+<div class="vt-section vt-mb-4">
+	<?php
+	// Build tabs array for secondary navigation
+	$tabs = [
+		[
+			'label' => 'Conversation',
+			'url' => '/conversations/' . $conversation->slug,
+			'active' => true
+		]
+	];
+
+	// Add Edit tab if user can edit
+	if ($is_logged_in && $conversation_manager->canEditConversation($conversation->id)) {
+		$tabs[] = [
+			'label' => 'Edit',
+			'url' => '/conversations/' . $conversation->slug . '/edit',
+			'active' => false
+		];
+	}
+
+	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
+	?>
+</div>
 
 <!-- Conversation Header -->
 <div class="vt-section vt-mb-4">
@@ -121,17 +149,20 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 			</div>
 		<?php endif; ?>
 
-		<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap vt-mb-4">
+		<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap vt-mb-2">
 			<h1 class="vt-heading vt-heading-xl vt-text-primary">
 				<?php echo htmlspecialchars($conversation->title); ?>
 			</h1>
-			<?php if ($is_logged_in && $conversation_manager->canEditConversation($conversation->id)) : ?>
-			<div>
-				<a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>/edit" class="vt-btn">
-					Edit Conversation
-				</a>
+			<div class="vt-flex vt-gap" style="align-items: flex-start;">
+				<?php if ($conversation->privacy === 'private' || $conversation->privacy === 'members') : ?>
+					<span class="vt-badge vt-badge-warning">Members Only</span>
+				<?php else : ?>
+					<span class="vt-badge vt-badge-success">Public</span>
+				<?php endif; ?>
+				<?php if ($conversation->is_pinned) : ?>
+					<span class="vt-badge vt-badge-primary">Pinned</span>
+				<?php endif; ?>
 			</div>
-			<?php endif; ?>
 		</div>
 
 		<div class="vt-conversation-meta vt-mb-4">
@@ -141,16 +172,6 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 				<span><?php echo date('F j, Y \a\t g:i A', strtotime($conversation->created_at)); ?></span>
 				<span>•</span>
 				<span><?php echo $conversation->reply_count; ?> replies</span>
-			</div>
-			<div class="vt-conversation-badges vt-mt-2">
-				<?php if ($conversation->privacy === 'private' || $conversation->privacy === 'members') : ?>
-					<span class="vt-badge vt-badge-warning">Members Only</span>
-				<?php else : ?>
-					<span class="vt-badge vt-badge-success">Public</span>
-				<?php endif; ?>
-				<?php if ($conversation->is_pinned) : ?>
-					<span class="vt-badge vt-badge-primary">Pinned</span>
-				<?php endif; ?>
 			</div>
 		</div>
 	</div>
