@@ -151,7 +151,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 
 <!-- Community Navigation Tabs -->
 <div class="vt-section vt-mb-4">
-	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<a href="/communities/<?php echo $community->slug; ?>?tab=events"
 		   class="vt-btn <?php echo ($active_tab === 'events') ? 'is-active' : ''; ?>">
 			Events

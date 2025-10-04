@@ -58,7 +58,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 <!-- Community Tabs Navigation -->
 <?php if ($user_logged_in) : ?>
 <div class="vt-section vt-mb-4">
-	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<button class="vt-btn is-active" data-filter="my-communities" role="tab" aria-selected="true" aria-controls="vt-communities-list">
 			My Communities
 		</button>

@@ -64,7 +64,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 <!-- Event Filters/Tabs -->
 <?php if ($user_logged_in) : ?>
 <div class="vt-section vt-mb-4">
-	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<!-- Event Type Filters -->
 		<button class="vt-btn is-active" data-filter="my-events" role="tab" aria-selected="true" aria-controls="vt-events-list">
 			My Events
@@ -87,58 +87,36 @@ $page_description = 'Discover amazing events and manage your gatherings';
 				<?php if (!empty($user_events)) : ?>
 					<?php foreach ($user_events as $event) : ?>
 						<?php
+						// Prepare data for entity card partial
 						$event_date = new DateTime($event->event_date);
 						$is_past = $event_date < new DateTime();
-						$date_formatted = $event_date->format('M j, Y');
-						$time_formatted = $event_date->format('g:i A');
+						$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
+
+						// Set up event time display
+						$event->event_time = $event_date->format('g:i A');
+
+						// Badges
+						$badges = [
+							['label' => 'Hosting', 'class' => 'vt-badge-primary']
+						];
+						if ($is_past) {
+							$badges[] = ['label' => 'Past Event', 'class' => 'vt-badge-secondary'];
+						}
+
+						// Stats
+						$stats = [
+							['value' => $guest_count, 'label' => 'Guest' . ($guest_count !== 1 ? 's' : '')]
+						];
+
+						// Actions
+						$actions = [
+							['label' => 'View', 'url' => '/events/' . $event->slug],
+							['label' => 'Manage', 'url' => '/events/' . $event->slug . '/manage']
+						];
+
+						// Render entity card
+						include VT_INCLUDES_DIR . '/../templates/partials/entity-card.php';
 						?>
-						<div class="vt-card">
-							<div class="vt-card-body">
-								<div class="vt-flex vt-flex-between vt-mb-4">
-									<div class="vt-flex-1">
-										<h3 class="vt-heading vt-heading-md vt-mb-2">
-											<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
-												<?php echo htmlspecialchars($event->title); ?>
-											</a>
-										</h3>
-										<div class="vt-text-muted vt-mb-2">
-											<?php echo $date_formatted; ?> at <?php echo $time_formatted; ?>
-										</div>
-										<?php if ($event->venue_info) : ?>
-											<div class="vt-text-muted vt-mb-2">
-												📍 <?php echo htmlspecialchars($event->venue_info); ?>
-											</div>
-										<?php endif; ?>
-									</div>
-								</div>
-
-								<?php if ($event->description) : ?>
-									<p class="vt-text-muted vt-mb-4">
-										<?php echo htmlspecialchars(VT_Text::truncate($event->description, 120)); ?>
-									</p>
-								<?php endif; ?>
-
-								<div class="vt-flex vt-flex-between vt-items-center">
-									<div class="vt-flex vt-gap-2">
-										<span class="vt-badge vt-badge-primary">Hosting</span>
-										<?php if ($is_past) : ?>
-											<span class="vt-badge vt-badge-secondary">Past Event</span>
-										<?php endif; ?>
-									</div>
-									<div class="vt-text-sm vt-text-muted">
-										<?php
-										$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
-										echo $guest_count . ' guest' . ($guest_count !== 1 ? 's' : '');
-										?>
-									</div>
-								</div>
-
-								<div class="vt-flex vt-gap-2 vt-mt-4">
-									<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
-									<a href="/events/<?php echo $event->slug; ?>/manage" class="vt-btn vt-btn-sm">Manage</a>
-								</div>
-							</div>
-						</div>
 					<?php endforeach; ?>
 				<?php else : ?>
 					<div class="vt-text-center vt-p-8">
@@ -154,65 +132,42 @@ $page_description = 'Discover amazing events and manage your gatherings';
 				<?php if (!empty($all_events)) : ?>
 					<?php foreach ($all_events as $event) : ?>
 						<?php
+						// Prepare data for entity card partial
 						$event_date = new DateTime($event->event_date);
 						$is_past = $event_date < new DateTime();
-						$date_formatted = $event_date->format('M j, Y');
-						$time_formatted = $event_date->format('g:i A');
 						$is_hosting = $event->author_id == $current_user->id;
+						$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
+
+						// Set up event time display
+						$event->event_time = $event_date->format('g:i A');
+
+						// Badges
+						$badges = [];
+						if ($is_hosting) {
+							$badges[] = ['label' => 'Hosting', 'class' => 'vt-badge-primary'];
+						} else {
+							$badges[] = ['label' => 'Public', 'class' => 'vt-badge-secondary'];
+						}
+						if ($is_past) {
+							$badges[] = ['label' => 'Past Event', 'class' => 'vt-badge-secondary'];
+						}
+
+						// Stats
+						$stats = [
+							['value' => $guest_count, 'label' => 'Guest' . ($guest_count !== 1 ? 's' : '')]
+						];
+
+						// Actions
+						$actions = [
+							['label' => 'View', 'url' => '/events/' . $event->slug]
+						];
+
+						// Render entity card
+						include VT_INCLUDES_DIR . '/../templates/partials/entity-card.php';
 						?>
-						<div class="vt-card">
-							<div class="vt-card-body">
-								<div class="vt-flex vt-flex-between vt-mb-4">
-									<div class="vt-flex-1">
-										<h3 class="vt-heading vt-heading-md vt-mb-2">
-											<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
-												<?php echo htmlspecialchars($event->title); ?>
-											</a>
-										</h3>
-										<div class="vt-text-muted vt-mb-2">
-											<?php echo $date_formatted; ?> at <?php echo $time_formatted; ?>
-										</div>
-										<?php if ($event->venue_info) : ?>
-											<div class="vt-text-muted vt-mb-2">
-												📍 <?php echo htmlspecialchars($event->venue_info); ?>
-											</div>
-										<?php endif; ?>
-									</div>
-								</div>
-
-								<?php if ($event->description) : ?>
-									<p class="vt-text-muted vt-mb-4">
-										<?php echo htmlspecialchars(VT_Text::truncate($event->description, 120)); ?>
-									</p>
-								<?php endif; ?>
-
-								<div class="vt-flex vt-flex-between vt-items-center">
-									<div class="vt-flex vt-gap-2">
-										<?php if ($is_hosting) : ?>
-											<span class="vt-badge vt-badge-primary">Hosting</span>
-										<?php else : ?>
-											<span class="vt-badge vt-badge-secondary">Public</span>
-										<?php endif; ?>
-										<?php if ($is_past) : ?>
-											<span class="vt-badge vt-badge-secondary">Past Event</span>
-										<?php endif; ?>
-									</div>
-									<div class="vt-text-sm vt-text-muted">
-										<?php
-										$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
-										echo $guest_count . ' guest' . ($guest_count !== 1 ? 's' : '');
-										?>
-									</div>
-								</div>
-
-								<div class="vt-flex vt-gap-2 vt-mt-4">
-									<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
-									<?php if (!$is_past) : ?>
-										<button class="vt-btn vt-btn-sm vt-btn-primary" onclick="openRSVPModal(<?php echo $event->id; ?>)">RSVP</button>
-									<?php endif; ?>
-								</div>
-							</div>
-						</div>
+						<?php if (!$is_past) : ?>
+							<button class="vt-btn vt-btn-sm vt-btn-primary" onclick="openRSVPModal(<?php echo $event->id; ?>)" style="margin-top: -0.5rem; margin-left: 1rem;">RSVP</button>
+						<?php endif; ?>
 					<?php endforeach; ?>
 				<?php else : ?>
 					<div class="vt-text-center vt-p-8">
@@ -227,56 +182,43 @@ $page_description = 'Discover amazing events and manage your gatherings';
 				<?php if (!empty($rsvp_events)) : ?>
 					<?php foreach ($rsvp_events as $event) : ?>
 						<?php
+						// Prepare data for entity card partial
 						$event_date = new DateTime($event->event_date);
 						$is_past = $event_date < new DateTime();
-						$date_formatted = $event_date->format('M j, Y');
-						$time_formatted = $event_date->format('g:i A');
+						$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
+
+						// Set up event time display
+						$event->event_time = $event_date->format('g:i A');
+
+						// RSVP status badge
+						$rsvp_status = strtolower($event->rsvp_status ?? '');
+						$rsvp_badge_class = $rsvp_status === 'yes' ? 'vt-badge-success' :
+											($rsvp_status === 'maybe' ? 'vt-badge-warning' : 'vt-badge-danger');
+
+						// Badges
+						$badges = [
+							['label' => ucfirst($event->rsvp_status), 'class' => $rsvp_badge_class]
+						];
+						if ($is_past) {
+							$badges[] = ['label' => 'Past Event', 'class' => 'vt-badge-secondary'];
+						}
+
+						// Stats
+						$stats = [
+							['value' => $guest_count, 'label' => 'Guest' . ($guest_count !== 1 ? 's' : '')]
+						];
+
+						// Actions
+						$actions = [
+							['label' => 'View', 'url' => '/events/' . $event->slug]
+						];
+
+						// Render entity card
+						include VT_INCLUDES_DIR . '/../templates/partials/entity-card.php';
 						?>
-						<div class="vt-card">
-							<div class="vt-card-body">
-								<div class="vt-flex vt-flex-between vt-mb-4">
-									<div class="vt-flex-1">
-										<h3 class="vt-heading vt-heading-md vt-mb-2">
-											<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
-												<?php echo htmlspecialchars($event->title); ?>
-											</a>
-										</h3>
-										<div class="vt-text-muted vt-mb-2">
-											<?php echo $date_formatted; ?> at <?php echo $time_formatted; ?>
-										</div>
-										<?php if ($event->venue_info) : ?>
-											<div class="vt-text-muted vt-mb-2">
-												📍 <?php echo htmlspecialchars($event->venue_info); ?>
-											</div>
-										<?php endif; ?>
-									</div>
-								</div>
-
-								<div class="vt-flex vt-flex-between vt-items-center">
-									<div class="vt-flex vt-gap-2">
-										<span class="vt-badge vt-badge-<?php echo strtolower($event->rsvp_status) === 'yes' ? 'success' : (strtolower($event->rsvp_status) === 'maybe' ? 'warning' : 'danger'); ?>">
-											<?php echo ucfirst($event->rsvp_status); ?>
-										</span>
-										<?php if ($is_past) : ?>
-											<span class="vt-badge vt-badge-secondary">Past Event</span>
-										<?php endif; ?>
-									</div>
-									<div class="vt-text-sm vt-text-muted">
-										<?php
-										$guest_count = isset($event->guest_stats->confirmed) ? $event->guest_stats->confirmed : 0;
-										echo $guest_count . ' guest' . ($guest_count !== 1 ? 's' : '');
-										?>
-									</div>
-								</div>
-
-								<div class="vt-flex vt-gap-2 vt-mt-4">
-									<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
-									<?php if (!$is_past) : ?>
-										<button class="vt-btn vt-btn-sm" onclick="openRSVPModal(<?php echo $event->id; ?>)">Update RSVP</button>
-									<?php endif; ?>
-								</div>
-							</div>
-						</div>
+						<?php if (!$is_past) : ?>
+							<button class="vt-btn vt-btn-sm" onclick="openRSVPModal(<?php echo $event->id; ?>)" style="margin-top: -0.5rem; margin-left: 1rem;">Update RSVP</button>
+						<?php endif; ?>
 					<?php endforeach; ?>
 				<?php else : ?>
 					<div class="vt-text-center vt-p-8">
@@ -324,7 +266,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 							<?php endif; ?>
 
 							<div class="vt-flex vt-gap-2 vt-mt-4">
-								<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View Event</a>
+								<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
 								<?php if (!$is_past) : ?>
 									<a href="/login" class="vt-btn vt-btn-sm vt-btn-primary">Sign In to RSVP</a>
 								<?php endif; ?>
@@ -354,7 +296,7 @@ function showAllEventsTab() {
 	document.querySelector('[data-tab="all-events"]').style.display = 'block';
 
 	// Update button states
-	document.querySelectorAll('.vt-conversations-nav .vt-btn').forEach(btn => {
+	document.querySelectorAll('.vt-tab-nav .vt-btn').forEach(btn => {
 		btn.classList.remove('is-active');
 		btn.setAttribute('aria-selected', 'false');
 	});
@@ -364,7 +306,7 @@ function showAllEventsTab() {
 
 // Tab switching functionality
 document.addEventListener('DOMContentLoaded', function() {
-	const tabButtons = document.querySelectorAll('.vt-conversations-nav .vt-btn');
+	const tabButtons = document.querySelectorAll('.vt-tab-nav .vt-btn');
 	const tabContents = document.querySelectorAll('.vt-events-tab-content');
 
 	tabButtons.forEach(button => {

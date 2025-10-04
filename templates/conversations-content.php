@@ -72,7 +72,7 @@ $breadcrumbs = array();
 		<span class="vt-text-muted">(<?php echo count($recent_conversations); ?> conversation<?php echo count($recent_conversations) !== 1 ? 's' : ''; ?>)</span>
 	</div>
 
-	<div class="vt-conversations-nav vt-flex vt-gap-4 vt-flex-wrap">
+	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<!-- Circle Filters (Circles of Trust) -->
 		<button class="vt-btn is-active" data-circle="inner" role="tab" aria-selected="true" aria-controls="vt-convo-list" style="font-weight: 600;">
 			Inner

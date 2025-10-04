@@ -82,45 +82,253 @@ Started on oembed yesterday. Finished today.
 
 #### **Thursday 2**
 
+#### **Friday 3**
 
-This looks good. I want to audit these things across events, conversations, and communities. Delete buttons, edit buttons, manage buttons, etc. It doesn't make sense to me that
-
-# Events Page
-
-My Events - All Events - RSVPs (Top nav)
-
-## Event Cards
-
-View - Manage (Buttons in cards)
-
-## Event Page
-
-Manage
-
-Create Conversation
-
-## Magage Event
-
-Settings - Guests - Invitations
+#### **Saturday 4**
 
 
-# Conversations Page
 
-Inner - Trusted - Extended - All - My Events - All Events (Top nav)
+<layout>
 
-## Conversation Page
-
-Has a conversation button.
-
-### Edit conversation
-
-# Communities Page
-
-My Comunities - All Communities (Top nav)
-
-## Community Page
+I want nice, consistent interfaces for everything.
+Events, Conversations, and Communities pages.
+Event, Conversation, and Community cards.
+Event, Conversation, and Community management pages.
+Event, Conversaiton, and Community edit pages.
+Event and Community invite pages.
+Consistent secondary navigation layout on Event, Conversation, and Community pages.
+Danger zones on the bottom of all edit pages to delete Events, Conversations, and Communities.
+Please audit the templates and create a plan to consolidate funtions, consolidate css, and clarify the user experience.
 
 
+ │ UI Consolidation Plan: Events, Conversations, Communities
+
+ Audit Summary
+
+ Current Inconsistencies Found
+
+ Navigation
+ - Tab navigation uses vt-conversations-nav for events, communities, conversations (misleading name)
+ - Different button labels: "View" vs "View Details" vs "View Event"
+ - Inconsistent tab structure across manage pages
+
+ Cards
+ - Events: .vt-card with .vt-card-body
+ - Conversations: .vt-section (no card wrapper)
+ - Communities: .vt-section.vt-border.vt-p-4 (manual styling)
+
+ Action Buttons
+ - Events cards: View + Manage buttons in footer
+ - Conversation cards: View Details button in flex-between
+ - Community cards: View + Manage buttons in flex
+
+ Secondary Navigation
+ - Events single page: No tabs, just Manage button
+ - Conversation single page: No tabs, Edit button conditional
+ - Community single page: No tabs
+
+ Danger Zones
+ - Events manage: Danger zone at bottom (inline styles #dc3545)
+ - Community manage: Danger zone at bottom (inline styles #dc2626)
+ - Edit pages: NO danger zones (user wants them)
+ - NO danger zone for conversations
+
+ Missing Pages
+ - ❌ No edit-community-content.php (uses manage page)
+ - ❌ No manage-conversation-content.php
+
+ ---
+ Consolidation Plan
+
+ Phase 1: Create Reusable Components
+
+ 1.1 Create templates/partials/secondary-nav.php
+ // Standardized tab navigation for all entity types
+ // Parameters: $tabs[], $active_tab, $entity_slug, $entity_type
+
+ 1.2 Create templates/partials/danger-zone.php
+ // Standardized danger zone component
+ // Parameters: $entity_type, $entity_id, $entity_name, $can_delete, $delete_message
+
+ 1.3 Create templates/partials/entity-card.php
+ // Standardized card layout for Events/Conversations/Communities
+ // Parameters: $entity, $entity_type, $show_manage, $badges[], $stats[]
+
+ Phase 2: Consolidate CSS
+
+ 2.1 Rename Generic Navigation Class
+ - .vt-conversations-nav → .vt-tab-nav
+ - Update all templates using this class
+
+ 2.2 Standardize Danger Zone Styles
+ .vt-danger-zone {
+     border: 2px solid var(--vt-danger);
+     border-radius: 0.5rem;
+     padding: 1.5rem;
+     margin-top: 3rem;
+ }
+
+ .vt-danger-zone-title {
+     color: var(--vt-danger);
+     margin-bottom: 1rem;
+ }
+
+ 2.3 Standardize Card Component
+ .vt-entity-card {
+     /* Unified card for all entity types */
+ }
+
+ Phase 3: Standardize List Pages
+
+ 3.1 Events List (templates/events-content.php)
+ - ✅ Keep tab structure (My Events / All Events / RSVPs)
+ - 🔧 Use new .vt-tab-nav class
+ - 🔧 Use entity-card.php partial for all event cards
+ - 🔧 Standardize button labels: "View" everywhere
+
+ 3.2 Conversations List (templates/conversations-content.php)
+ - ✅ Keep circle filters (Inner/Trusted/Extended)
+ - 🔧 Use new .vt-tab-nav class
+ - 🔧 Use entity-card.php partial for conversation cards
+ - 🔧 Standardize button labels: "View" everywhere
+
+ 3.3 Communities List (templates/communities-content.php)
+ - ✅ Keep tab structure (My Communities / All Communities)
+ - 🔧 Use new .vt-tab-nav class
+ - 🔧 Use entity-card.php partial for community cards
+ - 🔧 Standardize button labels: "View" everywhere
+
+ Phase 4: Standardize Single Pages
+
+ 4.1 Add Consistent Secondary Navigation
+
+ Single Event:
+ - Add tabs: Overview | Conversations | Manage (if owner)
+ - Place below header, above content
+
+ Single Conversation:
+ - Add tabs: Conversation | Edit (if owner/admin)
+ - Place below header, above content
+
+ Single Community:
+ - Add tabs: Overview | Events | Conversations | Members | Manage (if admin)
+ - Place below header, above content
+
+ 4.2 Standardize Header Actions
+ - All entity headers: Badge badges on right (Privacy, Role, Status)
+ - Action buttons move to secondary nav tabs
+
+ Phase 5: Standardize Management Pages
+
+ 5.1 Event Management (templates/manage-event-content.php)
+ - ✅ Keep tab structure (Settings | Guests | Invitations)
+ - 🔧 Use .vt-tab-nav class
+ - 🔧 Use danger-zone.php partial
+ - 🔧 Add "View Event" as tab (not separate button)
+ - 🔧 Consistent spacing/layout
+
+ 5.2 Community Management (templates/manage-community-content.php)
+ - ✅ Keep tab structure (Settings | Members | Invitations)
+ - 🔧 Use .vt-tab-nav class
+ - 🔧 Use danger-zone.php partial
+ - 🔧 Add "View Community" as tab (not separate button)
+ - 🔧 Consistent spacing/layout
+
+ 5.3 CREATE: Conversation Management (NEW FILE)
+ - Create templates/manage-conversation-content.php
+ - Tabs: Settings | Delete
+ - Settings: Edit title, content, privacy, community
+ - Danger Zone at bottom with delete
+
+ Phase 6: Standardize Edit Pages
+
+ 6.1 Event Edit (templates/edit-event-content.php)
+ - ✅ Keep form structure
+ - ➕ ADD danger zone at bottom
+ - 🔧 Use danger-zone.php partial
+ - 🔧 Consistent button placement (Update | Cancel | Delete)
+
+ 6.2 Conversation Edit (templates/edit-conversation-content.php)
+ - ✅ Keep form structure
+ - ➕ ADD danger zone at bottom
+ - 🔧 Use danger-zone.php partial
+ - 🔧 Consistent button placement (Update | Cancel | Delete)
+
+ 6.3 CREATE: Community Edit (NEW FILE)
+ - Create templates/edit-community-content.php
+ - Move settings form from manage page to dedicated edit page
+ - Add danger zone at bottom
+ - Use danger-zone.php partial
+ - Consistent button placement
+
+ Phase 7: Route & Permission Updates
+
+ 7.1 Add Missing Routes
+ - /conversations/{slug}/manage → New manage page
+ - /communities/{slug}/edit → New edit page
+
+ 7.2 Update Permission Checks
+ - Ensure all delete buttons check canDelete() methods
+ - Ensure all edit buttons check canEdit() methods
+
+ ---
+ File Manifest
+
+ New Files to Create
+
+ 1. templates/partials/secondary-nav.php - Reusable tab navigation
+ 2. templates/partials/danger-zone.php - Reusable danger zone
+ 3. templates/partials/entity-card.php - Reusable card component
+ 4. templates/manage-conversation-content.php - NEW conversation management
+ 5. templates/edit-community-content.php - NEW community edit page
+
+ Files to Modify
+
+ 1. assets/css/style.css - Add new classes, rename nav classes
+ 2. templates/events-content.php - Use partials, standardize
+ 3. templates/conversations-content.php - Use partials, standardize
+ 4. templates/communities-content.php - Use partials, standardize
+ 5. templates/single-event-content.php - Add secondary nav
+ 6. templates/single-conversation-content.php - Add secondary nav
+ 7. templates/single-community-content.php - Add secondary nav
+ 8. templates/manage-event-content.php - Use partials, standardize
+ 9. templates/manage-community-content.php - Use partials, standardize
+ 10. templates/edit-event-content.php - Add danger zone
+ 11. templates/edit-conversation-content.php - Add danger zone
+ 12. includes/class-router.php - Add new routes
+ 13. includes/class-pages.php - Add new page methods
+
+ ---
+ Expected Result
+
+ Consistent Experience:
+ - ✅ All list pages use same tab navigation style
+ - ✅ All cards have identical structure (just different content)
+ - ✅ All single pages have secondary navigation tabs
+ - ✅ All management pages have same tab structure
+ - ✅ All edit pages have danger zones at bottom
+ - ✅ Delete buttons always in danger zones, never as primary actions
+ - ✅ Consistent button labels throughout (View / Edit / Manage)
+
+ Reduced Code:
+ - 3 new reusable partials replace hundreds of lines of duplicate code
+ - Easier to maintain and update
+ - CSS consolidation reduces specificity issues
+
+ Better UX:
+ - Users know exactly where to find actions (tabs are consistent)
+ - Danger zones clearly separate destructive actions
+ - Navigation patterns are predictable across all entity types
+
+
+
+
+</layout>
+
+
+
+
+<conversations>
 
 # Document this
 Can a conversation have an event ID and a community ID?
@@ -168,17 +376,22 @@ If a conversation is created in an event, is there any reason it would need a co
      - Safer: if/elseif makes mutual exclusivity automatic
 
 
-Looking at a new conversation and there is a blue bar below both the Events tab and the Conversaitons tab. I can not duplicate this.
+
+</conversations>
+
+<todo>
+# Todo
 
 There is still a select community dropdown on the edit event conversation page.
 
 Event pages do not show who created the event.
 
 
+</todo>
 
 
 
-
+<delete button>
 
 ⏺ Plan: Add Edit/Delete UI Buttons (Skip Pin for Now)
 
@@ -260,18 +473,18 @@ Event pages do not show who created the event.
   - Implement Pin/Unpin conversation functionality (toggle method, AJAX endpoint, UI button)
 
 
+</delete button>
 
 
 
 
 
 
-That is the fix I want today. We can leave Create Event for everyone in a public community. Maybe I create a public community for 1965 Mustangs but over the years many people come and go and the community develops a soul. Anyone in that community should be able to create an event. It's a public community. Or maybe I'm that super popular guy, I know this guy, that throws big parties at least every month. That is a large community. People in that community know each other, not necessarily that guy. Anyone in that community should be able to create an event. The current logic works if we don't show the create event to community members in private communitiies. Only the founder can. That is why we create private communities. 
 
 
 
 
-
+<images>
 
   ⎿  Comprehensive Image System for VivalaTable
 
@@ -576,7 +789,7 @@ That is the fix I want today. We can leave Create Event for everyone in a public
      Documentation:
      - docs/IMAGES.md - Complete image system guide
 
-
+</images>
 
 
 
@@ -891,10 +1104,6 @@ I don't see /changelog in my instance of claude code.
 Fetch(https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/)
 
 
-
-#### **Friday 3**
-
-#### **Saturday 4**
 
 [Read](https://dev.to/siddhantkcode/extending-claudes-brain-how-mcp-makes-ai-actually-useful-for-developers-35c4)
 
