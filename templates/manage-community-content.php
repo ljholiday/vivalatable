@@ -223,30 +223,17 @@ $page_description = 'Manage settings, members, and invitations for your communit
 	</form>
 
 	<!-- Danger Zone -->
-	<div class="vt-section vt-mt-6" style="border-top: 2px solid #dc2626; padding-top: 20px;">
-		<h4 class="vt-heading vt-heading-sm" style="color: #dc2626;">Danger Zone</h4>
-		<p class="vt-text-muted vt-mb-4">
-			Once you delete a community, there is no going back. This will permanently delete the community, all its members, events, and conversations.
-		</p>
+	<?php
+	$entity_type = 'community';
+	$entity_id = $community_id;
+	$entity_name = $community->name;
+	$can_delete = true;
+	$confirmation_type = 'type_name';
+	$delete_message = 'Once you delete a community, there is no going back. This will permanently delete the community, all its members, events, and conversations.';
+	$nonce_action = 'vt_community_management';
 
-		<form method="post" class="vt-form" id="delete-community-form" onsubmit="return confirmCommunityDeletion(event)">
-			<input type="hidden" name="action" value="delete_community">
-			<input type="hidden" name="nonce" value="<?php echo vt_service('security.service')->createNonce('vt_community_management'); ?>">
-
-			<div class="vt-form-group">
-				<label class="vt-form-label" for="confirm_name" style="color: #dc2626;">
-					Type "<?php echo htmlspecialchars($community->name); ?>" to confirm deletion:
-				</label>
-				<input type="text" id="confirm_name" name="confirm_name" class="vt-form-input"
-					   placeholder="<?php echo htmlspecialchars($community->name); ?>" required>
-			</div>
-
-			<button type="submit" class="vt-btn" style="background-color: #dc2626; border-color: #dc2626;"
-					disabled id="delete-community-btn">
-				Delete Community Permanently
-			</button>
-		</form>
-	</div>
+	include VT_INCLUDES_DIR . '/../templates/partials/danger-zone.php';
+	?>
 </div>
 
 <?php elseif ($active_tab === 'members') : ?>
@@ -351,11 +338,6 @@ document.addEventListener('DOMContentLoaded', function() {
 		setupInvitationHandlers();
 	}
 
-	// Settings tab functionality
-	if (currentTab === 'settings') {
-		setupDeletionConfirmation();
-	}
-
 	function loadCommunityMembers(communityId) {
 		const membersList = document.getElementById('members-list');
 		if (!membersList) return;
@@ -415,20 +397,5 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
-	function setupDeletionConfirmation() {
-		const confirmInput = document.getElementById('confirm_name');
-		const deleteBtn = document.getElementById('delete-community-btn');
-
-		if (confirmInput && deleteBtn) {
-			confirmInput.addEventListener('input', function() {
-				deleteBtn.disabled = this.value !== communityName;
-			});
-		}
-	}
-
-	// Global function for form submission confirmation
-	window.confirmCommunityDeletion = function(event) {
-		return confirm('Are you absolutely sure you want to delete "' + communityName + '"?\n\nThis action cannot be undone. All community data, members, events, and conversations will be permanently deleted.');
-	};
 });
 </script>

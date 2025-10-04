@@ -78,29 +78,20 @@ $page_description = 'Manage your event settings, guests, and invitations';
 		   class="vt-btn <?php echo ($active_tab === 'invites') ? 'is-active' : ''; ?>">
 			Invitations
 		</a>
+		<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn">
+			View Event
+		</a>
 	</div>
 </div>
 
 <!-- Event Header -->
 <div class="vt-section vt-mb-4">
-	<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap">
-		<div>
-			<h2 class="vt-heading vt-heading-lg vt-text-primary vt-mb-2">
-				<?php echo htmlspecialchars($event->title); ?>
-			</h2>
-			<p class="vt-text-muted">
-				<?php echo date('F j, Y \a\t g:i A', strtotime($event->event_date)); ?>
-			</p>
-		</div>
-		<div class="vt-flex vt-gap">
-			<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn vt-btn-secondary">
-				View Event
-			</a>
-			<a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn">
-				Edit Details
-			</a>
-		</div>
-	</div>
+	<h2 class="vt-heading vt-heading-lg vt-text-primary vt-mb-2">
+		<?php echo htmlspecialchars($event->title); ?>
+	</h2>
+	<p class="vt-text-muted">
+		<?php echo date('F j, Y \a\t g:i A', strtotime($event->event_date)); ?>
+	</p>
 </div>
 
 <!-- Tab Content -->
@@ -151,27 +142,19 @@ $page_description = 'Manage your event settings, guests, and invitations';
 		</div>
 
 		<!-- Danger Zone -->
-		<?php if ($event_manager->canDeleteEvent($event->id)) : ?>
-		<div class="vt-card vt-mt-6" style="border-color: #dc3545;">
-			<div class="vt-card-body">
-				<h4 class="vt-heading vt-heading-sm vt-mb-2" style="color: #dc3545;">Danger Zone</h4>
-				<p class="vt-text-muted vt-mb-4">
-					Once you delete this event, there is no going back. This action cannot be undone.
-					<?php if ($confirmed_count > 0) : ?>
-						<br><strong>Note:</strong> This event has <?php echo $confirmed_count; ?> confirmed guest(s) and cannot be deleted.
-					<?php endif; ?>
-				</p>
-				<?php if ($confirmed_count == 0) : ?>
-				<form method="post" onsubmit="return confirm('Are you sure you want to delete this event? This action cannot be undone.');">
-					<?php echo vt_service('security.service')->nonceField('vt_delete_event', 'delete_nonce'); ?>
-					<input type="hidden" name="event_id" value="<?php echo $event->id; ?>">
-					<input type="hidden" name="action" value="delete_event">
-					<button type="submit" class="vt-btn vt-btn-danger">Delete Event</button>
-				</form>
-				<?php endif; ?>
-			</div>
-		</div>
-		<?php endif; ?>
+		<?php
+		$entity_type = 'event';
+		$entity_id = $event->id;
+		$entity_name = $event->title;
+		$can_delete = $event_manager->canDeleteEvent($event->id);
+		$confirmation_type = 'confirm';
+		$blocker_count = $confirmed_count;
+		$blocker_message = $confirmed_count > 0 ? "This event has {$confirmed_count} confirmed guest(s) and cannot be deleted." : '';
+		$delete_message = 'Once you delete this event, there is no going back. This action cannot be undone.';
+		$nonce_action = 'vt_delete_event';
+
+		include VT_INCLUDES_DIR . '/../templates/partials/danger-zone.php';
+		?>
 	</div>
 
 <?php elseif ($active_tab === 'guests') : ?>

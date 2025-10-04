@@ -1,4 +1,5 @@
 <?php
+// Run php clear-cache.php
 session_start();
 
 // Clear ALL transients
