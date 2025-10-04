@@ -21,7 +21,7 @@ if ($conversation_slug) {
 
 // Check for filter parameter from URL
 $active_filter = $_GET['filter'] ?? '';
-$valid_filters = array('events', 'communities');
+$valid_filters = array('my-events', 'all-events', 'communities');
 if (!in_array($active_filter, $valid_filters)) {
 	$active_filter = '';
 }
