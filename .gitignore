@@ -5,7 +5,7 @@
 # Local development documentation
 # -------------------------------------------------
 .claude/
-# dev/ is handled by ~/.gitignore_global in production
+dev/
 
 # -------------------------------------------------
 # Core - Environment-specific configs (never commit)
@@ -79,4 +79,3 @@ migrate.php
 scripts/
 .local/
 
-dev/
