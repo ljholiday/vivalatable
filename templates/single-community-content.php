@@ -93,6 +93,49 @@ $page_title = htmlspecialchars($community->name);
 $page_description = htmlspecialchars($community->description ?: 'Community events and discussions');
 ?>
 
+<!-- Community Navigation Tabs -->
+<div class="vt-section vt-mb-4">
+	<?php
+	// Build tabs array for secondary navigation
+	$tabs = [
+		[
+			'label' => 'Overview',
+			'url' => '/communities/' . $community->slug,
+			'active' => ($active_tab === 'overview')
+		],
+		[
+			'label' => 'Events',
+			'url' => '/communities/' . $community->slug . '?tab=events',
+			'active' => ($active_tab === 'events'),
+			'badge_count' => count($recent_events)
+		],
+		[
+			'label' => 'Conversations',
+			'url' => '/communities/' . $community->slug . '?tab=conversations',
+			'active' => ($active_tab === 'conversations'),
+			'badge_count' => count($recent_conversations)
+		],
+		[
+			'label' => 'Members',
+			'url' => '/communities/' . $community->slug . '?tab=members',
+			'active' => ($active_tab === 'members'),
+			'badge_count' => $member_count
+		]
+	];
+
+	// Add Manage tab if user is admin
+	if ($is_member && $user_role === 'admin') {
+		$tabs[] = [
+			'label' => 'Manage',
+			'url' => '/communities/' . $community->slug . '/manage',
+			'active' => false
+		];
+	}
+
+	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
+	?>
+</div>
+
 <!-- Success/Error Messages -->
 <?php if (!empty($messages)) : ?>
 	<div class="vt-alert vt-alert-success vt-mb-4">
@@ -143,49 +186,6 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 			<?php echo nl2br(htmlspecialchars($community->description)); ?>
 		</p>
 	<?php endif; ?>
-</div>
-
-<!-- Community Navigation Tabs -->
-<div class="vt-section vt-mb-4">
-	<?php
-	// Build tabs array for secondary navigation
-	$tabs = [
-		[
-			'label' => 'Overview',
-			'url' => '/communities/' . $community->slug,
-			'active' => ($active_tab === 'overview')
-		],
-		[
-			'label' => 'Events',
-			'url' => '/communities/' . $community->slug . '?tab=events',
-			'active' => ($active_tab === 'events'),
-			'badge_count' => count($recent_events)
-		],
-		[
-			'label' => 'Conversations',
-			'url' => '/communities/' . $community->slug . '?tab=conversations',
-			'active' => ($active_tab === 'conversations'),
-			'badge_count' => count($recent_conversations)
-		],
-		[
-			'label' => 'Members',
-			'url' => '/communities/' . $community->slug . '?tab=members',
-			'active' => ($active_tab === 'members'),
-			'badge_count' => $member_count
-		]
-	];
-
-	// Add Manage tab if user is admin
-	if ($is_member && $user_role === 'admin') {
-		$tabs[] = [
-			'label' => 'Manage',
-			'url' => '/communities/' . $community->slug . '/manage',
-			'active' => false
-		];
-	}
-
-	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
-	?>
 </div>
 
 <!-- Tab Content -->

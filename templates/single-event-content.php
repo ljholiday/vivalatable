@@ -35,28 +35,6 @@ $event_conversations = $conversation_manager->getEventConversations($event->id);
 $active_tab = $_GET['tab'] ?? 'overview';
 ?>
 
-<!-- Event Header -->
-<div class="vt-section">
-    <div class="vt-flex vt-align-start vt-mb-4">
-        <div class="vt-flex-1">
-            <h1 class="vt-heading vt-heading-lg vt-mb-2"><?php echo vt_service('validation.sanitizer')->richText($event->title); ?></h1>
-            <div class="vt-flex vt-gap vt-items-center vt-mb-2">
-                <span class="vt-text-muted"><?php echo date('F j, Y', strtotime($event->event_date)); ?></span>
-                <?php if ($event->event_time): ?>
-                    <span class="vt-text-muted">at <?php echo vt_service('validation.sanitizer')->richText($event->event_time); ?></span>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <div class="vt-flex vt-flex-column vt-items-end" style="gap: 0.5rem; margin-left: 2rem;">
-            <span class="vt-badge vt-badge-<?php echo $event->privacy === 'private' ? 'secondary' : 'success'; ?>">
-                <?php echo vt_service('validation.validator')->escHtml(ucfirst($event->privacy)); ?>
-            </span>
-        </div>
-    </div>
-
-</div>
-
 <!-- Event Secondary Navigation -->
 <div class="vt-section vt-mb-4">
 	<?php
@@ -86,6 +64,27 @@ $active_tab = $_GET['tab'] ?? 'overview';
 
 	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
 	?>
+</div>
+
+<!-- Event Header -->
+<div class="vt-section">
+	<div class="vt-flex vt-align-start vt-mb-4">
+		<div class="vt-flex-1">
+			<h1 class="vt-heading vt-heading-lg vt-mb-2"><?php echo vt_service('validation.sanitizer')->richText($event->title); ?></h1>
+			<div class="vt-flex vt-gap vt-items-center vt-mb-2">
+				<span class="vt-text-muted"><?php echo date('F j, Y', strtotime($event->event_date)); ?></span>
+				<?php if ($event->event_time): ?>
+					<span class="vt-text-muted">at <?php echo vt_service('validation.sanitizer')->richText($event->event_time); ?></span>
+				<?php endif; ?>
+			</div>
+		</div>
+
+		<div class="vt-flex vt-flex-column vt-items-end" style="gap: 0.5rem; margin-left: 2rem;">
+			<span class="vt-badge vt-badge-<?php echo $event->privacy === 'private' ? 'secondary' : 'success'; ?>">
+				<?php echo vt_service('validation.validator')->escHtml(ucfirst($event->privacy)); ?>
+			</span>
+		</div>
+	</div>
 </div>
 
 <!-- Tab Content -->

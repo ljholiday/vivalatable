@@ -113,6 +113,31 @@ $page_description = htmlspecialchars(VT_Text::truncate(strip_tags($conversation-
 $active_tab = $_GET['tab'] ?? 'conversation';
 ?>
 
+<!-- Conversation Secondary Navigation -->
+<div class="vt-section vt-mb-4">
+	<?php
+	// Build tabs array for secondary navigation
+	$tabs = [
+		[
+			'label' => 'Conversation',
+			'url' => '/conversations/' . $conversation->slug,
+			'active' => true
+		]
+	];
+
+	// Add Edit tab if user can edit
+	if ($is_logged_in && $conversation_manager->canEditConversation($conversation->id)) {
+		$tabs[] = [
+			'label' => 'Edit',
+			'url' => '/conversations/' . $conversation->slug . '/edit',
+			'active' => false
+		];
+	}
+
+	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
+	?>
+</div>
+
 <!-- Conversation Header -->
 <div class="vt-section vt-mb-4">
 	<div class="vt-conversation-header">
@@ -150,31 +175,6 @@ $active_tab = $_GET['tab'] ?? 'conversation';
 			</div>
 		</div>
 	</div>
-</div>
-
-<!-- Conversation Secondary Navigation -->
-<div class="vt-section vt-mb-4">
-	<?php
-	// Build tabs array for secondary navigation
-	$tabs = [
-		[
-			'label' => 'Conversation',
-			'url' => '/conversations/' . $conversation->slug,
-			'active' => true
-		]
-	];
-
-	// Add Edit tab if user can edit
-	if ($is_logged_in && $conversation_manager->canEditConversation($conversation->id)) {
-		$tabs[] = [
-			'label' => 'Edit',
-			'url' => '/conversations/' . $conversation->slug . '/edit',
-			'active' => false
-		];
-	}
-
-	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
-	?>
 </div>
 
 <!-- Original Conversation Content -->
