@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_logged_in) {
 }
 
 // Get community data
-$active_tab = $_GET['tab'] ?? 'events';
+$active_tab = $_GET['tab'] ?? 'overview';
 $member_count = $community_manager->getMemberCount($community->id);
 $recent_events = $event_manager->getCommunityEvents($community->id, 10);
 $recent_conversations = $conversation_manager->getCommunityConversations($community->id, 10);
@@ -120,55 +120,146 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 		</div>
 	<?php endif; ?>
 
-	<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap">
+	<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap vt-mb-2">
 		<div class="vt-flex-1">
-			<h1 class="vt-heading vt-heading-xl vt-text-primary vt-mb-2">
+			<h1 class="vt-heading vt-heading-xl vt-text-primary">
 				<?php echo htmlspecialchars($community->name); ?>
 			</h1>
-			<?php if ($community->description) : ?>
-				<p class="vt-text-muted vt-mb-4">
-					<?php echo nl2br(htmlspecialchars($community->description)); ?>
-				</p>
-			<?php endif; ?>
-
-			<div class="vt-flex vt-gap vt-flex-wrap">
-				<span class="vt-badge vt-badge-secondary">
-					<?php echo $member_count; ?> member<?php echo $member_count !== 1 ? 's' : ''; ?>
-				</span>
-				<?php if ($community->privacy === 'private') : ?>
-					<span class="vt-badge vt-badge-warning">Private</span>
-				<?php else : ?>
-					<span class="vt-badge vt-badge-success">Public</span>
-				<?php endif; ?>
-				<?php if ($is_member && $user_role) : ?>
-					<span class="vt-badge vt-badge-primary"><?php echo ucfirst($user_role); ?></span>
-				<?php endif; ?>
-			</div>
 		</div>
-
+		<div class="vt-flex vt-gap" style="align-items: flex-start;">
+			<?php if ($community->privacy === 'private') : ?>
+				<span class="vt-badge vt-badge-warning">Private</span>
+			<?php else : ?>
+				<span class="vt-badge vt-badge-success">Public</span>
+			<?php endif; ?>
+			<?php if ($is_member && $user_role) : ?>
+				<span class="vt-badge vt-badge-primary"><?php echo ucfirst($user_role); ?></span>
+			<?php endif; ?>
+		</div>
 	</div>
+
+	<?php if ($community->description) : ?>
+		<p class="vt-text-muted">
+			<?php echo nl2br(htmlspecialchars($community->description)); ?>
+		</p>
+	<?php endif; ?>
 </div>
 
 <!-- Community Navigation Tabs -->
 <div class="vt-section vt-mb-4">
-	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
-		<a href="/communities/<?php echo $community->slug; ?>?tab=events"
-		   class="vt-btn <?php echo ($active_tab === 'events') ? 'is-active' : ''; ?>">
-			Events
-		</a>
-		<a href="/communities/<?php echo $community->slug; ?>?tab=conversations"
-		   class="vt-btn <?php echo ($active_tab === 'conversations') ? 'is-active' : ''; ?>">
-			Conversations
-		</a>
-		<a href="/communities/<?php echo $community->slug; ?>?tab=members"
-		   class="vt-btn <?php echo ($active_tab === 'members') ? 'is-active' : ''; ?>">
-			Members
-		</a>
-	</div>
+	<?php
+	// Build tabs array for secondary navigation
+	$tabs = [
+		[
+			'label' => 'Overview',
+			'url' => '/communities/' . $community->slug,
+			'active' => ($active_tab === 'overview')
+		],
+		[
+			'label' => 'Events',
+			'url' => '/communities/' . $community->slug . '?tab=events',
+			'active' => ($active_tab === 'events'),
+			'badge_count' => count($recent_events)
+		],
+		[
+			'label' => 'Conversations',
+			'url' => '/communities/' . $community->slug . '?tab=conversations',
+			'active' => ($active_tab === 'conversations'),
+			'badge_count' => count($recent_conversations)
+		],
+		[
+			'label' => 'Members',
+			'url' => '/communities/' . $community->slug . '?tab=members',
+			'active' => ($active_tab === 'members'),
+			'badge_count' => $member_count
+		]
+	];
+
+	// Add Manage tab if user is admin
+	if ($is_member && $user_role === 'admin') {
+		$tabs[] = [
+			'label' => 'Manage',
+			'url' => '/communities/' . $community->slug . '/manage',
+			'active' => false
+		];
+	}
+
+	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
+	?>
 </div>
 
 <!-- Tab Content -->
-<?php if ($active_tab === 'events') : ?>
+<?php if ($active_tab === 'overview') : ?>
+	<!-- Overview Tab -->
+	<div class="vt-section">
+		<h3 class="vt-heading vt-heading-md vt-mb-4">Community Stats</h3>
+		<div class="vt-grid vt-grid-3 vt-gap-4 vt-mb-6">
+			<div class="vt-stat-card">
+				<div class="vt-stat-number vt-text-primary"><?php echo $member_count; ?></div>
+				<div class="vt-stat-label">Member<?php echo $member_count !== 1 ? 's' : ''; ?></div>
+			</div>
+			<div class="vt-stat-card">
+				<div class="vt-stat-number vt-text-primary"><?php echo count($recent_events); ?></div>
+				<div class="vt-stat-label">Event<?php echo count($recent_events) !== 1 ? 's' : ''; ?></div>
+			</div>
+			<div class="vt-stat-card">
+				<div class="vt-stat-number vt-text-primary"><?php echo count($recent_conversations); ?></div>
+				<div class="vt-stat-label">Conversation<?php echo count($recent_conversations) !== 1 ? 's' : ''; ?></div>
+			</div>
+		</div>
+
+		<?php if (!empty($recent_events) || !empty($recent_conversations)) : ?>
+			<h3 class="vt-heading vt-heading-md vt-mb-4">Recent Activity</h3>
+
+			<?php if (!empty($recent_events)) : ?>
+				<div class="vt-mb-4">
+					<h4 class="vt-heading vt-heading-sm vt-mb-2">Upcoming Events</h4>
+					<?php foreach (array_slice($recent_events, 0, 3) as $event) : ?>
+						<div class="vt-mb-2">
+							<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-text-primary">
+								<?php echo htmlspecialchars($event->title); ?>
+							</a>
+							<span class="vt-text-muted"> - <?php echo date('M j, Y', strtotime($event->event_date)); ?></span>
+						</div>
+					<?php endforeach; ?>
+					<?php if (count($recent_events) > 3) : ?>
+						<a href="/communities/<?php echo $community->slug; ?>?tab=events" class="vt-text-primary">View all events →</a>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+
+			<?php if (!empty($recent_conversations)) : ?>
+				<div class="vt-mb-4">
+					<h4 class="vt-heading vt-heading-sm vt-mb-2">Recent Discussions</h4>
+					<?php foreach (array_slice($recent_conversations, 0, 3) as $conversation) : ?>
+						<div class="vt-mb-2">
+							<a href="/conversations/<?php echo htmlspecialchars($conversation->slug); ?>" class="vt-text-primary">
+								<?php echo htmlspecialchars($conversation->title); ?>
+							</a>
+							<span class="vt-text-muted"> - <?php echo $conversation->reply_count; ?> replies</span>
+						</div>
+					<?php endforeach; ?>
+					<?php if (count($recent_conversations) > 3) : ?>
+						<a href="/communities/<?php echo $community->slug; ?>?tab=conversations" class="vt-text-primary">View all discussions →</a>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+		<?php else : ?>
+			<div class="vt-text-center vt-p-4">
+				<p class="vt-text-muted vt-mb-4">No activity yet in this community.</p>
+				<?php if ($is_member) : ?>
+					<div class="vt-flex vt-gap vt-justify-center">
+						<?php if ($community_manager->canCreateEvent($community->id)) : ?>
+							<a href="/events/create?community_id=<?php echo $community->id; ?>" class="vt-btn">Create Event</a>
+						<?php endif; ?>
+						<a href="/conversations/create?community_id=<?php echo $community->id; ?>" class="vt-btn">Start Discussion</a>
+					</div>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
+	</div>
+
+<?php elseif ($active_tab === 'events') : ?>
 	<!-- Events Tab -->
 	<div class="vt-section">
 		<div class="vt-flex vt-flex-between vt-mb-4">
