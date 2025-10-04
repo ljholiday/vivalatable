@@ -76,64 +76,47 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 			<div class="vt-communities-tab-content" data-tab="my-communities">
 				<?php if (!empty($user_communities)) : ?>
 					<?php foreach ($user_communities as $community) : ?>
-						<div class="vt-section vt-border vt-p-4">
-							<div class="vt-flex vt-flex-between vt-mb-4">
-								<div class="vt-flex-1">
-									<h3 class="vt-heading vt-heading-sm vt-mb-2">
-										<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>" class="vt-text-primary">
-											<?php echo vt_service('validation.validator')->escHtml($community->name); ?>
-										</a>
-									</h3>
-									<div class="vt-flex vt-gap vt-flex-wrap vt-mb-2">
-										<?php if (!empty($community->role)) : ?>
-										<span class="vt-badge vt-badge-<?php echo $community->role === 'admin' ? 'primary' : 'success'; ?>">
-											<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->role)); ?>
-										</span>
-										<?php endif; ?>
-										<span class="vt-badge vt-badge-<?php echo $community->privacy === 'private' ? 'secondary' : 'success'; ?>">
-											<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->privacy)); ?>
-										</span>
-									</div>
-									<div class="vt-text-muted">
-										<?php if (!empty($community->joined_at)) : ?>
-											<?php echo sprintf('Joined %s ago', VT_Text::timeAgo($community->joined_at)); ?>
-										<?php else : ?>
-											Member
-										<?php endif; ?>
-									</div>
-								</div>
-								<div class="vt-stat vt-text-center">
-									<div class="vt-stat-number vt-text-primary"><?php echo intval($community->event_count ?? 0); ?></div>
-									<div class="vt-stat-label">Events</div>
-								</div>
-							</div>
+						<?php
+						// Set up for entity card
+						$entity_type = 'community';
+						$entity = $community;
 
-							<?php if ($community->description) : ?>
-							<div class="vt-mb-4">
-								<p class="vt-text-muted"><?php echo vt_service('validation.validator')->escHtml(VT_Text::truncateWords($community->description, 15)); ?></p>
-							</div>
-							<?php endif; ?>
+						// Badges
+						$badges = [];
+						if (!empty($community->role)) {
+							$badge_class = $community->role === 'admin' ? 'vt-badge-primary' : 'vt-badge-success';
+							$badges[] = ['label' => ucfirst($community->role), 'class' => $badge_class];
+						}
+						$privacy_class = $community->privacy === 'private' ? 'vt-badge-secondary' : 'vt-badge-success';
+						$badges[] = ['label' => ucfirst($community->privacy), 'class' => $privacy_class];
 
-							<div class="vt-flex vt-flex-between vt-flex-wrap vt-gap">
-								<div class="vt-flex vt-gap vt-flex-wrap">
-									<div class="vt-stat vt-text-center">
-										<div class="vt-stat-number vt-text-primary"><?php echo intval($community->member_count ?? 0); ?></div>
-										<div class="vt-stat-label">Members</div>
-									</div>
-								</div>
+						// Stats
+						$stats = [
+							['value' => intval($community->event_count ?? 0), 'label' => 'Events'],
+							['value' => intval($community->member_count ?? 0), 'label' => 'Members']
+						];
 
-								<div class="vt-flex vt-gap">
-									<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>" class="vt-btn">
-										View
-									</a>
-									<?php if ($community->role === 'admin') : ?>
-										<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>/manage" class="vt-btn">
-											Manage
-										</a>
-									<?php endif; ?>
-								</div>
+						// Actions
+						$actions = [
+							['label' => 'View', 'url' => '/communities/' . $community->slug]
+						];
+						if ($community->role === 'admin') {
+							$actions[] = ['label' => 'Manage', 'url' => '/communities/' . $community->slug . '/manage'];
+						}
+
+						// Description
+						$description = $community->description ?? '';
+
+						// Render entity card
+						include VT_INCLUDES_DIR . '/../templates/partials/entity-card.php';
+						?>
+
+						<!-- Add joined_at info after card if exists -->
+						<?php if (!empty($community->joined_at)) : ?>
+							<div class="vt-text-muted vt-text-sm" style="margin-top: -0.5rem; margin-left: 1rem;">
+								Joined <?php echo VT_Text::timeAgo($community->joined_at); ?> ago
 							</div>
-						</div>
+						<?php endif; ?>
 					<?php endforeach; ?>
 				<?php else : ?>
 					<div class="vt-text-center vt-p-4">
@@ -155,53 +138,55 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 		<div class="vt-communities-tab-content" data-tab="all-communities" <?php echo $user_logged_in ? 'style="display: none;"' : ''; ?>>
 			<?php if (!empty($public_communities)) : ?>
 				<?php foreach ($public_communities as $community) : ?>
-				<div class="vt-section vt-border vt-p-4">
-					<div class="vt-section-header vt-flex vt-flex-between vt-mb-4">
-						<h3 class="vt-heading vt-heading-sm">
-							<a href="/communities/<?php echo vt_service('validation.validator')->escHtml($community->slug); ?>" class="vt-text-primary">
-								<?php echo vt_service('validation.validator')->escHtml($community->name); ?>
-							</a>
-						</h3>
-						<div class="vt-badge vt-badge-<?php echo $community->privacy === 'public' ? 'success' : 'secondary'; ?>">
-							<?php echo vt_service('validation.validator')->escHtml(ucfirst($community->privacy)); ?>
-						</div>
-					</div>
-					<div class="vt-mb-4">
-						<div class="vt-flex vt-gap">
-							<span class="vt-text-muted"><?php echo intval($community->member_count); ?> members</span>
-						</div>
-					</div>
+					<?php
+					// Set up for entity card
+					$entity_type = 'community';
+					$entity = $community;
 
-					<?php if ($community->description) : ?>
-				<div class="vt-mb-4">
-					<p class="vt-text-muted"><?php echo vt_service('validation.validator')->escHtml(VT_Text::truncateWords($community->description, 20)); ?></p>
-				</div>
-				<?php endif; ?>
+					// Badges
+					$privacy_class = $community->privacy === 'public' ? 'vt-badge-success' : 'vt-badge-secondary';
+					$badges = [
+						['label' => ucfirst($community->privacy), 'class' => $privacy_class]
+					];
 
-				<div class="vt-flex vt-flex-between vt-mt-4">
-					<div class="vt-stat">
-						<div class="vt-stat-number vt-text-primary"><?php echo intval($community->event_count); ?></div>
-						<div class="vt-text-muted">Events</div>
-					</div>
+					// Stats
+					$stats = [
+						['value' => intval($community->event_count ?? 0), 'label' => 'Events'],
+						['value' => intval($community->member_count ?? 0), 'label' => 'Members']
+					];
 
+					// Actions
+					$actions = [
+						['label' => 'View', 'url' => '/communities/' . $community->slug]
+					];
+
+					// Description
+					$description = $community->description ?? '';
+
+					// Render entity card
+					include VT_INCLUDES_DIR . '/../templates/partials/entity-card.php';
+					?>
+
+					<!-- Add Join button after card -->
 					<?php if ($user_logged_in) : ?>
 						<?php
 						$is_member = $community_manager->isMember($community->id, $current_user->id);
 						?>
-						<button class="vt-btn <?php echo $is_member ? 'vt-btn-secondary' : 'vt-btn-primary'; ?> join-community-btn"
+						<button class="vt-btn vt-btn-sm <?php echo $is_member ? '' : 'vt-btn-primary'; ?> join-community-btn"
 								data-community-id="<?php echo $community->id; ?>"
 								data-community-name="<?php echo vt_service('validation.validator')->escHtml($community->name); ?>"
-								<?php echo $is_member ? 'disabled' : ''; ?>>
+								<?php echo $is_member ? 'disabled' : ''; ?>
+								style="margin-top: -0.5rem; margin-left: 1rem;">
 							<?php echo $is_member ? 'Member' : 'Join'; ?>
 						</button>
 					<?php else : ?>
-						<a href="/login?redirect_to=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>" class="vt-btn">
+						<a href="/login?redirect_to=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>"
+						   class="vt-btn vt-btn-sm vt-btn-primary"
+						   style="margin-top: -0.5rem; margin-left: 1rem;">
 							Login to Join
 						</a>
 					<?php endif; ?>
-				</div>
-			</div>
-			<?php endforeach; ?>
+				<?php endforeach; ?>
 		<?php else : ?>
 			<div class="vt-text-center vt-p-4">
 				<p class="vt-text-muted vt-mb-4">No public communities yet.</p>

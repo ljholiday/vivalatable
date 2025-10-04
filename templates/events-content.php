@@ -234,45 +234,33 @@ $page_description = 'Discover amazing events and manage your gatherings';
 			<?php if (!empty($all_events)) : ?>
 				<?php foreach ($all_events as $event) : ?>
 					<?php
+					// Prepare data for entity card partial
 					$event_date = new DateTime($event->event_date);
 					$is_past = $event_date < new DateTime();
-					$date_formatted = $event_date->format('M j, Y');
-					$time_formatted = $event_date->format('g:i A');
+
+					// Set up event time display
+					$event->event_time = $event_date->format('g:i A');
+
+					// Badges
+					$badges = [];
+					if ($is_past) {
+						$badges[] = ['label' => 'Past Event', 'class' => 'vt-badge-secondary'];
+					}
+
+					// Stats (no stats for non-logged-in users)
+					$stats = [];
+
+					// Actions
+					$actions = [
+						['label' => 'View', 'url' => '/events/' . $event->slug]
+					];
+					if (!$is_past) {
+						$actions[] = ['label' => 'Sign In to RSVP', 'url' => '/login', 'class' => 'vt-btn-primary'];
+					}
+
+					// Render entity card
+					include VT_INCLUDES_DIR . '/../templates/partials/entity-card.php';
 					?>
-					<div class="vt-card">
-						<div class="vt-card-body">
-							<div class="vt-flex vt-flex-between vt-mb-4">
-								<div class="vt-flex-1">
-									<h3 class="vt-heading vt-heading-md vt-mb-2">
-										<a href="/events/<?php echo $event->slug; ?>" class="vt-text-primary">
-											<?php echo htmlspecialchars($event->title); ?>
-										</a>
-									</h3>
-									<div class="vt-text-muted vt-mb-2">
-										<?php echo $date_formatted; ?> at <?php echo $time_formatted; ?>
-									</div>
-									<?php if ($event->venue_info) : ?>
-										<div class="vt-text-muted vt-mb-2">
-											📍 <?php echo htmlspecialchars($event->venue_info); ?>
-										</div>
-									<?php endif; ?>
-								</div>
-							</div>
-
-							<?php if ($event->description) : ?>
-								<p class="vt-text-muted vt-mb-4">
-									<?php echo htmlspecialchars(VT_Text::truncate($event->description, 120)); ?>
-								</p>
-							<?php endif; ?>
-
-							<div class="vt-flex vt-gap-2 vt-mt-4">
-								<a href="/events/<?php echo $event->slug; ?>" class="vt-btn vt-btn-sm">View</a>
-								<?php if (!$is_past) : ?>
-									<a href="/login" class="vt-btn vt-btn-sm vt-btn-primary">Sign In to RSVP</a>
-								<?php endif; ?>
-							</div>
-						</div>
-					</div>
 				<?php endforeach; ?>
 			<?php else : ?>
 				<div class="vt-text-center vt-p-8">
