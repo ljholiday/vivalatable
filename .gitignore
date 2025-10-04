@@ -3,8 +3,8 @@
 # -------------------------------------------------
 # Local development ducumentation
 # -------------------------------------------------
-dev/
 .claude/
+# dev/ is handled by ~/.gitignore_global in production
 
 # -------------------------------------------------
 # Core - Environment-specific configs (never commit)
@@ -75,7 +75,6 @@ tests/.phpunit.result.cache
 phpunit.xml
 phpunit.xml.dist
 migrate.php
-dev/
 scripts/
 .local/
 
