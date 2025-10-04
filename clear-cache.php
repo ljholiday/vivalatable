@@ -9,5 +9,3 @@ if (isset($_SESSION['vt_transients'])) {
 } else {
     echo "No cached items found.<br><br>";
 }
-
-echo '<a href="/conversations/why-vivalatable">Go back to conversation</a>';
