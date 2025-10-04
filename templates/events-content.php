@@ -95,6 +95,10 @@ $page_description = 'Discover amazing events and manage your gatherings';
 						// Set up event time display
 						$event->event_time = $event_date->format('g:i A');
 
+						// Set up for entity card
+						$entity_type = 'event';
+						$entity = $event;
+
 						// Badges
 						$badges = [
 							['label' => 'Hosting', 'class' => 'vt-badge-primary']
@@ -140,6 +144,10 @@ $page_description = 'Discover amazing events and manage your gatherings';
 
 						// Set up event time display
 						$event->event_time = $event_date->format('g:i A');
+
+						// Set up for entity card
+						$entity_type = 'event';
+						$entity = $event;
 
 						// Badges
 						$badges = [];
@@ -189,6 +197,10 @@ $page_description = 'Discover amazing events and manage your gatherings';
 
 						// Set up event time display
 						$event->event_time = $event_date->format('g:i A');
+
+						// Set up for entity card
+						$entity_type = 'event';
+						$entity = $event;
 
 						// RSVP status badge
 						$rsvp_status = strtolower($event->rsvp_status ?? '');
@@ -240,6 +252,10 @@ $page_description = 'Discover amazing events and manage your gatherings';
 
 					// Set up event time display
 					$event->event_time = $event_date->format('g:i A');
+
+					// Set up for entity card
+					$entity_type = 'event';
+					$entity = $event;
 
 					// Badges
 					$badges = [];
