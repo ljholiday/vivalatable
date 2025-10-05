@@ -88,8 +88,6 @@ switch ($entity_type) {
                         <?php echo htmlspecialchars($entity->venue_info); ?>
                     </div>
                 <?php endif; ?>
-            </div>
-
         <!-- Badges -->
         <?php if (!empty($badges)) : ?>
             <div class="vt-flex vt-gap vt-mb-4 vt-flex-wrap vt-flex-column">
@@ -101,6 +99,7 @@ switch ($entity_type) {
             </div>
         <?php endif; ?>
 
+            </div>
         </div>
 
         <!-- Description -->
