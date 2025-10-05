@@ -23,6 +23,30 @@ if (!$event) {
 }
 ?>
 
+<!-- Secondary Navigation -->
+<div class="vt-mb-4">
+	<?php
+	$tabs = [
+		[
+			'label' => 'View Event',
+			'url' => '/events/' . $event->slug,
+			'active' => false
+		],
+		[
+			'label' => 'Edit',
+			'url' => '/events/' . $event->slug . '/edit',
+			'active' => true
+		],
+		[
+			'label' => 'Manage',
+			'url' => '/events/' . $event->slug . '/manage',
+			'active' => false
+		]
+	];
+	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
+	?>
+</div>
+
 <!-- Error Messages -->
 <?php if (!empty($errors)) : ?>
 	<div class="vt-alert vt-alert-error vt-mb-4">

@@ -22,6 +22,30 @@ if (!$community) {
 }
 ?>
 
+<!-- Secondary Navigation -->
+<div class="vt-mb-4">
+	<?php
+	$tabs = [
+		[
+			'label' => 'View Community',
+			'url' => '/communities/' . $community->slug,
+			'active' => false
+		],
+		[
+			'label' => 'Edit',
+			'url' => '/communities/' . $community->slug . '/edit',
+			'active' => true
+		],
+		[
+			'label' => 'Manage',
+			'url' => '/communities/' . $community->slug . '/manage',
+			'active' => false
+		]
+	];
+	include VT_INCLUDES_DIR . '/../templates/partials/secondary-nav.php';
+	?>
+</div>
+
 <!-- Error Messages -->
 <?php if (!empty($errors)) : ?>
 	<div class="vt-alert vt-alert-error vt-mb-4">
@@ -109,10 +133,9 @@ if (!$community) {
 	<!-- Danger Zone -->
 	<?php
 	$community_manager = new VT_Community_Manager();
-	$member_manager = new VT_Member_Manager();
 	$current_user = vt_service('auth.service')->getCurrentUser();
-	$members = $member_manager->getCommunityMembers($community->id);
-	$active_count = count(array_filter($members, function($member) { return $member->status === 'active'; }));
+	$members = $community_manager->getCommunityMembers($community->id);
+	$active_count = count($members);
 
 	$entity_type = 'community';
 	$entity_id = $community->id;

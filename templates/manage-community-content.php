@@ -66,6 +66,9 @@ if (!$community_manager->canManageCommunity($community_id, $current_user->id)) {
 
 // No form submissions handled on manage page - editing happens on /edit page
 
+// Get community members for display
+$community_members = $community_manager->getCommunityMembers($community_id);
+
 // Set up template variables
 $page_title = sprintf('Manage %s', htmlspecialchars($community->name));
 $page_description = 'Manage members and invitations for your community';
@@ -92,14 +95,60 @@ $page_description = 'Manage members and invitations for your community';
 <!-- Tab Content -->
 <?php if ($active_tab === 'members') : ?>
 <div class="vt-section">
-	<div class="vt-section-header">
-		<h2 class="vt-heading vt-heading-md vt-text-primary">Community Members</h2>
-	</div>
-	<div id="members-list">
-		<div class="vt-loading-placeholder">
-			<p>Loading community members...</p>
+	<h3 class="vt-heading vt-heading-md vt-mb-4">Community Members</h3>
+
+	<?php if (!empty($community_members)) : ?>
+		<div class="vt-table-responsive">
+			<table class="vt-table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Email</th>
+						<th>Role</th>
+						<th>Joined</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($community_members as $member) : ?>
+						<tr id="member-row-<?php echo $member->id; ?>">
+							<td>
+								<strong><?php echo htmlspecialchars($member->display_name ?: 'No name'); ?></strong>
+							</td>
+							<td><?php echo htmlspecialchars($member->email); ?></td>
+							<td>
+								<span class="vt-badge vt-badge-<?php echo $member->role === 'admin' ? 'primary' : 'secondary'; ?>">
+									<?php echo htmlspecialchars(ucfirst($member->role)); ?>
+								</span>
+							</td>
+							<td><?php echo date('M j, Y', strtotime($member->joined_at)); ?></td>
+							<td>
+								<div class="vt-flex vt-gap-2">
+									<?php if ($member->user_id != $current_user->id) : ?>
+										<select class="vt-form-input vt-form-input-sm"
+												onchange="changeMemberRole(<?php echo $member->id; ?>, this.value, <?php echo $community_id; ?>)">
+											<option value="member" <?php echo $member->role === 'member' ? 'selected' : ''; ?>>Member</option>
+											<option value="admin" <?php echo $member->role === 'admin' ? 'selected' : ''; ?>>Admin</option>
+										</select>
+										<button class="vt-btn vt-btn-sm vt-btn-danger"
+												onclick="removeMember(<?php echo $member->id; ?>, '<?php echo htmlspecialchars($member->display_name ?: $member->email, ENT_QUOTES); ?>', <?php echo $community_id; ?>)">
+											Remove
+										</button>
+									<?php else : ?>
+										<span class="vt-text-muted vt-text-sm">You</span>
+									<?php endif; ?>
+								</div>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
-	</div>
+	<?php else : ?>
+		<div class="vt-text-center vt-p-4">
+			<p class="vt-text-muted">No members yet.</p>
+		</div>
+	<?php endif; ?>
 </div>
 
 <?php elseif ($active_tab === 'invitations') : ?>
@@ -178,78 +227,3 @@ $page_description = 'Manage members and invitations for your community';
 
 <?php endif; ?>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-	const communityId = <?php echo $community_id; ?>;
-	const currentTab = '<?php echo $active_tab; ?>';
-	const communityName = '<?php echo addslashes($community->name); ?>';
-
-	// Load appropriate tab content
-	if (currentTab === 'members') {
-		loadCommunityMembers(communityId);
-	} else if (currentTab === 'invitations') {
-		loadCommunityInvitations(communityId);
-		setupInvitationHandlers();
-	}
-
-	function loadCommunityMembers(communityId) {
-		const membersList = document.getElementById('members-list');
-		if (!membersList) return;
-
-		// For now, show a placeholder - this would be implemented with AJAX
-		membersList.innerHTML = '<div class="vt-text-center vt-p-4"><p class="vt-text-muted">Member management functionality coming soon!</p></div>';
-	}
-
-	function loadCommunityInvitations(communityId) {
-		const invitationsList = document.getElementById('invitations-list');
-		if (!invitationsList) return;
-
-		// For now, show a placeholder - this would be implemented with AJAX
-		invitationsList.innerHTML = '<div class="vt-text-center vt-p-4"><p class="vt-text-muted">No pending invitations.</p></div>';
-	}
-
-	function setupInvitationHandlers() {
-		// Copy invitation link
-		const copyLinkBtn = document.querySelector('.vt-copy-invitation-link');
-		if (copyLinkBtn) {
-			copyLinkBtn.addEventListener('click', function() {
-				const linkInput = document.getElementById('invitation-link');
-				linkInput.select();
-				document.execCommand('copy');
-				this.textContent = 'Copied!';
-				setTimeout(() => {
-					this.textContent = 'Copy';
-				}, 2000);
-			});
-		}
-
-		// Copy invitation with message
-		const copyWithMessageBtn = document.querySelector('.vt-copy-invitation-with-message');
-		if (copyWithMessageBtn) {
-			copyWithMessageBtn.addEventListener('click', function() {
-				const link = document.getElementById('invitation-link').value;
-				const message = document.getElementById('custom-message').value;
-				const fullText = message ? message + '\n\n' + link : link;
-
-				navigator.clipboard.writeText(fullText).then(() => {
-					this.textContent = 'Copied!';
-					setTimeout(() => {
-						this.textContent = 'Copy Link with Message';
-					}, 2000);
-				});
-			});
-		}
-
-		// Email invitation form
-		const invitationForm = document.getElementById('send-invitation-form');
-		if (invitationForm) {
-			invitationForm.addEventListener('submit', function(e) {
-				e.preventDefault();
-				// Placeholder for AJAX invitation sending
-				alert('Email invitation functionality coming soon!');
-			});
-		}
-	}
-
-});
-</script>

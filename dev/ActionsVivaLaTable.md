@@ -86,6 +86,12 @@ Started on oembed yesterday. Finished today.
 
 #### **Saturday 4**
 
+Maybe we do need both tabs. If I am a member of a community or considering accepting an invitation to a community, I might want to know who else is in the community. I might want to invite someone from this community to one of my communities.
+Got distracted by invitations.
+Get rid of the members tab on the single event page. No one needs to know. Or maybe they do.
+Except they serve different functions. One is for information the other for managing members.
+Figuring out the members tab. There were two. One on the single community page and one on the manage community page. I think we only need one.
+
 
 
 <layout>
