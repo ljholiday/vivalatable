@@ -109,13 +109,18 @@ if (!$community) {
 	<!-- Danger Zone -->
 	<?php
 	$community_manager = new VT_Community_Manager();
+	$member_manager = new VT_Member_Manager();
 	$current_user = vt_service('auth.service')->getCurrentUser();
+	$members = $member_manager->getCommunityMembers($community->id);
+	$active_count = count(array_filter($members, function($member) { return $member->status === 'active'; }));
 
 	$entity_type = 'community';
 	$entity_id = $community->id;
 	$entity_name = $community->name;
 	$can_delete = $community_manager->canManageCommunity($community->id, $current_user->id);
 	$confirmation_type = 'type_name';
+	$blocker_count = 0; // Never block deletion
+	$blocker_message = $active_count > 0 ? "This community has {$active_count} active member(s)." : '';
 	$delete_message = 'Once you delete a community, there is no going back. This will permanently delete the community, all its members, events, and conversations.';
 	$nonce_action = 'vt_community_management';
 

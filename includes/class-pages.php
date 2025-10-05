@@ -816,14 +816,6 @@ class VT_Pages {
 	}
 
 	/**
-	 * Manage conversation by slug
-	 */
-	public static function manageConversationBySlug($params) {
-		self::requireAuth();
-		self::renderPage('manage-conversation', 'Manage Conversation', null, 'two-column');
-	}
-
-	/**
 	 * User profile page
 	 */
 	public static function profile($params = array()) {

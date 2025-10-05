@@ -131,8 +131,8 @@ if (!$event) {
 	$entity_name = $event->title;
 	$can_delete = $event_manager->canDeleteEvent($event->id);
 	$confirmation_type = 'confirm';
-	$blocker_count = $confirmed_count;
-	$blocker_message = $confirmed_count > 0 ? "This event has {$confirmed_count} confirmed guest(s) and cannot be deleted." : '';
+	$blocker_count = 0; // Never block deletion
+	$blocker_message = $confirmed_count > 0 ? "This event has {$confirmed_count} confirmed guest(s)." : '';
 	$delete_message = 'Once you delete this event, there is no going back. This action cannot be undone.';
 	$nonce_action = 'vt_delete_event';
 

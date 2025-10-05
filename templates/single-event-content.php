@@ -41,7 +41,7 @@ $active_tab = $_GET['tab'] ?? 'overview';
 	// Build tabs array for secondary navigation
 	$tabs = [
 		[
-			'label' => 'Overview',
+			'label' => 'View Event',
 			'url' => '/events/' . $event->slug,
 			'active' => ($active_tab === 'overview')
 		],
@@ -53,8 +53,13 @@ $active_tab = $_GET['tab'] ?? 'overview';
 		]
 	];
 
-	// Add Manage tab if user is host
+	// Add Edit and Manage tabs if user is host
 	if ($is_host) {
+		$tabs[] = [
+			'label' => 'Edit',
+			'url' => '/events/' . $event->slug . '/edit',
+			'active' => false
+		];
 		$tabs[] = [
 			'label' => 'Manage',
 			'url' => '/events/' . $event->slug . '/manage',

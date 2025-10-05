@@ -68,7 +68,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
 		<a href="/events/<?php echo $event->slug; ?>/manage?tab=settings"
 		   class="vt-btn <?php echo ($active_tab === 'settings') ? 'is-active' : ''; ?>">
-			Settings
+			Overview
 		</a>
 		<a href="/events/<?php echo $event->slug; ?>/manage?tab=guests"
 		   class="vt-btn <?php echo ($active_tab === 'guests') ? 'is-active' : ''; ?>">
@@ -77,6 +77,9 @@ $page_description = 'Manage your event settings, guests, and invitations';
 		<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites"
 		   class="vt-btn <?php echo ($active_tab === 'invites') ? 'is-active' : ''; ?>">
 			Invitations
+		</a>
+		<a href="/events/<?php echo $event->slug; ?>/edit" class="vt-btn">
+			Edit
 		</a>
 		<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn">
 			View Event
@@ -140,21 +143,6 @@ $page_description = 'Manage your event settings, guests, and invitations';
 				</div>
 			</div>
 		</div>
-
-		<!-- Danger Zone -->
-		<?php
-		$entity_type = 'event';
-		$entity_id = $event->id;
-		$entity_name = $event->title;
-		$can_delete = $event_manager->canDeleteEvent($event->id);
-		$confirmation_type = 'confirm';
-		$blocker_count = $confirmed_count;
-		$blocker_message = $confirmed_count > 0 ? "This event has {$confirmed_count} confirmed guest(s) and cannot be deleted." : '';
-		$delete_message = 'Once you delete this event, there is no going back. This action cannot be undone.';
-		$nonce_action = 'vt_delete_event';
-
-		include VT_INCLUDES_DIR . '/../templates/partials/danger-zone.php';
-		?>
 	</div>
 
 <?php elseif ($active_tab === 'guests') : ?>

@@ -99,7 +99,7 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 	// Build tabs array for secondary navigation
 	$tabs = [
 		[
-			'label' => 'Overview',
+			'label' => 'View Community',
 			'url' => '/communities/' . $community->slug,
 			'active' => ($active_tab === 'overview')
 		],
@@ -123,8 +123,13 @@ $page_description = htmlspecialchars($community->description ?: 'Community event
 		]
 	];
 
-	// Add Manage tab if user is admin
+	// Add Edit and Manage tabs if user is admin
 	if ($is_member && $user_role === 'admin') {
+		$tabs[] = [
+			'label' => 'Edit',
+			'url' => '/communities/' . $community->slug . '/edit',
+			'active' => false
+		];
 		$tabs[] = [
 			'label' => 'Manage',
 			'url' => '/communities/' . $community->slug . '/manage',

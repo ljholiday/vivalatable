@@ -9,7 +9,7 @@
 if (!isset($community_id)) {
 	$community_id = intval($_GET['community_id'] ?? 0); // Fallback for backward compatibility
 }
-$active_tab = $_GET['tab'] ?? 'settings';
+$active_tab = $_GET['tab'] ?? 'members';
 
 if (!$community_id) {
 	?>
@@ -64,93 +64,24 @@ if (!$community_manager->canManageCommunity($community_id, $current_user->id)) {
 	return;
 }
 
-// Handle form submissions
-$success_message = '';
-$error_message = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-	if ($_POST['action'] === 'update_community_settings' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_community_management')) {
-		$update_data = array(
-			'name' => vt_service('validation.sanitizer')->textField($_POST['community_name']),
-			'description' => vt_service('validation.sanitizer')->textarea($_POST['description']),
-			'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy']),
-		);
-
-		// Handle cover image removal
-		if (isset($_POST['remove_cover_image']) && $_POST['remove_cover_image'] == '1') {
-			$update_data['featured_image'] = '';
-		}
-
-		// Handle cover image upload
-		if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
-			$upload_result = VT_Image_Manager::handleImageUpload($_FILES['cover_image'], 'cover', $community_id, 'community');
-			if ($upload_result['success']) {
-				$update_data['featured_image'] = $upload_result['url'];
-			} else {
-				$error_message = $upload_result['error'];
-			}
-		}
-
-		if (!$error_message) {
-			$result = $community_manager->updateCommunity($community_id, $update_data);
-			if ($result) {
-				$success_message = 'Community settings updated successfully.';
-				// Refresh community data
-				$community = $community_manager->getCommunity($community_id);
-			} else {
-				$error_message = 'Failed to update community settings.';
-			}
-		}
-	}
-
-	// Handle community deletion
-	if ($_POST['action'] === 'delete_community' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_community_management')) {
-		$confirm_name = vt_service('validation.sanitizer')->textField($_POST['confirm_name']);
-
-		if ($confirm_name === $community->name) {
-			$result = $community_manager->deleteCommunity($community_id);
-			if ($result) {
-				// Redirect to communities page after successful deletion
-				VT_Router::redirect('/communities?deleted=1');
-				exit;
-			} else {
-				$error_message = 'Failed to delete community.';
-			}
-		} else {
-			$error_message = 'Community name confirmation does not match. Community was not deleted.';
-		}
-	}
-}
+// No form submissions handled on manage page - editing happens on /edit page
 
 // Set up template variables
 $page_title = sprintf('Manage %s', htmlspecialchars($community->name));
-$page_description = 'Manage settings, members, and invitations for your community';
+$page_description = 'Manage members and invitations for your community';
 ?>
-
-<!-- Success/Error Messages -->
-<?php if ($success_message) : ?>
-	<div class="vt-alert vt-alert-success vt-mb-4">
-		<?php echo htmlspecialchars($success_message); ?>
-	</div>
-<?php endif; ?>
-
-<?php if ($error_message) : ?>
-	<div class="vt-alert vt-alert-error vt-mb-4">
-		<?php echo htmlspecialchars($error_message); ?>
-	</div>
-<?php endif; ?>
 
 <!-- Tab Navigation -->
 <div class="vt-section vt-mb-4">
 	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
-		<a href="?community_id=<?php echo $community_id; ?>&tab=settings" class="vt-btn <?php echo ($active_tab === 'settings') ? 'is-active' : ''; ?>">
-			Settings
-		</a>
 		<a href="?community_id=<?php echo $community_id; ?>&tab=members" class="vt-btn <?php echo ($active_tab === 'members') ? 'is-active' : ''; ?>">
 			Members
 		</a>
 		<a href="?community_id=<?php echo $community_id; ?>&tab=invitations" class="vt-btn <?php echo ($active_tab === 'invitations') ? 'is-active' : ''; ?>">
 			Invitations
+		</a>
+		<a href="/communities/<?php echo htmlspecialchars($community->slug); ?>/edit" class="vt-btn">
+			Edit
 		</a>
 		<a href="/communities/<?php echo htmlspecialchars($community->slug); ?>" class="vt-btn">
 			View Community
@@ -159,84 +90,7 @@ $page_description = 'Manage settings, members, and invitations for your communit
 </div>
 
 <!-- Tab Content -->
-<?php if ($active_tab === 'settings') : ?>
-<div class="vt-section">
-	<div class="vt-section-header">
-		<h2 class="vt-heading vt-heading-md vt-text-primary">Community Settings</h2>
-	</div>
-
-	<form method="post" class="vt-form" enctype="multipart/form-data">
-		<input type="hidden" name="action" value="update_community_settings">
-		<input type="hidden" name="nonce" value="<?php echo vt_service('security.service')->createNonce('vt_community_management'); ?>">
-
-		<div class="vt-form-group">
-			<label class="vt-form-label" for="community_name">
-				Community Name
-			</label>
-			<input type="text" id="community_name" name="community_name" class="vt-form-input"
-				   value="<?php echo htmlspecialchars($community->name); ?>" required>
-		</div>
-
-		<div class="vt-form-group">
-			<label class="vt-form-label" for="description">
-				Description
-			</label>
-			<textarea id="description" name="description" class="vt-form-textarea" rows="4"
-					  placeholder="Update community description..."><?php echo htmlspecialchars($community->description); ?></textarea>
-		</div>
-
-		<!-- Cover Image Upload -->
-		<div class="vt-form-group">
-			<label class="vt-form-label" for="cover_image">Cover Image</label>
-			<input type="file" id="cover_image" name="cover_image" class="vt-form-input" accept="image/*">
-			<p class="vt-form-help vt-text-muted">Optional: Upload a cover image for this community (Max 5MB)</p>
-
-			<?php if (!empty($community->featured_image)) : ?>
-				<div class="vt-current-cover vt-mt-2">
-					<p class="vt-text-muted vt-mb-2">Current cover image:</p>
-					<img src="<?php echo htmlspecialchars($community->featured_image); ?>" alt="Current cover"
-						 style="max-width: 200px; height: auto; border-radius: 4px;">
-					<label class="vt-mt-2">
-						<input type="checkbox" name="remove_cover_image" value="1"> Remove current cover image
-					</label>
-				</div>
-			<?php endif; ?>
-		</div>
-
-		<div class="vt-form-group">
-			<label class="vt-form-label" for="privacy">
-				Privacy Setting
-			</label>
-			<select id="privacy" name="privacy" class="vt-form-input">
-				<option value="public" <?php echo ($community->privacy === 'public') ? 'selected' : ''; ?>>
-					Public - Anyone can join
-				</option>
-				<option value="private" <?php echo ($community->privacy === 'private') ? 'selected' : ''; ?>>
-					Private - Invite only
-				</option>
-			</select>
-		</div>
-
-		<button type="submit" class="vt-btn vt-btn-primary">
-			Save Changes
-		</button>
-	</form>
-
-	<!-- Danger Zone -->
-	<?php
-	$entity_type = 'community';
-	$entity_id = $community_id;
-	$entity_name = $community->name;
-	$can_delete = $community_manager->canManageCommunity($community_id, $current_user->id);
-	$confirmation_type = 'type_name';
-	$delete_message = 'Once you delete a community, there is no going back. This will permanently delete the community, all its members, events, and conversations.';
-	$nonce_action = 'vt_community_management';
-
-	include VT_INCLUDES_DIR . '/../templates/partials/danger-zone.php';
-	?>
-</div>
-
-<?php elseif ($active_tab === 'members') : ?>
+<?php if ($active_tab === 'members') : ?>
 <div class="vt-section">
 	<div class="vt-section-header">
 		<h2 class="vt-heading vt-heading-md vt-text-primary">Community Members</h2>

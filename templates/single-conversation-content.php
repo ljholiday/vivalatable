@@ -119,7 +119,7 @@ $active_tab = $_GET['tab'] ?? 'conversation';
 	// Build tabs array for secondary navigation
 	$tabs = [
 		[
-			'label' => 'Conversation',
+			'label' => 'View Conversation',
 			'url' => '/conversations/' . $conversation->slug,
 			'active' => true
 		]
