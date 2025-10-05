@@ -109,11 +109,12 @@ if (!$community) {
 	<!-- Danger Zone -->
 	<?php
 	$community_manager = new VT_Community_Manager();
+	$current_user = vt_service('auth.service')->getCurrentUser();
 
 	$entity_type = 'community';
 	$entity_id = $community->id;
 	$entity_name = $community->name;
-	$can_delete = true; // Adjust based on business logic
+	$can_delete = $community_manager->canManageCommunity($community->id, $current_user->id);
 	$confirmation_type = 'type_name';
 	$delete_message = 'Once you delete a community, there is no going back. This will permanently delete the community, all its members, events, and conversations.';
 	$nonce_action = 'vt_community_management';
