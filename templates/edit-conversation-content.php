@@ -91,6 +91,22 @@ if (!$conversation) {
 			</a>
 		</div>
 	</form>
+
+	<!-- Danger Zone -->
+	<?php
+	$conversation_manager = new VT_Conversation_Manager();
+	$current_user = vt_service('auth.service')->getCurrentUser();
+
+	$entity_type = 'conversation';
+	$entity_id = $conversation->id;
+	$entity_name = $conversation->title;
+	$can_delete = $conversation_manager->canDeleteConversation($conversation->id, $current_user->id);
+	$confirmation_type = 'confirm';
+	$delete_message = 'Once you delete this conversation, there is no going back. This action cannot be undone.';
+	$nonce_action = 'vt_delete_conversation';
+
+	include VT_INCLUDES_DIR . '/../templates/partials/danger-zone.php';
+	?>
 </div>
 
 <script>

@@ -114,10 +114,30 @@ if (!$event) {
 				Update Event
 			</button>
 			<a href="/events/<?php echo htmlspecialchars($event->slug); ?>" class="vt-btn vt-btn-secondary vt-btn-lg">
-				View Event
+				Cancel
 			</a>
 		</div>
 	</form>
+
+	<!-- Danger Zone -->
+	<?php
+	$event_manager = new VT_Event_Manager();
+	$guest_manager = new VT_Guest_Manager();
+	$guests = $guest_manager->getEventGuests($event->id);
+	$confirmed_count = count(array_filter($guests, function($guest) { return $guest->status === 'confirmed'; }));
+
+	$entity_type = 'event';
+	$entity_id = $event->id;
+	$entity_name = $event->title;
+	$can_delete = $event_manager->canDeleteEvent($event->id);
+	$confirmation_type = 'confirm';
+	$blocker_count = $confirmed_count;
+	$blocker_message = $confirmed_count > 0 ? "This event has {$confirmed_count} confirmed guest(s) and cannot be deleted." : '';
+	$delete_message = 'Once you delete this event, there is no going back. This action cannot be undone.';
+	$nonce_action = 'vt_delete_event';
+
+	include VT_INCLUDES_DIR . '/../templates/partials/danger-zone.php';
+	?>
 </div>
 
 <script>

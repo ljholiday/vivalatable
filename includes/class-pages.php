@@ -484,15 +484,88 @@ class VT_Pages {
 	 */
 	public static function editCommunityBySlug($params) {
 		self::requireAuth();
-		// Get community by slug, then pass community_id to template
+
+		$errors = array();
+		$messages = array();
+		$current_user = vt_service('auth.service')->getCurrentUser();
+
+		// Get community by slug
 		$community_manager = new VT_Community_Manager();
-		$community = $community_manager->getCommunityBySlug($params['slug']);
+		$community_slug = $params['slug'] ?? null;
+
+		if (!$community_slug) {
+			self::notFound();
+			return;
+		}
+
+		$community = $community_manager->getCommunityBySlug($community_slug);
 		if (!$community) {
 			self::notFound();
 			return;
 		}
-		$community_id = $community->id;
-		self::renderPage('edit-community', 'Edit Community', null, 'form', compact('community_id'));
+
+		// Check permissions
+		if (!$community_manager->canManageCommunity($community->id, $current_user->id)) {
+			http_response_code(403);
+			self::renderPage('403', 'Access Denied', 'You don\'t have permission to edit this community', 'page');
+			return;
+		}
+
+		// Handle POST before any output
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			// Verify CSRF nonce
+			if (!vt_service('security.service')->verifyNonce($_POST['edit_community_nonce'] ?? '', 'vt_edit_community')) {
+				$errors[] = 'Security check failed. Please try again.';
+				self::renderPage('edit-community', 'Edit Community', null, 'form', compact('errors', 'messages', 'community'));
+				return;
+			}
+
+			// Prepare community data
+			$community_data = array(
+				'name' => vt_service('validation.sanitizer')->textField($_POST['community_name'] ?? ''),
+				'description' => vt_service('validation.sanitizer')->richText($_POST['description'] ?? ''),
+				'privacy' => vt_service('validation.sanitizer')->textField($_POST['privacy'] ?? 'public'),
+			);
+
+			// Handle cover image removal
+			if (isset($_POST['remove_cover_image']) && $_POST['remove_cover_image'] == '1') {
+				$community_data['featured_image'] = '';
+			}
+
+			// Handle cover image upload
+			if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
+				$upload_result = VT_Image_Manager::handleImageUpload($_FILES['cover_image'], 'cover', $community->id, 'community');
+				if ($upload_result['success']) {
+					$community_data['featured_image'] = $upload_result['url'];
+				} else {
+					$errors[] = $upload_result['error'];
+				}
+			}
+
+			// Basic validation
+			if (empty($community_data['name'])) {
+				$errors[] = 'Community name is required.';
+			}
+
+			// If no validation errors, update the community
+			if (empty($errors)) {
+				$result = $community_manager->updateCommunity($community->id, $community_data);
+				if ($result) {
+					// Redirect to community page on success
+					VT_Router::redirect('/communities/' . $community_slug);
+					return;
+				} else {
+					$errors[] = 'Failed to update community. Please try again.';
+				}
+			}
+
+			// If we reach here, update failed - render with errors
+			self::renderPage('edit-community', 'Edit Community', null, 'form', compact('errors', 'messages', 'community'));
+			return;
+		}
+
+		// GET request - show form
+		self::renderPage('edit-community', 'Edit Community', null, 'form', compact('errors', 'messages', 'community'));
 	}
 
 	/**
