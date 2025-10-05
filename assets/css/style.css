@@ -17,11 +17,6 @@
  * ======================================================
  */
 
-/* Editing aid. Puts a green border around every element */
-* {
-    border: 1px solid #5f5;
-    }
-
 
 /* VivalaTable - Clean Semantic CSS with .vt- Prefixes */
 

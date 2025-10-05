@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="<?php echo vt_service('security.service')->createNonce('vt_nonce'); ?>">
     <title><?php echo isset($page_title) ? htmlspecialchars($page_title) . ' - ' : ''; ?>VivalaTable</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+
 </head>
 <body>
 
@@ -81,3 +82,20 @@
 <?php endif; ?>
 </body>
 </html>
+
+<!-- Adds green border to all elements in development -->
+<script>
+  fetch('/assets/css/dev.css', { method: 'HEAD' })
+    .then(response => {
+      if (response.ok) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/assets/css/dev.css';
+        document.head.appendChild(link);
+      }
+    })
+    .catch(() => {
+      // dev.css doesn't exist — silently ignore
+    });
+</script>
+

@@ -14,6 +14,7 @@ config/database.php
 config/security_salts.php
 .env
 *.env
+assets/css/dev.css
 
 # -------------------------------------------------
 # Uploads, cache, and runtime data
