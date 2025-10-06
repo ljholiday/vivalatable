@@ -52,12 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 		$rsvp_status = $_POST['rsvp_status'] ?? '';
 
 		$guest_data = array(
-			'name' => vt_service('validation.validator')->textField($_POST['guest_name'] ?? ''),
-			'phone' => vt_service('validation.validator')->textField($_POST['guest_phone'] ?? ''),
-			'dietary_restrictions' => vt_service('validation.validator')->textField($_POST['dietary_restrictions'] ?? ''),
+			'name' => $_POST['guest_name'] ?? '',
+			'phone' => $_POST['guest_phone'] ?? '',
+			'dietary_restrictions' => $_POST['dietary_restrictions'] ?? '',
 			'plus_one' => intval($_POST['plus_one'] ?? 0),
-			'plus_one_name' => vt_service('validation.validator')->textField($_POST['plus_one_name'] ?? ''),
-			'notes' => vt_service('validation.validator')->textField($_POST['guest_notes'] ?? '')
+			'plus_one_name' => $_POST['plus_one_name'] ?? '',
+			'notes' => $_POST['guest_notes'] ?? ''
 		);
 
 		$result = $guest_manager->processAnonymousRsvp($rsvp_token, $rsvp_status, $guest_data);

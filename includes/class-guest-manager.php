@@ -142,8 +142,7 @@ class VT_Guest_Manager {
 			'plus_one' => intval($guest_data['plus_one'] ?? 0),
 			'plus_one_name' => vt_service('validation.sanitizer')->textField($guest_data['plus_one_name'] ?? ''),
 			'notes' => vt_service('validation.sanitizer')->textField($guest_data['notes'] ?? ''),
-			'rsvp_date' => VT_Time::currentTime('mysql'),
-			'updated_at' => VT_Time::currentTime('mysql')
+			'rsvp_date' => VT_Time::currentTime('mysql')
 		);
 
 		// Clear plus one data if not bringing one
