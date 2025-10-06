@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 		$result = $guest_manager->processAnonymousRsvp($rsvp_token, $rsvp_status, $guest_data);
 
 		if (is_vt_error($result)) {
-			$error_message = $result->get_error_message();
+			$error_message = $result->getErrorMessage();
 		} else {
 			$success_message = 'Thank you for your RSVP! A confirmation email has been sent.';
 			// Refresh guest data
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 		$user_result = $guest_manager->convertGuestToUser($guest->id, $user_data);
 
 		if (is_vt_error($user_result)) {
-			$error_message = $user_result->get_error_message();
+			$error_message = $user_result->getErrorMessage();
 		} else {
 			// Redirect to event page as logged-in user
 			VT_Router::redirect('/events/' . $guest->event_slug . '?converted=1');
