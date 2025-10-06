@@ -84,7 +84,9 @@ if ($is_logged_in && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acce
 	$result = $community_manager->acceptInvitation($invitation_token);
 
 	if (is_vt_error($result)) {
-		$error_message = $result->getErrorMessage();
+		$codes = $result->getErrorCodes();
+		$code_str = is_array($codes) ? implode(', ', $codes) : $codes;
+		$error_message = 'Error: ' . $result->getErrorMessage() . ' (Code: ' . $code_str . ')';
 	} else {
 		// Success - redirect to community
 		VT_Router::redirect('/communities/' . $invitation->community_slug . '?joined=1');

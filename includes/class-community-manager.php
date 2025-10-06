@@ -245,8 +245,8 @@ class VT_Community_Manager {
 			'user_id' => $user_id,
 			'email' => vt_service('validation.sanitizer')->email($member_data['email']),
 			'display_name' => vt_service('validation.sanitizer')->textField($member_data['display_name'] ?? ''),
-			'role' => in_array($member_data['role'] ?? 'member', array('admin', 'member')) ? $member_data['role'] : 'member',
-			'status' => in_array($member_data['status'] ?? 'active', array('active', 'inactive')) ? $member_data['status'] : 'active',
+			'role' => in_array($member_data['role'] ?? 'member', array('admin', 'member')) ? ($member_data['role'] ?? 'member') : 'member',
+			'status' => in_array($member_data['status'] ?? 'active', array('active', 'inactive')) ? ($member_data['status'] ?? 'active') : 'active',
 			'joined_at' => VT_Time::currentTime('mysql')
 		);
 
@@ -562,6 +562,7 @@ class VT_Community_Manager {
 		// Add user as member
 		$member_data = array(
 			'user_id' => $user_id,
+			'email' => $user->email,
 			'role' => 'member'
 		);
 
