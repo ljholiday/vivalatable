@@ -410,7 +410,7 @@ class VT_Guest_Manager {
 
 		$host_name = $host ? ($host->profile_display_name ?: $host->display_name) : 'Event Host';
 
-		$rsvp_url = $invitation_service->buildInvitationUrl('event', $event->slug, $rsvp_token, array('token' => $rsvp_token));
+		$rsvp_url = $invitation_service->buildInvitationUrl('event', $event->slug, $rsvp_token);
 
 		$subject = sprintf('%s invited you to %s', $host_name, $event->title);
 

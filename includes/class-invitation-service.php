@@ -83,19 +83,26 @@ class VT_Invitation_Service {
 		$base_url = VT_Http::getBaseUrl();
 
 		if ($entity_type === 'community') {
-			$url = "{$base_url}/communities/{$entity_slug}";
-			$params = array_merge(array('invitation' => $token), $extra_params);
+			// Use dedicated invitation acceptance page
+			$url = "{$base_url}/invitation/accept";
+			$params = array_merge(array('token' => $token), $extra_params);
+
+			// Build query string
+			if (!empty($params)) {
+				$query_string = http_build_query($params);
+				$url .= '?' . $query_string;
+			}
 		} elseif ($entity_type === 'event') {
-			$url = "{$base_url}/events/{$entity_slug}";
-			$params = array_merge(array('rsvp' => $token), $extra_params);
+			// Use /rsvp/{token} route for event invitations
+			$url = "{$base_url}/rsvp/{$token}";
+
+			// Add extra params if provided
+			if (!empty($extra_params)) {
+				$query_string = http_build_query($extra_params);
+				$url .= '?' . $query_string;
+			}
 		} else {
 			return '';
-		}
-
-		// Build query string
-		if (!empty($params)) {
-			$query_string = http_build_query($params);
-			$url .= '?' . $query_string;
 		}
 
 		return $url;

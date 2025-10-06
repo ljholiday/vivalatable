@@ -49,6 +49,10 @@ class VT_Router {
 		self::addRoute('GET', '/manage-event', array('VT_Pages', 'manageEvent'));
 		self::addRoute('POST', '/manage-event', array('VT_Pages', 'manageEvent'));
 
+		// Invitation routes
+		self::addRoute('GET', '/invitation/accept', array('VT_Pages', 'acceptInvitation'));
+		self::addRoute('POST', '/invitation/accept', array('VT_Pages', 'acceptInvitation'));
+
 		// Community routes (specific routes first, general routes last)
 		self::addRoute('GET', '/communities', array('VT_Pages', 'communitiesList'));
 		self::addRoute('GET', '/communities/create', array('VT_Pages', 'createCommunity'));

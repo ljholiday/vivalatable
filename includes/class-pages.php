@@ -599,6 +599,13 @@ class VT_Pages {
 	}
 
 	/**
+	 * Invitation acceptance page
+	 */
+	public static function acceptInvitation() {
+		self::renderPage('invitation-accept', 'Accept Invitation', null, 'two-column');
+	}
+
+	/**
 	 * Conversations list page
 	 */
 	public static function conversationsList() {
