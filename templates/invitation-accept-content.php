@@ -131,7 +131,7 @@ if ($is_logged_in && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acce
 				</div>
 
 				<?php if ($is_logged_in) : ?>
-					<form method="POST" class="vt-flex vt-gap-2">
+					<form method="POST" class="vt-flex vt-gap-2" data-custom-handler="true">
 						<button type="submit" name="accept_invitation" class="vt-btn vt-btn-primary">
 							Accept Invitation
 						</button>
@@ -143,10 +143,10 @@ if ($is_logged_in && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acce
 					<div class="vt-mb-4">
 						<p class="vt-text-muted vt-mb-4">To accept this invitation, you need to log in or create an account.</p>
 						<div class="vt-flex vt-gap-2">
-							<a href="/login?redirect=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>" class="vt-btn vt-btn-primary">
+							<a href="/login?redirect_to=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>" class="vt-btn vt-btn-primary">
 								Log In
 							</a>
-							<a href="/register?redirect=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>&email=<?php echo urlencode($invitation->invited_email); ?>" class="vt-btn vt-btn-secondary">
+							<a href="/register?redirect_to=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>&email=<?php echo urlencode($invitation->invited_email); ?>" class="vt-btn vt-btn-secondary">
 								Create Account
 							</a>
 						</div>
