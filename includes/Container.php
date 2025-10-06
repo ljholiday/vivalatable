@@ -125,6 +125,11 @@ class Container {
         $this->register('security.service', function($container) {
             return new VT_Security_SecurityService();
         });
+
+        // Invitation Service
+        $this->register('invitation.service', function($container) {
+            return new VT_Invitation_Service();
+        });
     }
 
     /**

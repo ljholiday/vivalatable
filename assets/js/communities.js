@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initCommunityTabs();
     initJoinButtons();
     initInvitationCopy();
+    initInvitationForm();
+    initPendingInvitations();
 });
 
 /**
@@ -216,5 +218,202 @@ function removeMember(memberId, memberName, communityId) {
     .catch(error => {
         console.error('Error:', error);
         alert('Failed to remove member. Please try again.');
+    });
+}
+
+/**
+ * Initialize invitation form submission
+ */
+function initInvitationForm() {
+    const form = document.getElementById('send-invitation-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const entityType = this.getAttribute('data-entity-type');
+        const entityId = this.getAttribute('data-entity-id');
+        const email = document.getElementById('invitation-email').value;
+        const message = document.getElementById('invitation-message').value;
+
+        if (!email) {
+            alert('Please enter an email address');
+            return;
+        }
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+
+        const formData = new FormData();
+        formData.append('email', email);
+        if (message) {
+            formData.append('message', message);
+        }
+
+        const entityTypePlural = entityType === 'community' ? 'communities' : 'events';
+
+        fetch(`/api/${entityTypePlural}/${entityId}/invitations`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+
+            // Clear form fields
+            document.getElementById('invitation-email').value = '';
+            document.getElementById('invitation-message').value = '';
+
+            if (data.success) {
+                alert(data.message || 'Invitation sent successfully!');
+
+                // Reload pending invitations if applicable
+                loadPendingInvitations(entityType, entityId);
+            } else {
+                alert('Error: ' + (data.message || 'Failed to send invitation'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to send invitation. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    });
+}
+
+/**
+ * Initialize pending invitations loading
+ */
+function initPendingInvitations() {
+    const form = document.getElementById('send-invitation-form');
+    const invitationsList = document.getElementById('invitations-list');
+
+    if (!form || !invitationsList) return;
+
+    const entityType = form.getAttribute('data-entity-type');
+    const entityId = form.getAttribute('data-entity-id');
+
+    loadPendingInvitations(entityType, entityId);
+}
+
+/**
+ * Load pending invitations
+ */
+function loadPendingInvitations(entityType, entityId) {
+    const invitationsList = document.getElementById('invitations-list');
+    if (!invitationsList) return;
+
+    const entityTypePlural = entityType === 'community' ? 'communities' : 'events';
+
+    fetch(`/api/${entityTypePlural}/${entityId}/invitations`, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.html) {
+                invitationsList.innerHTML = data.html;
+            } else if (data.invitations && data.invitations.length > 0) {
+                invitationsList.innerHTML = renderInvitationsList(data.invitations, entityType);
+            } else {
+                invitationsList.innerHTML = '<div class="vt-text-center vt-text-muted">No pending invitations.</div>';
+            }
+
+            // Attach cancel handlers
+            attachCancelInvitationHandlers(entityType, entityId);
+        } else {
+            invitationsList.innerHTML = '<div class="vt-text-center vt-text-muted">Could not load invitations.</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading invitations:', error);
+        invitationsList.innerHTML = '<div class="vt-text-center vt-text-muted">Error loading invitations.</div>';
+    });
+}
+
+/**
+ * Render invitations list HTML (for communities without server-side HTML)
+ */
+function renderInvitationsList(invitations, entityType) {
+    let html = '<div class="vt-invitations-list">';
+
+    invitations.forEach(inv => {
+        const statusClass = inv.status === 'accepted' ? 'success' : (inv.status === 'declined' ? 'danger' : 'secondary');
+        const statusText = inv.status.charAt(0).toUpperCase() + inv.status.slice(1);
+
+        // Handle different field names between communities and events
+        const email = inv.invited_email || inv.email;
+        const dateField = inv.created_at || inv.rsvp_date;
+
+        html += '<div class="vt-invitation-item">';
+        html += '<div class="vt-flex vt-flex-between">';
+        html += '<div>';
+        html += '<strong>' + escapeHtml(email) + '</strong>';
+        html += '<div class="vt-text-muted vt-text-sm">Sent ' + new Date(dateField).toLocaleDateString() + '</div>';
+        html += '</div>';
+        html += '<div class="vt-flex vt-gap-2">';
+        html += '<span class="vt-badge vt-badge-' + statusClass + '">' + statusText + '</span>';
+        if (inv.status === 'pending') {
+            html += '<button class="vt-btn vt-btn-sm vt-btn-danger cancel-invitation" data-invitation-id="' + inv.id + '">Cancel</button>';
+        }
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+    });
+
+    html += '</div>';
+    return html;
+}
+
+/**
+ * Attach cancel invitation handlers
+ */
+function attachCancelInvitationHandlers(entityType, entityId) {
+    const cancelBtns = document.querySelectorAll('.cancel-invitation, .cancel-event-invitation');
+
+    cancelBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const invitationId = this.getAttribute('data-invitation-id');
+
+            if (!confirm('Are you sure you want to cancel this invitation?')) {
+                return;
+            }
+
+            const entityTypePlural = entityType === 'community' ? 'communities' : 'events';
+
+            fetch(`/api/${entityTypePlural}/${entityId}/invitations/${invitationId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Invitation cancelled successfully');
+                    loadPendingInvitations(entityType, entityId);
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to cancel invitation'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to cancel invitation. Please try again.');
+            });
+        });
+    });
+}
+
+/**
+ * Copy invitation URL to clipboard (called from event invitations HTML)
+ */
+function copyInvitationUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Invitation link copied to clipboard!');
+    }).catch(error => {
+        console.error('Error copying to clipboard:', error);
+        alert('Failed to copy link. Please try again.');
     });
 }

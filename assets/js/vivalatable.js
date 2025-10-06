@@ -5,7 +5,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     // Basic form enhancement
-    const forms = document.querySelectorAll('form');
+    const forms = document.querySelectorAll('form:not([data-custom-handler])');
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
             const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');

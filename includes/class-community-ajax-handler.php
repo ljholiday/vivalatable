@@ -406,7 +406,7 @@ class VT_Community_Ajax_Handler {
 	}
 
 	public function ajaxSendInvitation() {
-		vt_service('security.service')->verifyNonce('vt_community_action', 'nonce');
+		vt_service('security.service')->verifyNonce('vt_nonce', 'nonce');
 
 		if (!vt_service('auth.service')->isLoggedIn()) {
 			VT_Ajax::sendError('You must be logged in.');
@@ -810,6 +810,176 @@ class VT_Community_Ajax_Handler {
 				return new VT_Error('upload_failed', 'File upload failed.');
 			}
 		}
+	}
+
+	/**
+	 * REST API handler for sending invitations
+	 */
+	public static function handleSendInvitation($params) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
+			http_response_code(401);
+			echo json_encode(['success' => false, 'message' => 'You must be logged in']);
+			exit;
+		}
+
+		$community_id = intval($params['id'] ?? 0);
+		$email = vt_service('validation.sanitizer')->email($_POST['email'] ?? '');
+		$message = vt_service('validation.sanitizer')->textarea($_POST['message'] ?? '');
+
+		if (!$community_id || !$email) {
+			http_response_code(400);
+			echo json_encode(['success' => false, 'message' => 'Community ID and email are required']);
+			exit;
+		}
+
+		$community_manager = new VT_Community_Manager();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
+
+		if (!in_array($user_role, ['admin', 'moderator'])) {
+			http_response_code(403);
+			echo json_encode(['success' => false, 'message' => 'You do not have permission to send invitations']);
+			exit;
+		}
+
+		$community = $community_manager->getCommunity($community_id);
+		if (!$community) {
+			http_response_code(404);
+			echo json_encode(['success' => false, 'message' => 'Community not found']);
+			exit;
+		}
+
+		$db = VT_Database::getInstance();
+		$existing = $db->getVar(
+			$db->prepare(
+				"SELECT id FROM {$db->prefix}community_invitations WHERE community_id = %d AND invited_email = %s AND status = 'pending'",
+				$community_id, $email
+			)
+		);
+
+		if ($existing) {
+			http_response_code(409);
+			echo json_encode(['success' => false, 'message' => 'This email has already been invited']);
+			exit;
+		}
+
+		if ($community_manager->isMember($community_id, null, $email)) {
+			http_response_code(409);
+			echo json_encode(['success' => false, 'message' => 'This email is already a member of the community']);
+			exit;
+		}
+
+		$invitation_data = [
+			'invited_email' => $email,
+			'personal_message' => $message
+		];
+
+		$result = $community_manager->sendinvitation($community_id, $invitation_data);
+
+		if (!is_vt_error($result)) {
+			echo json_encode(['success' => true, 'message' => 'Invitation sent successfully!']);
+		} else {
+			http_response_code(500);
+			echo json_encode(['success' => false, 'message' => $result->getErrorMessage()]);
+		}
+		exit;
+	}
+
+	/**
+	 * REST API handler for getting invitations
+	 */
+	public static function handleGetInvitations($params) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
+			http_response_code(401);
+			echo json_encode(['success' => false, 'message' => 'You must be logged in']);
+			exit;
+		}
+
+		$community_id = intval($params['id'] ?? 0);
+		if (!$community_id) {
+			http_response_code(400);
+			echo json_encode(['success' => false, 'message' => 'Community ID is required']);
+			exit;
+		}
+
+		$community_manager = new VT_Community_Manager();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
+
+		if (!in_array($user_role, ['admin', 'moderator'])) {
+			http_response_code(403);
+			echo json_encode(['success' => false, 'message' => 'You do not have permission to view invitations']);
+			exit;
+		}
+
+		$db = VT_Database::getInstance();
+		$invitations = $db->getResults(
+			$db->prepare(
+				"SELECT ci.*, u.display_name as invited_by_name
+				FROM {$db->prefix}community_invitations ci
+				LEFT JOIN {$db->prefix}users u ON ci.invited_by_member_id = u.id
+				WHERE ci.community_id = %d
+				ORDER BY ci.created_at DESC",
+				$community_id
+			)
+		);
+
+		echo json_encode(['success' => true, 'invitations' => $invitations]);
+		exit;
+	}
+
+	/**
+	 * REST API handler for canceling invitations
+	 */
+	public static function handleCancelInvitation($params) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
+			http_response_code(401);
+			echo json_encode(['success' => false, 'message' => 'You must be logged in']);
+			exit;
+		}
+
+		$community_id = intval($params['id'] ?? 0);
+		$invitation_id = intval($params['invitation_id'] ?? 0);
+
+		if (!$invitation_id) {
+			http_response_code(400);
+			echo json_encode(['success' => false, 'message' => 'Invitation ID is required']);
+			exit;
+		}
+
+		$db = VT_Database::getInstance();
+		$invitation = $db->getRow(
+			$db->prepare(
+				"SELECT * FROM {$db->prefix}community_invitations WHERE id = %d AND community_id = %d",
+				$invitation_id, $community_id
+			)
+		);
+
+		if (!$invitation) {
+			http_response_code(404);
+			echo json_encode(['success' => false, 'message' => 'Invitation not found']);
+			exit;
+		}
+
+		$community_manager = new VT_Community_Manager();
+		$current_user_id = vt_service('auth.service')->getCurrentUserId();
+		$user_role = $community_manager->getMemberRole($community_id, $current_user_id);
+
+		if (!in_array($user_role, ['admin', 'moderator'])) {
+			http_response_code(403);
+			echo json_encode(['success' => false, 'message' => 'You do not have permission to cancel invitations']);
+			exit;
+		}
+
+		$result = $db->delete('community_invitations', ['id' => $invitation_id]);
+
+		if ($result !== false) {
+			echo json_encode(['success' => true, 'message' => 'Invitation cancelled successfully']);
+		} else {
+			http_response_code(500);
+			echo json_encode(['success' => false, 'message' => 'Failed to cancel invitation']);
+		}
+		exit;
 	}
 
 	/**

@@ -436,9 +436,12 @@ class VT_Community_Manager {
 			return new VT_Error('invalid_community', 'Invalid community ID');
 		}
 
-		// Validate required fields
-		if (empty($invitation_data['invited_email'])) {
-			return new VT_Error('email_required', 'Invitation email is required');
+		$invitation_service = vt_service('invitation.service');
+
+		// Validate invitation data using shared service
+		$validation = $invitation_service->validateInvitationData($invitation_data);
+		if (is_vt_error($validation)) {
+			return $validation;
 		}
 
 		// Check if community exists
@@ -460,16 +463,8 @@ class VT_Community_Manager {
 			)
 		);
 
-		// Check if user is already invited or member
-		$existing_invitation = $this->db->getRow(
-			$this->db->prepare(
-				"SELECT id FROM {$this->db->prefix}community_invitations
-				 WHERE community_id = %d AND invited_email = %s AND status = 'pending'",
-				$community_id, vt_service('validation.sanitizer')->email($invitation_data['invited_email'])
-			)
-		);
-
-		if ($existing_invitation) {
+		// Check if already invited using shared service
+		if ($invitation_service->isAlreadyInvited('community', $community_id, $invitation_data['invited_email'])) {
 			return new VT_Error('already_invited', 'User has already been invited to this community');
 		}
 
@@ -477,17 +472,16 @@ class VT_Community_Manager {
 			return new VT_Error('already_member', 'User is already a member of this community');
 		}
 
-		// Generate invitation token
-		$invitation_token = vt_service('security.service')->generateToken();
+		// Generate invitation token using shared service
+		$invitation_token = $invitation_service->generateToken();
 
 		// Prepare invitation data
 		$insert_data = array(
 			'community_id' => $community_id,
 			'invited_email' => vt_service('validation.sanitizer')->email($invitation_data['invited_email']),
-			'invited_display_name' => vt_service('validation.sanitizer')->textField($invitation_data['invited_display_name'] ?? ''),
 			'invitation_token' => $invitation_token,
 			'invited_by_member_id' => $inviter_member->id,
-			'personal_message' => vt_service('validation.sanitizer')->richText($invitation_data['personal_message'] ?? ''),
+			'message' => $invitation_service->sanitizeMessage($invitation_data['personal_message'] ?? ''),
 			'status' => 'pending',
 			'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
 			'created_at' => VT_Time::currentTime('mysql')
@@ -509,9 +503,11 @@ class VT_Community_Manager {
 	 * Send invitation email
 	 */
 	private function sendInvitationEmail($invitation_id) {
+		$invitation_service = vt_service('invitation.service');
+
 		$invitation = $this->db->getRow(
 			$this->db->prepare(
-				"SELECT i.*, c.name as community_name, c.description as community_description,
+				"SELECT i.*, c.name as community_name, c.description as community_description, c.slug as community_slug,
 				        m.display_name as inviter_name
 				 FROM {$this->db->prefix}community_invitations i
 				 LEFT JOIN {$this->db->prefix}communities c ON i.community_id = c.id
@@ -525,13 +521,17 @@ class VT_Community_Manager {
 			return false;
 		}
 
-		$invitation_url = VT_Config::get('site_url') . '/community/invitation/' . $invitation->invitation_token;
+		$invitation_url = $invitation_service->buildInvitationUrl('community', $invitation->community_slug, $invitation->invitation_token);
 
 		$subject = sprintf('%s invited you to join %s', $invitation->inviter_name, $invitation->community_name);
 
-		$message = $this->getInvitationEmailTemplate($invitation, $invitation_url);
+		$body_html = $invitation_service->getEmailTemplate($this->getInvitationEmailTemplate($invitation, $invitation_url));
 
-		return VT_Mail::send($invitation->invited_email, $subject, $message);
+		return $invitation_service->sendInvitationEmail(array(
+			'to_email' => $invitation->invited_email,
+			'subject' => $subject,
+			'body_html' => $body_html
+		));
 	}
 
 	/**
@@ -556,10 +556,10 @@ class VT_Community_Manager {
 				</div>
 				<?php endif; ?>
 
-				<?php if ($invitation->personal_message): ?>
+				<?php if ($invitation->message): ?>
 				<div>
 					<p><strong>Personal message from <?php echo vt_service('validation.validator')->escHtml($invitation->inviter_name); ?>:</strong></p>
-					<p><?php echo nl2br(vt_service('validation.validator')->escHtml($invitation->personal_message)); ?></p>
+					<p><?php echo nl2br(vt_service('validation.validator')->escHtml($invitation->message)); ?></p>
 				</div>
 				<?php endif; ?>
 
