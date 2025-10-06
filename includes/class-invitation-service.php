@@ -21,7 +21,10 @@ class VT_Invitation_Service {
 	 * @return true|VT_Error True if valid, VT_Error if invalid
 	 */
 	public function validateInvitationData($data) {
-		if (empty($data['email']) || !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+		// Handle both 'email' and 'invited_email' field names
+		$email = $data['email'] ?? $data['invited_email'] ?? '';
+
+		if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 			return new VT_Error('invalid_email', 'Valid email address required');
 		}
 
