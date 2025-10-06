@@ -149,7 +149,7 @@ CREATE TABLE `vt_community_invitations` (
   `invited_by_member_id` mediumint NOT NULL,
   `invited_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `invited_user_id` bigint unsigned DEFAULT NULL,
-  `invitation_token` varchar(32) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `invitation_token` varchar(64) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci,
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT 'pending',
   `expires_at` datetime NOT NULL,
@@ -300,7 +300,7 @@ CREATE TABLE `vt_event_invitations` (
   `invited_by_user_id` bigint unsigned NOT NULL,
   `invited_email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `invited_user_id` bigint unsigned DEFAULT NULL,
-  `invitation_token` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `invitation_token` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci,
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT 'pending',
   `custom_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci,
@@ -376,8 +376,8 @@ CREATE TABLE `vt_events` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `vt_guests` (
   `id` mediumint NOT NULL AUTO_INCREMENT,
-  `rsvp_token` varchar(32) COLLATE utf8mb4_unicode_520_ci DEFAULT '',
-  `temporary_guest_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT '',
+  `rsvp_token` varchar(64) COLLATE utf8mb4_unicode_520_ci DEFAULT '',
+  `temporary_guest_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT '',
   `converted_user_id` bigint unsigned DEFAULT NULL,
   `event_id` mediumint NOT NULL,
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
@@ -498,7 +498,7 @@ CREATE TABLE `vt_search` (
 CREATE TABLE `vt_sessions` (
   `id` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` bigint unsigned DEFAULT NULL,
-  `guest_token` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `guest_token` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `data` longtext COLLATE utf8mb4_unicode_ci,
   `expires_at` datetime NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
