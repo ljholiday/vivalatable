@@ -49,7 +49,7 @@ $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	if ($_POST['action'] === 'submit_rsvp' && vt_service('security.service')->verifyNonce($_POST['nonce'], 'vt_guest_rsvp')) {
-		$rsvp_status = vt_service('validation.validator')->textField($_POST['rsvp_status']);
+		$rsvp_status = $_POST['rsvp_status'] ?? '';
 
 		$guest_data = array(
 			'name' => vt_service('validation.validator')->textField($_POST['guest_name'] ?? ''),
