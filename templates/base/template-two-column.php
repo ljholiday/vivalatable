@@ -79,6 +79,7 @@
 <?php endif; ?>
 <?php if (strpos(VT_Router::getCurrentUri(), '/communities') !== false || strpos(VT_Router::getCurrentUri(), '/events') !== false) : ?>
 <script src="/assets/js/communities.js"></script>
+<script src="/assets/js/invitation.js"></script>
 <?php endif; ?>
 </body>
 </html>

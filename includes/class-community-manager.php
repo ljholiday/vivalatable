@@ -500,6 +500,88 @@ class VT_Community_Manager {
 	}
 
 	/**
+	 * Accept a community invitation
+	 *
+	 * @param string $invitation_token Invitation token
+	 * @param int|null $user_id User ID (uses current user if null)
+	 * @return int|VT_Error Member ID on success, VT_Error on failure
+	 */
+	public function acceptInvitation($invitation_token, $user_id = null) {
+		if (empty($invitation_token)) {
+			return new VT_Error('invalid_token', 'Invitation token is required');
+		}
+
+		// Get invitation by token
+		$invitation = $this->db->getRow(
+			$this->db->prepare(
+				"SELECT * FROM {$this->db->prefix}community_invitations
+				 WHERE invitation_token = %s AND status = 'pending'",
+				$invitation_token
+			)
+		);
+
+		if (!$invitation) {
+			return new VT_Error('invalid_invitation', 'Invalid or expired invitation');
+		}
+
+		// Check if invitation has expired
+		if (strtotime($invitation->expires_at) < time()) {
+			return new VT_Error('expired_invitation', 'This invitation has expired');
+		}
+
+		// Get or create user
+		if ($user_id === null) {
+			$user_id = vt_service('auth.service')->getCurrentUserId();
+		}
+
+		if (!$user_id) {
+			return new VT_Error('login_required', 'You must be logged in to accept this invitation');
+		}
+
+		$user = vt_service('auth.service')->getUserById($user_id);
+		if (!$user) {
+			return new VT_Error('user_not_found', 'User not found');
+		}
+
+		// Check if user's email matches the invitation
+		if ($user->email !== $invitation->invited_email) {
+			return new VT_Error('email_mismatch', 'This invitation was sent to a different email address');
+		}
+
+		// Check if already a member
+		if ($this->isMember($invitation->community_id, $user_id)) {
+			// Mark invitation as accepted
+			$this->db->update(
+				'community_invitations',
+				array('status' => 'accepted'),
+				array('id' => $invitation->id)
+			);
+			return new VT_Error('already_member', 'You are already a member of this community');
+		}
+
+		// Add user as member
+		$member_data = array(
+			'user_id' => $user_id,
+			'role' => 'member'
+		);
+
+		$member_id = $this->addMember($invitation->community_id, $member_data, true);
+
+		if (is_vt_error($member_id)) {
+			return $member_id;
+		}
+
+		// Mark invitation as accepted
+		$this->db->update(
+			'community_invitations',
+			array('status' => 'accepted'),
+			array('id' => $invitation->id)
+		);
+
+		return $member_id;
+	}
+
+	/**
 	 * Send invitation email
 	 */
 	private function sendInvitationEmail($invitation_id) {

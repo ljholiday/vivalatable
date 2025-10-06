@@ -983,6 +983,50 @@ class VT_Community_Ajax_Handler {
 	}
 
 	/**
+	 * REST API handler for accepting invitations
+	 */
+	public static function handleAcceptInvitation($params) {
+		if (!vt_service('auth.service')->isLoggedIn()) {
+			http_response_code(401);
+			echo json_encode(['success' => false, 'message' => 'You must be logged in to accept invitations']);
+			exit;
+		}
+
+		$token = $_POST['token'] ?? $_GET['token'] ?? '';
+
+		if (empty($token)) {
+			http_response_code(400);
+			echo json_encode(['success' => false, 'message' => 'Invitation token is required']);
+			exit;
+		}
+
+		$community_manager = new VT_Community_Manager();
+		$result = $community_manager->acceptInvitation($token);
+
+		if (is_vt_error($result)) {
+			$error_code = $result->getErrorCode();
+
+			// Map error codes to HTTP status codes
+			$status_map = array(
+				'invalid_token' => 400,
+				'invalid_invitation' => 404,
+				'expired_invitation' => 410,
+				'login_required' => 401,
+				'user_not_found' => 404,
+				'email_mismatch' => 403,
+				'already_member' => 409
+			);
+
+			http_response_code($status_map[$error_code] ?? 500);
+			echo json_encode(['success' => false, 'message' => $result->getErrorMessage()]);
+			exit;
+		}
+
+		echo json_encode(['success' => true, 'message' => 'You have successfully joined the community!', 'member_id' => $result]);
+		exit;
+	}
+
+	/**
 	 * AJAX handler for getting communities with circle filtering
 	 */
 	public static function ajaxGetCommunities() {
