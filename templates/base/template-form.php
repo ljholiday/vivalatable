@@ -23,32 +23,6 @@
             Communities
         </a>
     </div>
-    <!-- Context Action Bar -->
-    <div class="vt-action-bar">
-        <?php
-        // Smart back button based on current page
-        $back_url = '/';
-        $back_text = 'Back';
-        $current_uri = VT_Router::getCurrentUri();
-
-        if (strpos($current_uri, '/edit') !== false && isset($event)) {
-            $back_url = '/events/' . $event->slug . '/manage';
-            $back_text = 'Back to Manage';
-        } elseif (strpos($current_uri, '/create-event') !== false) {
-            $back_url = '/events';
-            $back_text = 'Back to Events';
-        } elseif (strpos($current_uri, '/create-community') !== false) {
-            $back_url = '/communities';
-            $back_text = 'Back to Communities';
-        } elseif (strpos($current_uri, '/create-conversation') !== false) {
-            $back_url = '/conversations';
-            $back_text = 'Back to Conversations';
-        }
-        ?>
-        <a href="<?php echo $back_url; ?>" class="vt-btn vt-btn-secondary">
-            ← <?php echo $back_text; ?>
-        </a>
-    </div>
 
     <!-- Page Header -->
     <div class="vt-header">

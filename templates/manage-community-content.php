@@ -77,18 +77,23 @@ $page_description = 'Manage members and invitations for your community';
 <!-- Tab Navigation -->
 <div class="vt-section vt-mb-4">
 	<div class="vt-tab-nav vt-flex vt-gap-4 vt-flex-wrap">
+
 		<a href="?community_id=<?php echo $community_id; ?>&tab=members" class="vt-btn <?php echo ($active_tab === 'members') ? 'is-active' : ''; ?>">
 			Members
 		</a>
+
 		<a href="?community_id=<?php echo $community_id; ?>&tab=invitations" class="vt-btn <?php echo ($active_tab === 'invitations') ? 'is-active' : ''; ?>">
 			Invitations
 		</a>
+
 		<a href="/communities/<?php echo htmlspecialchars($community->slug); ?>/edit" class="vt-btn">
 			Edit
 		</a>
+
 		<a href="/communities/<?php echo htmlspecialchars($community->slug); ?>" class="vt-btn">
 			View Community
 		</a>
+
 	</div>
 </div>
 
