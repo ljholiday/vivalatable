@@ -17,15 +17,8 @@ if (empty($invitation_token)) {
 	return;
 }
 
-// Check if user is logged in
-if (!vt_service('auth.service')->isLoggedIn()) {
-	// Redirect to login with return URL
-	$return_url = '/invitation/accept?token=' . urlencode($invitation_token);
-	VT_Router::redirect('/login?redirect=' . urlencode($return_url));
-	exit;
-}
-
-// Get invitation details before accepting
+// Get invitation details first (before checking login)
+$is_logged_in = vt_service('auth.service')->isLoggedIn();
 $db = VT_Database::getInstance();
 $invitation = $db->getRow(
 	$db->prepare(
@@ -61,9 +54,18 @@ if (strtotime($invitation->expires_at) < time()) {
 	return;
 }
 
-// Check if user's email matches
-$current_user = vt_service('auth.service')->getCurrentUser();
-if ($current_user->email !== $invitation->invited_email) {
+// Check if user's email matches (only if logged in)
+$current_user = null;
+$email_mismatch = false;
+
+if ($is_logged_in) {
+	$current_user = vt_service('auth.service')->getCurrentUser();
+	if ($current_user->email !== $invitation->invited_email) {
+		$email_mismatch = true;
+	}
+}
+
+if ($email_mismatch) {
 	?>
 	<div class="vt-section vt-text-center">
 		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Email Mismatch</h3>
@@ -76,8 +78,8 @@ if ($current_user->email !== $invitation->invited_email) {
 	return;
 }
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_invitation'])) {
+// Handle form submission (only if logged in)
+if ($is_logged_in && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_invitation'])) {
 	$community_manager = new VT_Community_Manager();
 	$result = $community_manager->acceptInvitation($invitation_token);
 
@@ -128,14 +130,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accept_invitation']))
 					</p>
 				</div>
 
-				<form method="POST" class="vt-flex vt-gap-2">
-					<button type="submit" name="accept_invitation" class="vt-btn vt-btn-primary">
-						Accept Invitation
-					</button>
-					<a href="/communities" class="vt-btn vt-btn-secondary">
-						Decline
-					</a>
-				</form>
+				<?php if ($is_logged_in) : ?>
+					<form method="POST" class="vt-flex vt-gap-2">
+						<button type="submit" name="accept_invitation" class="vt-btn vt-btn-primary">
+							Accept Invitation
+						</button>
+						<a href="/communities" class="vt-btn vt-btn-secondary">
+							Decline
+						</a>
+					</form>
+				<?php else : ?>
+					<div class="vt-mb-4">
+						<p class="vt-text-muted vt-mb-4">To accept this invitation, you need to log in or create an account.</p>
+						<div class="vt-flex vt-gap-2">
+							<a href="/login?redirect=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>" class="vt-btn vt-btn-primary">
+								Log In
+							</a>
+							<a href="/register?redirect=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>&email=<?php echo urlencode($invitation->invited_email); ?>" class="vt-btn vt-btn-secondary">
+								Create Account
+							</a>
+						</div>
+					</div>
+				<?php endif; ?>
 			</div>
 		</div>
 	</div>

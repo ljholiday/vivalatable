@@ -176,7 +176,7 @@ class VT_Guest_Manager {
 	 * Get guest by RSVP token
 	 */
 	public function getGuestByToken($rsvp_token) {
-		if (empty($rsvp_token) || strlen($rsvp_token) !== 32) {
+		if (empty($rsvp_token) || strlen($rsvp_token) !== 64) {
 			return null;
 		}
 

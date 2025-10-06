@@ -5,11 +5,11 @@
  * Ported from PartyMinder WordPress plugin - maintains 32-character token system
  */
 
-// Get RSVP token from URL
-$rsvp_token = $_GET['token'] ?? '';
+// Get RSVP token from route parameter or URL
+$rsvp_token = $token ?? $_GET['token'] ?? '';
 $quick_response = $_GET['response'] ?? '';
 
-if (empty($rsvp_token) || strlen($rsvp_token) !== 32) {
+if (empty($rsvp_token) || strlen($rsvp_token) !== 64) {
 	?>
 	<div class="vt-section vt-text-center">
 		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Invalid RSVP Link</h3>
