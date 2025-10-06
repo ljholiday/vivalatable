@@ -47,7 +47,7 @@ class VT_Pages {
 
 				if ($user) {
 					// Login successful - redirect before any output
-					$redirect_to = $_GET['redirect_to'] ?? '/dashboard';
+					$redirect_to = $_POST['redirect_to'] ?? $_GET['redirect_to'] ?? '/dashboard';
 					VT_Router::redirect($redirect_to);
 					return;
 				} else {

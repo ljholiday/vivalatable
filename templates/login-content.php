@@ -37,6 +37,9 @@ $messages = $messages ?? array();
 
 	<form method="post" class="vt-form">
 		<?php echo vt_service('security.service')->nonceField('vt_login', 'vt_login_nonce'); ?>
+		<?php if (isset($_GET['redirect_to'])): ?>
+			<input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_GET['redirect_to']); ?>">
+		<?php endif; ?>
 
 		<div class="vt-form-group">
 			<label for="username" class="vt-form-label">Username or Email</label>
