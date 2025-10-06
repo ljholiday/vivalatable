@@ -102,7 +102,7 @@ class VT_Guest_Manager {
 	 * Core functionality for guest RSVP without registration
 	 */
 	public function processAnonymousRsvp($rsvp_token, $status, $guest_data = array()) {
-		if (empty($rsvp_token) || strlen($rsvp_token) !== 32) {
+		if (empty($rsvp_token) || strlen($rsvp_token) !== 64) {
 			return new VT_Error('invalid_token', 'Invalid RSVP token');
 		}
 
