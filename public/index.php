@@ -32,6 +32,12 @@ switch ($path) {
         require __DIR__ . '/../templates/events-list.php';
         break;
 
+    case preg_match('#^/events/([^/]+)$#', $path, $m):
+        $slug = $m[1];
+        $event = vt_service('event.service')->getBySlugOrId($slug);
+        require __DIR__ . '/../templates/event-detail.php';
+        break;
+
     default:
         // Not implemented yet: e.g., /events/{slug}, /events/{slug}/edit
         http_response_code(404);
