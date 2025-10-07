@@ -3,32 +3,39 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// No namespace here — keep this file in the global namespace.
-
 if (!defined('VT_VERSION')) {
     define('VT_VERSION', '2.0-dev');
 }
 
-use App\Database\Database;
-use App\Services\EventService;
-
 /**
- * Very small service container.
+ * Legacy compatibility shim: VT_Text
+ * Keeps old partials (like templates/partials/entity-card.php) working.
  */
-function vt_service(string $name) {
-    static $services = [];
-
-    if (!isset($services['db'])) {
-        $cfg = require __DIR__ . '/../config/database.php';
-        if (!is_array($cfg)) {
-            throw new RuntimeException('config/database.php must return an array.');
+if (!class_exists('VT_Text')) {
+    final class VT_Text {
+        public static function esc(string $text): string {
+            return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
         }
-        $services['db'] = new Database($cfg); // <- now resolves to App\Database\Database
+        public static function plain(string $text): string {
+            return trim(strip_tags($text));
+        }
+        public static function truncate(string $text, int $limit = 120, string $ellipsis = '…'): string {
+            return self::truncate_chars($text, $limit, $ellipsis);
+        }
+        public static function truncate_chars(string $text, int $limit = 120, string $ellipsis = '…'): string {
+            $t = self::plain($text);
+            if (mb_strlen($t) <= $limit) return $t;
+            return rtrim(mb_substr($t, 0, $limit)) . $ellipsis;
+        }
+        public static function truncate_words(string $text, int $limit = 25, string $ellipsis = '…'): string {
+            $t = preg_replace('/\s+/u', ' ', self::plain($text));
+            $words = $t === '' ? [] : explode(' ', $t);
+            if (count($words) <= $limit) return $t;
+            return implode(' ', array_slice($words, 0, $limit)) . $ellipsis;
+        }
+        public static function excerpt(string $text, int $words = 30, string $ellipsis = '…'): string {
+            return self::truncate_words($text, $words, $ellipsis);
+        }
     }
-
-    return match ($name) {
-        'event.service' => $services['event'] ??= new EventService($services['db']),
-        default => throw new RuntimeException('Unknown service: ' . $name),
-    };
 }
 
