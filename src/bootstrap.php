@@ -1,10 +1,124 @@
 <?php
 declare(strict_types=1);
 
+use App\Database\Database;
+use App\Services\EventService;
+use App\Services\CommunityService;
+
+
 require __DIR__ . '/../vendor/autoload.php';
 
 if (!defined('VT_VERSION')) {
     define('VT_VERSION', '2.0-dev');
+}
+
+/**
+ * Very small service container for modern code paths.
+ *
+ * This intentionally mirrors the legacy helper functions (`vt_service`,
+ * `vt_container`) so templates and controllers can stay agnostic while the
+ * migration to namespaced classes progresses.
+ */
+final class VTContainer
+{
+    /** @var array<string, callable(self):mixed> */
+    private array $factories = [];
+
+    /** @var array<string, mixed> */
+    private array $instances = [];
+
+    /**
+     * Register a service factory.
+     *
+     * @param string $id Identifier like "event.service".
+     * @param callable(self):mixed $factory Factory that returns the service instance.
+     * @param bool $shared Whether the instance should be cached (default true).
+     */
+    public function register(string $id, callable $factory, bool $shared = true): void
+    {
+        $this->factories[$id] = [$factory, $shared];
+        if (!$shared) {
+            unset($this->instances[$id]);
+        }
+    }
+
+    /**
+     * Resolve a service by id.
+     *
+     * @template T
+     * @param string $id
+     * @return mixed
+     */
+    public function get(string $id)
+    {
+        if (array_key_exists($id, $this->instances)) {
+            return $this->instances[$id];
+        }
+
+        if (!isset($this->factories[$id])) {
+            throw new RuntimeException(sprintf('Service "%s" not registered.', $id));
+        }
+
+        [$factory, $shared] = $this->factories[$id];
+        $instance = $factory($this);
+
+        if ($shared) {
+            $this->instances[$id] = $instance;
+        }
+
+        return $instance;
+    }
+}
+
+if (!function_exists('vt_container')) {
+    /**
+     * Retrieve the global container instance, creating it on first use.
+     */
+    function vt_container(): VTContainer
+    {
+        static $container = null;
+
+        if ($container === null) {
+            $container = new VTContainer();
+
+            $container->register('config.database', static function (): array {
+                $path = __DIR__ . '/../config/database.php';
+                if (!is_file($path)) {
+                    throw new RuntimeException('Missing config/database.php. Copy database.php.sample and update credentials.');
+                }
+
+                $config = require $path;
+                if (!is_array($config)) {
+                    throw new RuntimeException('config/database.php must return an array.');
+                }
+
+                return $config;
+            });
+
+            $container->register('database.connection', static function (VTContainer $c): Database {
+                return new Database($c->get('config.database'));
+            });
+
+            $container->register('event.service', static function (VTContainer $c): EventService {
+                return new EventService($c->get('database.connection'));
+            });
+        }
+
+        return $container;
+    }
+}
+
+if (!function_exists('vt_service')) {
+    /**
+     * Convenience accessor for services during the migration.
+     *
+     * @param string $id
+     * @return mixed
+     */
+    function vt_service(string $id)
+    {
+        return vt_container()->get($id);
+    }
 }
 
 /**
@@ -38,4 +152,3 @@ if (!class_exists('VT_Text')) {
         }
     }
 }
-
