@@ -60,16 +60,15 @@ final class EventService
                 WHERE e.event_status = 'active'
                   AND e.status = 'active'
                   AND (
-                        e.author_id = :viewer
-                        OR g.converted_user_id = :viewer
-                        OR g.email = :viewer_email
+                        e.author_id = :viewer_author
+                        OR g.converted_user_id = :viewer_guest
                     )
                 ORDER BY e.event_date DESC
                 LIMIT :lim";
 
         $stmt = $this->db->pdo()->prepare($sql);
-        $stmt->bindValue(':viewer', $viewerId, PDO::PARAM_INT);
-        $stmt->bindValue(':viewer_email', $this->fallbackEmail($viewerId), PDO::PARAM_STR);
+        $stmt->bindValue(':viewer_author', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_guest', $viewerId, PDO::PARAM_INT);
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -252,12 +251,6 @@ final class EventService
             }
             $slug = $base . '-' . ++$i;
         }
-    }
-
-    private function fallbackEmail(int $viewerId): string
-    {
-        // TODO: wire to authenticated user's email when auth service is migrated.
-        return '';
     }
 
 }
