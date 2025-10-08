@@ -135,6 +135,13 @@ if ($path === '/communities/create') {
     return;
 }
 
+if ($path === '/conversations') {
+    $view = vt_service('controller.conversations')->index();
+    $conversations = $view['conversations'];
+    require __DIR__ . '/../templates/conversations-list.php';
+    return;
+}
+
 if ($path === '/communities') {
     $view = vt_service('controller.communities')->index();
     $communities = $view['communities'];
@@ -188,6 +195,14 @@ if (preg_match('#^/communities/([^/]+)/delete$#', $path, $m)) {
     $result = vt_service('controller.communities')->destroy($slug);
     header('Location: ' . $result['redirect']);
     exit;
+}
+
+if (preg_match('#^/conversations/([^/]+)$#', $path, $m)) {
+    $slug = $m[1];
+    $view = vt_service('controller.conversations')->show($slug);
+    $conversation = $view['conversation'];
+    require __DIR__ . '/../templates/conversation-detail.php';
+    return;
 }
 
 if (preg_match('#^/communities/([^/]+)$#', $path, $m)) {

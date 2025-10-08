@@ -4,9 +4,11 @@ declare(strict_types=1);
 use App\Database\Database;
 use App\Http\Controller\EventController;
 use App\Http\Controller\CommunityController;
+use App\Http\Controller\ConversationController;
 use App\Http\Request;
 use App\Services\EventService;
 use App\Services\CommunityService;
+use App\Services\ConversationService;
 
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -110,12 +112,20 @@ if (!function_exists('vt_container')) {
                 return new CommunityService($c->get('database.connection'));
             });
 
+            $container->register('conversation.service', static function (VTContainer $c): ConversationService {
+                return new ConversationService($c->get('database.connection'));
+            });
+
             $container->register('controller.events', static function (VTContainer $c): EventController {
                 return new EventController($c->get('event.service'));
             }, false);
 
             $container->register('controller.communities', static function (VTContainer $c): CommunityController {
                 return new CommunityController($c->get('community.service'));
+            }, false);
+
+            $container->register('controller.conversations', static function (VTContainer $c): ConversationController {
+                return new ConversationController($c->get('conversation.service'));
             }, false);
 
             $container->register('http.request', static function (): Request {
