@@ -171,6 +171,22 @@ final class CommunityService
         return $slug;
     }
 
+    public function delete(string $slugOrId): bool
+    {
+        $community = $this->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return false;
+        }
+
+        $slug = (string)($community['slug'] ?? $slugOrId);
+        $pdo = $this->db->pdo();
+
+        $stmt = $pdo->prepare('DELETE FROM vt_communities WHERE slug = :slug LIMIT 1');
+        $stmt->execute([':slug' => $slug]);
+
+        return $stmt->rowCount() === 1;
+    }
+
     private function slugify(string $name): string
     {
         $slug = strtolower($name);

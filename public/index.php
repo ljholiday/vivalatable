@@ -176,6 +176,20 @@ if (preg_match('#^/communities/([^/]+)/edit$#', $path, $m)) {
     return;
 }
 
+if (preg_match('#^/communities/([^/]+)/delete$#', $path, $m)) {
+    if ($request->method() !== 'POST') {
+        http_response_code(405);
+        header('Allow: POST');
+        echo 'Method Not Allowed';
+        return;
+    }
+
+    $slug = $m[1];
+    $result = vt_service('controller.communities')->destroy($slug);
+    header('Location: ' . $result['redirect']);
+    exit;
+}
+
 if (preg_match('#^/communities/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.communities')->show($slug);

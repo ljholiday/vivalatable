@@ -59,5 +59,13 @@ $community = $community ?? null;
         <a class="vt-btn" href="/communities/<?= e($community['slug'] ?? '') ?>">Cancel</a>
       </div>
     </form>
+
+    <div class="vt-danger-zone vt-mt-6">
+      <h2 class="vt-heading-sm">Danger Zone</h2>
+      <p class="vt-text-muted">Deleting a community cannot be undone.</p>
+      <form method="post" action="/communities/<?= e($community['slug'] ?? '') ?>/delete" class="vt-inline-form" onsubmit="return confirm('Delete this community?');">
+        <button type="submit" class="vt-btn vt-btn-danger">Delete Community</button>
+      </form>
+    </div>
   <?php endif; ?>
 </section>

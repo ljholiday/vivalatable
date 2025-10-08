@@ -151,6 +151,17 @@ final class CommunityController
      *   errors: array<string,string>
      * }
      */
+    /**
+     * @return array{redirect: string}
+     */
+    public function destroy(string $slugOrId): array
+    {
+        $this->communities->delete($slugOrId);
+        return [
+            'redirect' => '/communities',
+        ];
+    }
+
     private function validateCommunityInput(Request $request): array
     {
         $input = [
