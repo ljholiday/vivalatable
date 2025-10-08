@@ -142,6 +142,40 @@ if ($path === '/communities') {
     return;
 }
 
+if (preg_match('#^/communities/([^/]+)/edit$#', $path, $m)) {
+    $slug = $m[1];
+    $controller = vt_service('controller.communities');
+
+    if ($request->method() === 'POST') {
+        $result = $controller->update($slug);
+        if (isset($result['redirect'])) {
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        if (!isset($result['community']) || $result['community'] === null) {
+            http_response_code(404);
+            echo 'Not Found';
+            return;
+        }
+        $community = $result['community'];
+        $errors = $result['errors'] ?? [];
+        $input = $result['input'] ?? [];
+    } else {
+        $view = $controller->edit($slug);
+        if ($view['community'] === null) {
+            http_response_code(404);
+            echo 'Not Found';
+            return;
+        }
+        $community = $view['community'];
+        $errors = $view['errors'];
+        $input = $view['input'];
+    }
+
+    require __DIR__ . '/../templates/community-edit.php';
+    return;
+}
+
 if (preg_match('#^/communities/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.communities')->show($slug);

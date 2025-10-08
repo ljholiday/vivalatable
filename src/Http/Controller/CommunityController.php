@@ -81,6 +81,72 @@ final class CommunityController
 
     /**
      * @return array{
+     *   community: array<string,mixed>|null,
+     *   errors: array<string,string>,
+     *   input: array<string,string>
+     * }
+     */
+    public function edit(string $slugOrId): array
+    {
+        $community = $this->communities->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return [
+                'community' => null,
+                'errors' => [],
+                'input' => [],
+            ];
+        }
+
+        return [
+            'community' => $community,
+            'errors' => [],
+            'input' => [
+                'name' => $community['title'] ?? '',
+                'description' => $community['description'] ?? '',
+                'privacy' => strtolower((string)($community['privacy'] ?? 'public')),
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *   redirect?: string,
+     *   community?: array<string,mixed>|null,
+     *   errors?: array<string,string>,
+     *   input?: array<string,string>
+     * }
+     */
+    public function update(string $slugOrId): array
+    {
+        $community = $this->communities->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return [
+                'community' => null,
+            ];
+        }
+
+        $validated = $this->validateCommunityInput($this->request());
+        if ($validated['errors']) {
+            return [
+                'community' => $community,
+                'errors' => $validated['errors'],
+                'input' => $validated['input'],
+            ];
+        }
+
+        $this->communities->update($community['slug'], [
+            'name' => $validated['input']['name'],
+            'description' => $validated['input']['description'],
+            'privacy' => $validated['input']['privacy'],
+        ]);
+
+        return [
+            'redirect' => '/communities/' . $community['slug'],
+        ];
+    }
+
+    /**
+     * @return array{
      *   input: array<string,string>,
      *   errors: array<string,string>
      * }

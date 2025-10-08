@@ -126,6 +126,51 @@ final class CommunityService
         return $slug;
     }
 
+    /**
+     * @param array{name:string,description:string,privacy:string} $data
+     */
+    public function update(string $slugOrId, array $data): string
+    {
+        $community = $this->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            throw new RuntimeException('Community not found.');
+        }
+
+        $name = trim($data['name']);
+        if ($name === '') {
+            throw new RuntimeException('Name is required.');
+        }
+
+        $privacy = $data['privacy'] !== '' ? $data['privacy'] : 'public';
+        if (!in_array($privacy, ['public', 'private'], true)) {
+            throw new RuntimeException('Invalid privacy value.');
+        }
+
+        $slug = (string)($community['slug'] ?? $slugOrId);
+        $pdo = $this->db->pdo();
+        $updatedAt = date('Y-m-d H:i:s');
+
+        $stmt = $pdo->prepare(
+            "UPDATE vt_communities
+             SET name = :name,
+                 description = :description,
+                 privacy = :privacy,
+                 updated_at = :updated_at
+             WHERE slug = :slug
+             LIMIT 1"
+        );
+
+        $stmt->execute([
+            ':name' => $name,
+            ':description' => $data['description'],
+            ':privacy' => $privacy,
+            ':updated_at' => $updatedAt,
+            ':slug' => $slug,
+        ]);
+
+        return $slug;
+    }
+
     private function slugify(string $name): string
     {
         $slug = strtolower($name);
