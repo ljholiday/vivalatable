@@ -169,6 +169,8 @@ if ($path === '/conversations') {
 if ($path === '/communities') {
     $view = vt_service('controller.communities')->index();
     $communities = $view['communities'];
+    $circle = $view['circle'] ?? 'all';
+    $circle_context = $view['circle_context'] ?? ['inner' => ['communities' => [], 'creators' => []], 'trusted' => ['communities' => [], 'creators' => []], 'extended' => ['communities' => [], 'creators' => []]];
     require __DIR__ . '/../templates/communities-list.php';
     return;
 }

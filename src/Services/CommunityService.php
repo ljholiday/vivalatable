@@ -12,6 +12,51 @@ final class CommunityService
     public function __construct(private Database $db) {}
 
     /** @return array<int,array<string,mixed>> */
+    public function listByIds(array $communityIds): array
+    {
+        $ids = $this->uniqueInts($communityIds);
+        if ($ids === []) {
+            return [];
+        }
+
+        $sql = "SELECT
+                    id,
+                    name AS title,
+                    slug,
+                    description,
+                    created_at,
+                    privacy,
+                    member_count,
+                    event_count
+                FROM vt_communities
+                WHERE id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        foreach ($ids as $i => $id) {
+            $stmt->bindValue($i + 1, $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @param array<int|string> $values
+     * @return array<int>
+     */
+    private function uniqueInts(array $values): array
+    {
+        if ($values === []) {
+            return [];
+        }
+
+        $ints = array_map(static fn($value) => (int)$value, $values);
+        $ints = array_values(array_unique($ints));
+        sort($ints);
+
+        return $ints;
+    }
+
     public function listRecent(int $limit = 20): array
     {
         $sql = "SELECT
@@ -29,6 +74,77 @@ final class CommunityService
         $stmt = $this->db->pdo()->prepare($sql);
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
         $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function listByCircle(?array $allowedCommunities, array $memberCommunities, int $limit = 20): array
+    {
+        $allowedCommunities = $allowedCommunities === null ? null : $this->uniqueInts($allowedCommunities);
+        $memberCommunities = $this->uniqueInts($memberCommunities);
+
+        if ($allowedCommunities !== null && $allowedCommunities === []) {
+            return [];
+        }
+
+        $conditions = [];
+
+        if ($allowedCommunities === null) {
+            $privacyParts = ["privacy = 'public'"];
+            if ($memberCommunities !== []) {
+                $privacyParts[] = 'id IN (' . implode(',', array_fill(0, count($memberCommunities), '?')) . ')';
+            }
+            $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
+        } else {
+            $conditions[] = 'id IN (' . implode(',', array_fill(0, count($allowedCommunities), '?')) . ')';
+            $privacyParts = ["privacy = 'public'"];
+            if ($memberCommunities !== []) {
+                $privacyParts[] = 'id IN (' . implode(',', array_fill(0, count($memberCommunities), '?')) . ')';
+            }
+            $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
+        }
+
+        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+        $sql = "SELECT
+                    id,
+                    name AS title,
+                    slug,
+                    description,
+                    created_at,
+                    privacy,
+                    member_count,
+                    event_count
+                FROM vt_communities
+                $where
+                ORDER BY COALESCE(created_at, id) DESC
+                LIMIT $limit";
+
+        $pdo = $this->db->pdo();
+        $stmt = $pdo->prepare($sql);
+
+        $bindValues = [];
+        if ($allowedCommunities === null) {
+            foreach ($memberCommunities as $id) {
+                $bindValues[] = $id;
+            }
+        } else {
+            foreach ($allowedCommunities as $id) {
+                $bindValues[] = $id;
+            }
+            foreach ($memberCommunities as $id) {
+                $bindValues[] = $id;
+            }
+        }
+
+        foreach ($bindValues as $index => $value) {
+            $stmt->bindValue($index + 1, $value, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

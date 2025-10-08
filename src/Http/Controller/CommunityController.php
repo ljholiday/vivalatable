@@ -5,11 +5,16 @@ namespace App\Http\Controller;
 
 use App\Http\Request;
 use App\Services\CommunityService;
+use App\Services\CircleService;
 
 final class CommunityController
 {
-    public function __construct(private CommunityService $communities)
-    {
+    private const VALID_CIRCLES = ['all', 'inner', 'trusted', 'extended'];
+
+    public function __construct(
+        private CommunityService $communities,
+        private CircleService $circles
+    ) {
     }
 
     /**
@@ -17,8 +22,19 @@ final class CommunityController
      */
     public function index(): array
     {
+        $request = $this->request();
+        $circle = $this->normalizeCircle($request->query('circle'));
+        $viewerId = $this->viewerId();
+        $context = $this->circles->buildContext($viewerId);
+        $allowed = $this->circles->resolveCommunitiesForCircle($context, $circle);
+        $memberCommunities = $this->circles->memberCommunities($context);
+
+        $communities = $this->communities->listByCircle($allowed, $memberCommunities);
+
         return [
-            'communities' => $this->communities->listRecent(),
+            'communities' => $communities,
+            'circle' => $circle,
+            'circle_context' => $context,
         ];
     }
 
