@@ -58,6 +58,40 @@ if ($path === '/events/create') {
     return;
 }
 
+if (preg_match('#^/events/([^/]+)/edit$#', $path, $m)) {
+    $slug = $m[1];
+    $controller = vt_service('controller.events');
+
+    if ($request->method() === 'POST') {
+        $result = $controller->update($slug);
+        if (isset($result['redirect'])) {
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        if (!isset($result['event']) || $result['event'] === null) {
+            http_response_code(404);
+            echo 'Not Found';
+            return;
+        }
+        $event = $result['event'];
+        $errors = $result['errors'] ?? [];
+        $input = $result['input'] ?? [];
+    } else {
+        $view = $controller->edit($slug);
+        if ($view['event'] === null) {
+            http_response_code(404);
+            echo 'Not Found';
+            return;
+        }
+        $event = $view['event'];
+        $errors = $view['errors'];
+        $input = $view['input'];
+    }
+
+    require __DIR__ . '/../templates/event-edit.php';
+    return;
+}
+
 if (preg_match('#^/events/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.events')->show($slug);

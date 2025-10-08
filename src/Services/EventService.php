@@ -143,6 +143,46 @@ final class EventService
         return $slug;
     }
 
+    /**
+     * @param array{title:string,description:string,event_date:?string} $data
+     */
+    public function update(string $slugOrId, array $data): string
+    {
+        $event = $this->getBySlugOrId($slugOrId);
+        if ($event === null) {
+            throw new RuntimeException('Event not found.');
+        }
+
+        $title = trim($data['title']);
+        if ($title === '') {
+            throw new RuntimeException('Title is required.');
+        }
+
+        $slug = (string)($event['slug'] ?? $slugOrId);
+        $pdo = $this->db->pdo();
+        $updatedAt = date('Y-m-d H:i:s');
+
+        $stmt = $pdo->prepare(
+            "UPDATE vt_events
+             SET title = :title,
+                 description = :description,
+                 event_date = :event_date,
+                 updated_at = :updated_at
+             WHERE slug = :slug
+             LIMIT 1"
+        );
+
+        $stmt->execute([
+            ':title' => $title,
+            ':description' => $data['description'],
+            ':event_date' => $data['event_date'],
+            ':updated_at' => $updatedAt,
+            ':slug' => $slug,
+        ]);
+
+        return $slug;
+    }
+
     private function slugify(string $title): string
     {
         $slug = strtolower($title);

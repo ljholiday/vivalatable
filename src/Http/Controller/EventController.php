@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controller;
 
+use App\Http\Request;
 use App\Services\EventService;
 
 /**
@@ -62,9 +63,101 @@ final class EventController
      */
     public function store(): array
     {
-        /** @var \App\Http\Request $request */
-        $request = vt_service('http.request');
+        $validated = $this->validateEventInput($this->request());
 
+        if ($validated['errors']) {
+            return [
+                'errors' => $validated['errors'],
+                'input' => $validated['input'],
+            ];
+        }
+
+        $slug = $this->events->create([
+            'title' => $validated['input']['title'],
+            'description' => $validated['input']['description'],
+            'event_date' => $validated['event_date_db'],
+        ]);
+
+        return [
+            'redirect' => '/events/' . $slug,
+        ];
+    }
+
+    /**
+     * @return array{
+     *   event: array<string,mixed>|null,
+     *   errors: array<string,string>,
+     *   input: array<string,string>
+     * }
+     */
+    public function edit(string $slugOrId): array
+    {
+        $event = $this->events->getBySlugOrId($slugOrId);
+        if ($event === null) {
+            return [
+                'event' => null,
+                'errors' => [],
+                'input' => [],
+            ];
+        }
+
+        return [
+            'event' => $event,
+            'errors' => [],
+            'input' => [
+                'title' => $event['title'] ?? '',
+                'description' => $event['description'] ?? '',
+                'event_date' => $this->formatForInput($event['event_date'] ?? null),
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *   redirect?: string,
+     *   event?: array<string,mixed>|null,
+     *   errors?: array<string,string>,
+     *   input?: array<string,string>
+     * }
+     */
+    public function update(string $slugOrId): array
+    {
+        $event = $this->events->getBySlugOrId($slugOrId);
+        if ($event === null) {
+            return [
+                'event' => null,
+            ];
+        }
+
+        $validated = $this->validateEventInput($this->request());
+        if ($validated['errors']) {
+            return [
+                'event' => $event,
+                'errors' => $validated['errors'],
+                'input' => $validated['input'],
+            ];
+        }
+
+        $this->events->update($event['slug'], [
+            'title' => $validated['input']['title'],
+            'description' => $validated['input']['description'],
+            'event_date' => $validated['event_date_db'],
+        ]);
+
+        return [
+            'redirect' => '/events/' . $event['slug'],
+        ];
+    }
+
+    /**
+     * @return array{
+     *   input: array<string,string>,
+     *   errors: array<string,string>,
+     *   event_date_db: ?string
+     * }
+     */
+    private function validateEventInput(Request $request): array
+    {
         $input = [
             'title' => trim((string)$request->input('title', '')),
             'description' => trim((string)$request->input('description', '')),
@@ -72,7 +165,6 @@ final class EventController
         ];
 
         $errors = [];
-
         if ($input['title'] === '') {
             $errors['title'] = 'Title is required.';
         }
@@ -87,21 +179,26 @@ final class EventController
             }
         }
 
-        if ($errors) {
-            return [
-                'errors' => $errors,
-                'input' => $input,
-            ];
-        }
-
-        $slug = $this->events->create([
-            'title' => $input['title'],
-            'description' => $input['description'],
-            'event_date' => $eventDateDb,
-        ]);
-
         return [
-            'redirect' => '/events/' . $slug,
+            'input' => $input,
+            'errors' => $errors,
+            'event_date_db' => $eventDateDb,
         ];
+    }
+
+    private function request(): Request
+    {
+        /** @var Request $request */
+        $request = vt_service('http.request');
+        return $request;
+    }
+
+    private function formatForInput(?string $dbDate): string
+    {
+        if (!$dbDate) {
+            return '';
+        }
+        $timestamp = strtotime($dbDate);
+        return $timestamp ? date('Y-m-d\TH:i', $timestamp) : '';
     }
 }
