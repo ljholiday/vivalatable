@@ -218,6 +218,40 @@ if (preg_match('#^/communities/([^/]+)/delete$#', $path, $m)) {
     exit;
 }
 
+if (preg_match('#^/conversations/([^/]+)/edit$#', $path, $m)) {
+    $slug = $m[1];
+    $controller = vt_service('controller.conversations');
+
+    if ($request->method() === 'POST') {
+        $result = $controller->update($slug);
+        if (isset($result['redirect'])) {
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        if (!isset($result['conversation']) || $result['conversation'] === null) {
+            http_response_code(404);
+            echo 'Not Found';
+            return;
+        }
+        $conversation = $result['conversation'];
+        $errors = $result['errors'] ?? [];
+        $input = $result['input'] ?? [];
+    } else {
+        $view = $controller->edit($slug);
+        if ($view['conversation'] === null) {
+            http_response_code(404);
+            echo 'Not Found';
+            return;
+        }
+        $conversation = $view['conversation'];
+        $errors = $view['errors'];
+        $input = $view['input'];
+    }
+
+    require __DIR__ . '/../templates/conversation-edit.php';
+    return;
+}
+
 if (preg_match('#^/conversations/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.conversations')->show($slug);

@@ -130,6 +130,49 @@ final class ConversationService
         return $slug;
     }
 
+    /**
+     * @param array{title:string,content:string} $data
+     */
+    public function update(string $slugOrId, array $data): string
+    {
+        $conversation = $this->getBySlugOrId($slugOrId);
+        if ($conversation === null) {
+            throw new \RuntimeException('Conversation not found.');
+        }
+
+        $title = trim($data['title']);
+        if ($title === '') {
+            throw new \RuntimeException('Title is required.');
+        }
+
+        $content = trim($data['content']);
+        if ($content === '') {
+            throw new \RuntimeException('Content is required.');
+        }
+
+        $slug = (string)($conversation['slug'] ?? $slugOrId);
+        $pdo = $this->db->pdo();
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $pdo->prepare(
+            "UPDATE vt_conversations
+             SET title = :title,
+                 content = :content,
+                 updated_at = :updated_at
+             WHERE slug = :slug
+             LIMIT 1"
+        );
+
+        $stmt->execute([
+            ':title' => $title,
+            ':content' => $content,
+            ':updated_at' => $now,
+            ':slug' => $slug,
+        ]);
+
+        return $slug;
+    }
+
     private function slugify(string $title): string
     {
         $slug = strtolower($title);
