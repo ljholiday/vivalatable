@@ -66,10 +66,20 @@ final class ConversationController
     public function show(string $slugOrId): array
     {
         $conversation = $this->conversations->getBySlugOrId($slugOrId);
-        $replies = [];
-        if ($conversation !== null && isset($conversation['id'])) {
-            $replies = $this->conversations->listReplies((int)$conversation['id']);
+        $viewerId = $this->viewerId();
+        $context = $this->circles->buildContext($viewerId);
+        $memberCommunities = $context['inner']['communities'] ?? [];
+
+        if ($conversation === null || !$this->conversations->canViewerAccess($conversation, $viewerId, $memberCommunities)) {
+            return [
+                'conversation' => null,
+                'replies' => [],
+                'reply_errors' => [],
+                'reply_input' => ['content' => ''],
+            ];
         }
+
+        $replies = $this->conversations->listReplies((int)$conversation['id']);
 
         return [
             'conversation' => $conversation,
@@ -228,6 +238,18 @@ final class ConversationController
     {
         $conversation = $this->conversations->getBySlugOrId($slugOrId);
         if ($conversation === null || !isset($conversation['id'])) {
+            return [
+                'conversation' => null,
+                'replies' => [],
+                'reply_errors' => ['conversation' => 'Conversation not found.'],
+                'reply_input' => ['content' => ''],
+            ];
+        }
+
+        $viewerId = $this->viewerId();
+        $context = $this->circles->buildContext($viewerId);
+        $memberCommunities = $context['inner']['communities'] ?? [];
+        if (!$this->conversations->canViewerAccess($conversation, $viewerId, $memberCommunities)) {
             return [
                 'conversation' => null,
                 'replies' => [],

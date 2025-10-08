@@ -46,17 +46,19 @@ final class ConversationService
 
         if (ctype_digit($slugOrId)) {
             $stmt = $pdo->prepare(
-                "SELECT id, title, slug, content, author_name, created_at, reply_count, last_reply_date
-                 FROM vt_conversations
-                 WHERE id = :id
+                "SELECT conv.id, conv.title, conv.slug, conv.content, conv.author_id, conv.author_name, conv.created_at, conv.reply_count, conv.last_reply_date, conv.community_id, conv.privacy, com.privacy AS community_privacy
+                 FROM vt_conversations conv
+                 LEFT JOIN vt_communities com ON conv.community_id = com.id
+                 WHERE conv.id = :id
                  LIMIT 1"
             );
             $stmt->execute([':id' => (int)$slugOrId]);
         } else {
             $stmt = $pdo->prepare(
-                "SELECT id, title, slug, content, author_name, created_at, reply_count, last_reply_date
-                 FROM vt_conversations
-                 WHERE slug = :slug
+                "SELECT conv.id, conv.title, conv.slug, conv.content, conv.author_id, conv.author_name, conv.created_at, conv.reply_count, conv.last_reply_date, conv.community_id, conv.privacy, com.privacy AS community_privacy
+                 FROM vt_conversations conv
+                 LEFT JOIN vt_communities com ON conv.community_id = com.id
+                 WHERE conv.slug = :slug
                  LIMIT 1"
             );
             $stmt->execute([':slug' => $slugOrId]);
@@ -243,6 +245,45 @@ final class ConversationService
     private function placeholderList(int $count): string
     {
         return implode(',', array_fill(0, $count, '?'));
+    }
+
+    public function canViewerAccess(array $conversation, int $viewerId, array $memberCommunities): bool
+    {
+        if (empty($conversation)) {
+            return false;
+        }
+
+        $conversationPrivacy = $conversation['privacy'] ?? 'public';
+        $communityId = isset($conversation['community_id']) ? (int)$conversation['community_id'] : 0;
+        $communityPrivacy = $conversation['community_privacy'] ?? null;
+
+        if ($communityId === 0) {
+            if ($conversationPrivacy === 'public') {
+                return true;
+            }
+
+            return $viewerId > 0 && isset($conversation['author_id']) && (int)$conversation['author_id'] === $viewerId;
+        }
+
+        if ($communityPrivacy === null) {
+            $communityPrivacy = $this->lookupCommunityPrivacy($communityId);
+        }
+
+        if ($communityPrivacy === 'public') {
+            return true;
+        }
+
+        return in_array($communityId, $memberCommunities, true);
+    }
+
+    private function lookupCommunityPrivacy(int $communityId): ?string
+    {
+        $stmt = $this->db->pdo()->prepare('SELECT privacy FROM vt_communities WHERE id = :id LIMIT 1');
+        $stmt->bindValue(':id', $communityId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $privacy = $stmt->fetchColumn();
+        return is_string($privacy) ? $privacy : null;
     }
 
     /**
