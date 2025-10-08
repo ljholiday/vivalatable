@@ -159,6 +159,9 @@ if ($path === '/conversations/create') {
 if ($path === '/conversations') {
     $view = vt_service('controller.conversations')->index();
     $conversations = $view['conversations'];
+    $circle = $view['circle'] ?? 'all';
+    $circle_context = $view['circle_context'] ?? ['inner' => ['communities' => [], 'creators' => []], 'trusted' => ['communities' => [], 'creators' => []], 'extended' => ['communities' => [], 'creators' => []]];
+    $pagination = $view['pagination'] ?? ['page' => 1, 'per_page' => 20, 'has_more' => false, 'next_page' => null];
     require __DIR__ . '/../templates/conversations-list.php';
     return;
 }

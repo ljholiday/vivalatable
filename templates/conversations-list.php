@@ -3,6 +3,24 @@
 <section class="vt-section vt-conversations">
   <h1 class="vt-heading">Conversations</h1>
 
+  <?php
+  $circle = $circle ?? 'all';
+  $pagination = $pagination ?? ['page' => 1, 'per_page' => 20, 'has_more' => false, 'next_page' => null];
+  $circleLinks = [
+      ['key' => 'all', 'label' => 'All'],
+      ['key' => 'inner', 'label' => 'Inner'],
+      ['key' => 'trusted', 'label' => 'Trusted'],
+      ['key' => 'extended', 'label' => 'Extended'],
+  ];
+  ?>
+  <nav class="vt-subnav vt-mb-4">
+    <?php foreach ($circleLinks as $link): ?>
+      <a class="vt-subnav-link<?= $link['key'] === $circle ? ' is-active' : '' ?>" href="/conversations?circle=<?= urlencode($link['key']) ?>">
+        <?= e($link['label']) ?>
+      </a>
+    <?php endforeach; ?>
+  </nav>
+
   <?php if (!empty($conversations)): ?>
     <div class="vt-stack">
       <?php foreach ($conversations as $row):
@@ -26,10 +44,19 @@
               <span>Updated <?= e(date_fmt($item->last_reply_date)) ?></span>
             <?php endif; ?>
           </div>
+          <?php if (!empty($item->community_name)): ?>
+            <div class="vt-card-meta">In <?= e($item->community_name) ?></div>
+          <?php endif; ?>
         </article>
       <?php endforeach; ?>
     </div>
   <?php else: ?>
     <p class="vt-text-muted">No conversations found.</p>
+  <?php endif; ?>
+
+  <?php if (!empty($pagination['has_more'])): ?>
+    <div class="vt-mt-4">
+      <a class="vt-btn" href="/conversations?circle=<?= urlencode($circle) ?>&page=<?= (int)($pagination['next_page'] ?? (($pagination['page'] ?? 1) + 1)) ?>">Older Conversations</a>
+    </div>
   <?php endif; ?>
 </section>

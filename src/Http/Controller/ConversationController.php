@@ -3,26 +3,65 @@ declare(strict_types=1);
 
 namespace App\Http\Controller;
 
+use App\Services\CircleService;
 use App\Services\ConversationService;
 
 final class ConversationController
 {
-    public function __construct(private ConversationService $conversations)
-    {
+    private const VALID_CIRCLES = ['all', 'inner', 'trusted', 'extended'];
+
+    public function __construct(
+        private ConversationService $conversations,
+        private CircleService $circles
+    ) {
     }
 
     /**
-     * @return array{conversations: array<int, array<string, mixed>>}
+     * @return array{
+     *   conversations: array<int, array<string, mixed>>,
+     *   circle: string,
+     *   circle_context: array<string, array{communities: array<int>, creators: array<int>}>,
+     *   pagination: array{page:int, per_page:int, has_more:bool, next_page:int|null}
+     * }
      */
     public function index(): array
     {
+        $request = $this->request();
+        $circle = $this->normalizeCircle($request->query('circle'));
+
+        $viewerId = $this->viewerId();
+        $context = $this->circles->buildContext($viewerId);
+        $allowedCommunities = $this->circles->resolveCommunitiesForCircle($context, $circle);
+        $memberCommunities = $this->circles->memberCommunities($context);
+
+        $options = [
+            'page' => max(1, (int)$request->query('page', 1)),
+            'per_page' => 20,
+        ];
+
+        $feed = $this->conversations->listByCircle(
+            $viewerId,
+            $circle,
+            $allowedCommunities,
+            $memberCommunities,
+            $options
+        );
+
         return [
-            'conversations' => $this->conversations->listRecent(),
+            'conversations' => $feed['conversations'],
+            'circle' => $circle,
+            'circle_context' => $context,
+            'pagination' => $feed['pagination'],
         ];
     }
 
     /**
-     * @return array{conversation: array<string, mixed>|null}
+     * @return array{
+     *   conversation: array<string, mixed>|null,
+     *   replies: array<int, array<string, mixed>>,
+     *   reply_errors: array<string,string>,
+     *   reply_input: array<string,string>
+     * }
      */
     public function show(string $slugOrId): array
     {
@@ -64,6 +103,41 @@ final class ConversationController
      *   input?: array<string,string>
      * }
      */
+    public function store(): array
+    {
+        $request = $this->request();
+
+        $input = [
+            'title' => trim((string)$request->input('title', '')),
+            'content' => trim((string)$request->input('content', '')),
+        ];
+
+        $errors = [];
+
+        if ($input['title'] === '') {
+            $errors['title'] = 'Title is required.';
+        }
+        if ($input['content'] === '') {
+            $errors['content'] = 'Content is required.';
+        }
+
+        if ($errors) {
+            return [
+                'errors' => $errors,
+                'input' => $input,
+            ];
+        }
+
+        $slug = $this->conversations->create([
+            'title' => $input['title'],
+            'content' => $input['content'],
+        ]);
+
+        return [
+            'redirect' => '/conversations/' . $slug,
+        ];
+    }
+
     /**
      * @return array{
      *   conversation: array<string,mixed>|null,
@@ -141,41 +215,6 @@ final class ConversationController
         ];
     }
 
-    public function store(): array
-    {
-        $request = $this->request();
-
-        $input = [
-            'title' => trim((string)$request->input('title', '')),
-            'content' => trim((string)$request->input('content', '')),
-        ];
-
-        $errors = [];
-
-        if ($input['title'] === '') {
-            $errors['title'] = 'Title is required.';
-        }
-        if ($input['content'] === '') {
-            $errors['content'] = 'Content is required.';
-        }
-
-        if ($errors) {
-            return [
-                'errors' => $errors,
-                'input' => $input,
-            ];
-        }
-
-        $slug = $this->conversations->create([
-            'title' => $input['title'],
-            'content' => $input['content'],
-        ]);
-
-        return [
-            'redirect' => '/conversations/' . $slug,
-        ];
-    }
-
     /**
      * @return array{
      *   conversation: array<string,mixed>|null,
@@ -218,8 +257,14 @@ final class ConversationController
 
         $this->conversations->addReply((int)$conversation['id'], $input);
 
+        $redirect = '/conversations/' . $conversation['slug'];
+        $circleParam = $request->query('circle');
+        if (is_string($circleParam) && $circleParam !== '') {
+            $redirect .= '?circle=' . urlencode($circleParam);
+        }
+
         return [
-            'redirect' => '/conversations/' . $conversation['slug'],
+            'redirect' => $redirect,
             'conversation' => $conversation,
             'replies' => [],
             'reply_errors' => [],
@@ -243,5 +288,17 @@ final class ConversationController
         /** @var \App\Http\Request $request */
         $request = vt_service('http.request');
         return $request;
+    }
+
+    private function viewerId(): int
+    {
+        // TODO: Integrate with authentication service when available.
+        return 1;
+    }
+
+    private function normalizeCircle(?string $circle): string
+    {
+        $circle = strtolower((string)$circle);
+        return in_array($circle, self::VALID_CIRCLES, true) ? $circle : 'all';
     }
 }

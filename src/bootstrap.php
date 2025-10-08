@@ -9,6 +9,7 @@ use App\Http\Request;
 use App\Services\EventService;
 use App\Services\CommunityService;
 use App\Services\ConversationService;
+use App\Services\CircleService;
 
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -116,6 +117,10 @@ if (!function_exists('vt_container')) {
                 return new ConversationService($c->get('database.connection'));
             });
 
+            $container->register('circle.service', static function (VTContainer $c): CircleService {
+                return new CircleService($c->get('database.connection'));
+            });
+
             $container->register('controller.events', static function (VTContainer $c): EventController {
                 return new EventController($c->get('event.service'));
             }, false);
@@ -125,7 +130,10 @@ if (!function_exists('vt_container')) {
             }, false);
 
             $container->register('controller.conversations', static function (VTContainer $c): ConversationController {
-                return new ConversationController($c->get('conversation.service'));
+                return new ConversationController(
+                    $c->get('conversation.service'),
+                    $c->get('circle.service')
+                );
             }, false);
 
             $container->register('http.request', static function (): Request {

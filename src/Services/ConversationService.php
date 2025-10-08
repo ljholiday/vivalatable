@@ -131,6 +131,113 @@ final class ConversationService
     }
 
     /**
+     * @return array{conversations: array<int, array<string, mixed>>, pagination: array{page:int, per_page:int, has_more:bool, next_page:int|null}}
+     */
+    public function listByCircle(int $viewerId, string $circle, ?array $allowedCommunities, array $memberCommunities, array $options = []): array
+    {
+        $options = array_merge(['page' => 1, 'per_page' => 20], $options);
+        $page = max(1, (int)$options['page']);
+        $perPage = max(1, (int)$options['per_page']);
+        $offset = ($page - 1) * $perPage;
+        $fetchLimit = $perPage + 1;
+
+        $allowedCommunities = $allowedCommunities === null ? null : $this->uniqueInts($allowedCommunities);
+        $memberCommunities = $this->uniqueInts($memberCommunities);
+
+        if ($allowedCommunities !== null && $allowedCommunities === []) {
+            return [
+                'conversations' => [],
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'has_more' => false,
+                    'next_page' => null,
+                ],
+            ];
+        }
+
+        $conditions = [];
+
+        if ($allowedCommunities === null) {
+            $privacyParts = ["com.privacy = 'public'"];
+            if ($memberCommunities !== []) {
+                $privacyParts[] = 'conv.community_id IN (' . $this->buildInClause($memberCommunities) . ')';
+            }
+            $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
+        } else {
+            $conditions[] = 'conv.community_id IN (' . $this->buildInClause($allowedCommunities) . ')';
+            $privacyParts = ["com.privacy = 'public'"];
+            if ($memberCommunities !== []) {
+                $privacyParts[] = 'conv.community_id IN (' . $this->buildInClause($memberCommunities) . ')';
+            }
+            $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
+        }
+
+        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+        $sql = "SELECT
+                conv.id,
+                conv.title,
+                conv.slug,
+                conv.content,
+                conv.author_name,
+                conv.created_at,
+                conv.reply_count,
+                conv.last_reply_date,
+                conv.community_id,
+                conv.event_id,
+                com.name AS community_name,
+                com.slug AS community_slug,
+                com.privacy AS community_privacy
+            FROM vt_conversations conv
+            LEFT JOIN vt_communities com ON conv.community_id = com.id
+            $where
+            ORDER BY COALESCE(conv.updated_at, conv.created_at) DESC
+            LIMIT $fetchLimit OFFSET $offset";
+
+        $rows = $this->db->pdo()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $hasMore = count($rows) > $perPage;
+        if ($hasMore) {
+            $rows = array_slice($rows, 0, $perPage);
+        }
+
+        return [
+            'conversations' => $rows,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'has_more' => $hasMore,
+                'next_page' => $hasMore ? $page + 1 : null,
+            ],
+        ];
+    }
+
+    /**
+     * @param array<int|string> $values
+     * @return array<int>
+     */
+    private function uniqueInts(array $values): array
+    {
+        if ($values === []) {
+            return [];
+        }
+
+        $ints = array_map(static fn($value) => (int)$value, $values);
+        $ints = array_values(array_unique($ints));
+        sort($ints);
+
+        return $ints;
+    }
+
+    /**
+     * @param array<int> $ids
+     */
+    private function buildInClause(array $ids): string
+    {
+        return implode(',', array_map(static fn($id) => (string)(int)$id, $ids));
+    }
+
+    /**
      * @param array{title:string,content:string} $data
      */
     /**
