@@ -201,4 +201,15 @@ final class EventController
         $timestamp = strtotime($dbDate);
         return $timestamp ? date('Y-m-d\TH:i', $timestamp) : '';
     }
+
+    /**
+     * @return array{redirect: string}
+     */
+    public function destroy(string $slugOrId): array
+    {
+        $this->events->delete($slugOrId);
+        return [
+            'redirect' => '/events',
+        ];
+    }
 }

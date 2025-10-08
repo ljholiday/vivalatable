@@ -63,5 +63,14 @@ $event = $event ?? null;
         <a class="vt-btn" href="/events/<?= e($event['slug'] ?? '') ?>">Cancel</a>
       </div>
     </form>
+
+    <div class="vt-danger-zone vt-mt-6">
+      <h2 class="vt-heading-sm">Danger Zone</h2>
+      <p class="vt-text-muted">Deleting an event cannot be undone.</p>
+      <form method="post" action="/events/<?= e($event['slug'] ?? '') ?>/delete" class="vt-inline-form" onsubmit="return confirm('Delete this event?');">
+        <button type="submit" class="vt-btn vt-btn-danger">Delete Event</button>
+      </form>
+    </div>
+
   <?php endif; ?>
 </section>

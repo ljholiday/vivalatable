@@ -183,6 +183,22 @@ final class EventService
         return $slug;
     }
 
+    public function delete(string $slugOrId): bool
+    {
+        $event = $this->getBySlugOrId($slugOrId);
+        if ($event === null) {
+            return false;
+        }
+
+        $slug = (string)($event['slug'] ?? $slugOrId);
+        $pdo = $this->db->pdo();
+
+        $stmt = $pdo->prepare('DELETE FROM vt_events WHERE slug = :slug LIMIT 1');
+        $stmt->execute([':slug' => $slug]);
+
+        return $stmt->rowCount() === 1;
+    }
+
     private function slugify(string $title): string
     {
         $slug = strtolower($title);
