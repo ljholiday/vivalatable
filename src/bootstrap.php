@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Database\Database;
 use App\Http\Controller\EventController;
 use App\Http\Controller\CommunityController;
+use App\Http\Request;
 use App\Services\EventService;
 use App\Services\CommunityService;
 
@@ -115,6 +116,10 @@ if (!function_exists('vt_container')) {
 
             $container->register('controller.communities', static function (VTContainer $c): CommunityController {
                 return new CommunityController($c->get('community.service'));
+            }, false);
+
+            $container->register('http.request', static function (): Request {
+                return Request::fromGlobals();
             }, false);
         }
 

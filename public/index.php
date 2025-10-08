@@ -8,8 +8,11 @@ error_reporting(E_ALL);
 
 require __DIR__ . '/../src/bootstrap.php';
 
+/** @var \App\Http\Request $request */
+$request = vt_service('http.request');
+
 // Basic front controller & very simple router.
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$path = $request->path();
 
 // Normalize: remove trailing slash (except root)
 if ($path !== '/' && str_ends_with($path, '/')) {
