@@ -167,6 +167,17 @@ final class ConversationController
         ];
     }
 
+    /**
+     * @return array{redirect: string}
+     */
+    public function destroy(string $slugOrId): array
+    {
+        $this->conversations->delete($slugOrId);
+        return [
+            'redirect' => '/conversations',
+        ];
+    }
+
     private function request(): \App\Http\Request
     {
         /** @var \App\Http\Request $request */

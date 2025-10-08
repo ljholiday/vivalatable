@@ -52,5 +52,13 @@ $conversation = $conversation ?? null;
         <a class="vt-btn" href="/conversations/<?= e($conversation['slug'] ?? '') ?>">Cancel</a>
       </div>
     </form>
+
+    <div class="vt-danger-zone vt-mt-6">
+      <h2 class="vt-heading-sm">Danger Zone</h2>
+      <p class="vt-text-muted">Deleting a conversation cannot be undone.</p>
+      <form method="post" action="/conversations/<?= e($conversation['slug'] ?? '') ?>/delete" class="vt-inline-form" onsubmit="return confirm('Delete this conversation?');">
+        <button type="submit" class="vt-btn vt-btn-danger">Delete Conversation</button>
+      </form>
+    </div>
   <?php endif; ?>
 </section>

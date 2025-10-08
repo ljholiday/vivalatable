@@ -252,6 +252,20 @@ if (preg_match('#^/conversations/([^/]+)/edit$#', $path, $m)) {
     return;
 }
 
+if (preg_match('#^/conversations/([^/]+)/delete$#', $path, $m)) {
+    if ($request->method() !== 'POST') {
+        http_response_code(405);
+        header('Allow: POST');
+        echo 'Method Not Allowed';
+        return;
+    }
+
+    $slug = $m[1];
+    $result = vt_service('controller.conversations')->destroy($slug);
+    header('Location: ' . $result['redirect']);
+    exit;
+}
+
 if (preg_match('#^/conversations/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.conversations')->show($slug);

@@ -173,6 +173,22 @@ final class ConversationService
         return $slug;
     }
 
+    public function delete(string $slugOrId): bool
+    {
+        $conversation = $this->getBySlugOrId($slugOrId);
+        if ($conversation === null) {
+            return false;
+        }
+
+        $slug = (string)($conversation['slug'] ?? $slugOrId);
+        $pdo = $this->db->pdo();
+
+        $stmt = $pdo->prepare('DELETE FROM vt_conversations WHERE slug = :slug LIMIT 1');
+        $stmt->execute([':slug' => $slug]);
+
+        return $stmt->rowCount() === 1;
+    }
+
     private function slugify(string $title): string
     {
         $slug = strtolower($title);
