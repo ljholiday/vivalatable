@@ -157,18 +157,23 @@ final class ConversationService
         }
 
         $conditions = [];
+        $params = [];
 
         if ($allowedCommunities === null) {
             $privacyParts = ["com.privacy = 'public'"];
             if ($memberCommunities !== []) {
-                $privacyParts[] = 'conv.community_id IN (' . $this->buildInClause($memberCommunities) . ')';
+                $privacyParts[] = 'conv.community_id IN (' . $this->placeholderList(count($memberCommunities)) . ')';
+                $params = array_merge($params, $memberCommunities);
             }
             $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
         } else {
-            $conditions[] = 'conv.community_id IN (' . $this->buildInClause($allowedCommunities) . ')';
+            $conditions[] = 'conv.community_id IN (' . $this->placeholderList(count($allowedCommunities)) . ')';
+            $params = array_merge($params, $allowedCommunities);
+
             $privacyParts = ["com.privacy = 'public'"];
             if ($memberCommunities !== []) {
-                $privacyParts[] = 'conv.community_id IN (' . $this->buildInClause($memberCommunities) . ')';
+                $privacyParts[] = 'conv.community_id IN (' . $this->placeholderList(count($memberCommunities)) . ')';
+                $params = array_merge($params, $memberCommunities);
             }
             $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
         }
@@ -195,7 +200,13 @@ final class ConversationService
             ORDER BY COALESCE(conv.updated_at, conv.created_at) DESC
             LIMIT $fetchLimit OFFSET $offset";
 
-        $rows = $this->db->pdo()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->db->pdo()->prepare($sql);
+        foreach ($params as $index => $value) {
+            $stmt->bindValue($index + 1, (int)$value, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $hasMore = count($rows) > $perPage;
         if ($hasMore) {
             $rows = array_slice($rows, 0, $perPage);
@@ -229,12 +240,9 @@ final class ConversationService
         return $ints;
     }
 
-    /**
-     * @param array<int> $ids
-     */
-    private function buildInClause(array $ids): string
+    private function placeholderList(int $count): string
     {
-        return implode(',', array_map(static fn($id) => (string)(int)$id, $ids));
+        return implode(',', array_fill(0, $count, '?'));
     }
 
     /**
