@@ -210,8 +210,11 @@ final class CommunityController
 
     private function viewerId(): int
     {
-        // TODO: Integrate with real authentication once migrated.
-        return 1;
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        return isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
     }
 
     private function normalizeCircle(?string $circle): string

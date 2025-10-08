@@ -205,7 +205,11 @@ final class EventController
 
     private function viewerId(): int
     {
-        return 1;
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        return isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
     }
 
     private function normalizeFilter(?string $filter): string

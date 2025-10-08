@@ -292,8 +292,11 @@ final class ConversationController
 
     private function viewerId(): int
     {
-        // TODO: Integrate with authentication service when available.
-        return 1;
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        return isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
     }
 
     private function normalizeCircle(?string $circle): string

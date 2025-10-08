@@ -62,6 +62,7 @@ final class EventService
                   AND (
                         e.author_id = :viewer_author
                         OR g.converted_user_id = :viewer_guest
+                        OR g.email = :viewer_email
                     )
                 ORDER BY e.event_date DESC
                 LIMIT :lim";
@@ -69,6 +70,7 @@ final class EventService
         $stmt = $this->db->pdo()->prepare($sql);
         $stmt->bindValue(':viewer_author', $viewerId, PDO::PARAM_INT);
         $stmt->bindValue(':viewer_guest', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_email', $this->lookupUserEmail($viewerId) ?? '', PDO::PARAM_STR);
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -251,6 +253,20 @@ final class EventService
             }
             $slug = $base . '-' . ++$i;
         }
+    }
+
+    private function lookupUserEmail(int $viewerId): ?string
+    {
+        if ($viewerId <= 0) {
+            return null;
+        }
+
+        $stmt = $this->db->pdo()->prepare('SELECT email FROM vt_users WHERE id = :id LIMIT 1');
+        $stmt->bindValue(':id', $viewerId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $email = $stmt->fetchColumn();
+        return is_string($email) ? $email : null;
     }
 
 }
