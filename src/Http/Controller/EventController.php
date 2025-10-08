@@ -5,7 +5,6 @@ namespace App\Http\Controller;
 
 use App\Http\Request;
 use App\Services\EventService;
-use App\Services\CircleService;
 
 /**
  * Thin HTTP controller for event listings and detail views.
@@ -13,31 +12,30 @@ use App\Services\CircleService;
  */
 final class EventController
 {
-    private const VALID_CIRCLES = ['all', 'inner', 'trusted', 'extended'];
+    private const VALID_FILTERS = ['all', 'my'];
 
-    public function __construct(
-        private EventService $events,
-        private CircleService $circles
-    ) {
+    public function __construct(private EventService $events)
+    {
     }
 
     /**
-     * @return array{events: array<int, array<string, mixed>>}
+     * @return array{events: array<int, array<string, mixed>>, filter: string}
      */
     public function index(): array
     {
         $request = $this->request();
-        $circle = $this->normalizeCircle($request->query('circle'));
+        $filter = $this->normalizeFilter($request->query('filter'));
         $viewerId = $this->viewerId();
-        $context = $this->circles->buildContext($viewerId);
-        $allowed = $this->circles->resolveCommunitiesForCircle($context, $circle);
-        $memberCommunities = $this->circles->memberCommunities($context);
 
-        $events = $this->events->listByCircle($allowed, $memberCommunities);
+        if ($filter === 'my') {
+            $events = $viewerId > 0 ? $this->events->listMine($viewerId) : [];
+        } else {
+            $events = $this->events->listRecent();
+        }
 
         return [
             'events' => $events,
-            'circle' => $circle,
+            'filter' => $filter,
         ];
     }
 
@@ -73,6 +71,7 @@ final class EventController
      * @return array{
      *   errors?: array<string,string>,
      *   input?: array<string,string>,
+     *   event_date_db?: ?string,
      *   redirect?: string
      * }
      */
@@ -145,6 +144,7 @@ final class EventController
         }
 
         $validated = $this->validateEventInput($this->request());
+
         if ($validated['errors']) {
             return [
                 'event' => $event,
@@ -166,11 +166,63 @@ final class EventController
 
     /**
      * @return array{
-     *   input: array<string,string>,
-     *   errors: array<string,string>,
-     *   event_date_db: ?string
+     *   conversation: array<string,mixed>|null,
+     *   replies: array<int,array<string,mixed>>,
+     *   reply_errors: array<string,string>,
+     *   reply_input: array<string,string>,
+     *   redirect?: string
      * }
      */
+    public function reply(string $slugOrId): array
+    {
+        // Events currently do not support replies; redirect to detail.
+        return [
+            'redirect' => '/events/' . $slugOrId,
+            'conversation' => null,
+            'replies' => [],
+            'reply_errors' => [],
+            'reply_input' => ['content' => ''],
+        ];
+    }
+
+    /**
+     * @return array{redirect: string}
+     */
+    public function destroy(string $slugOrId): array
+    {
+        $this->events->delete($slugOrId);
+        return [
+            'redirect' => '/events',
+        ];
+    }
+
+    private function request(): Request
+    {
+        /** @var Request $request */
+        $request = vt_service('http.request');
+        return $request;
+    }
+
+    private function viewerId(): int
+    {
+        return 1;
+    }
+
+    private function normalizeFilter(?string $filter): string
+    {
+        $filter = strtolower((string) $filter);
+        return in_array($filter, self::VALID_FILTERS, true) ? $filter : 'all';
+    }
+
+    private function formatForInput(?string $dbDate): string
+    {
+        if (!$dbDate) {
+            return '';
+        }
+        $timestamp = strtotime($dbDate);
+        return $timestamp ? date('Y-m-d\TH:i', $timestamp) : '';
+    }
+
     private function validateEventInput(Request $request): array
     {
         $input = [
@@ -198,44 +250,6 @@ final class EventController
             'input' => $input,
             'errors' => $errors,
             'event_date_db' => $eventDateDb,
-        ];
-    }
-
-    private function request(): Request
-    {
-        /** @var Request $request */
-        $request = vt_service('http.request');
-        return $request;
-    }
-
-    private function viewerId(): int
-    {
-        return 1;
-    }
-
-    private function normalizeCircle(?string $circle): string
-    {
-        $circle = strtolower((string) $circle);
-        return in_array($circle, self::VALID_CIRCLES, true) ? $circle : 'all';
-    }
-
-    private function formatForInput(?string $dbDate): string
-    {
-        if (!$dbDate) {
-            return '';
-        }
-        $timestamp = strtotime($dbDate);
-        return $timestamp ? date('Y-m-d\TH:i', $timestamp) : '';
-    }
-
-    /**
-     * @return array{redirect: string}
-     */
-    public function destroy(string $slugOrId): array
-    {
-        $this->events->delete($slugOrId);
-        return [
-            'redirect' => '/events',
         ];
     }
 }

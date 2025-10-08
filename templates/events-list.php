@@ -4,18 +4,16 @@
   <h1 class="vt-heading">Upcoming Events</h1>
 
   <?php
-  $circle = $circle ?? 'all';
-  $circleLinks = [
+  $filter = $filter ?? 'all';
+  $filters = [
       ['key' => 'all', 'label' => 'All'],
-      ['key' => 'inner', 'label' => 'Inner'],
-      ['key' => 'trusted', 'label' => 'Trusted'],
-      ['key' => 'extended', 'label' => 'Extended'],
+      ['key' => 'my',  'label' => 'My Events'],
   ];
   ?>
   <nav class="vt-subnav vt-mb-4">
-    <?php foreach ($circleLinks as $link): ?>
-      <a class="vt-subnav-link<?= $link['key'] === $circle ? ' is-active' : '' ?>" href="/events?circle=<?= urlencode($link['key']) ?>">
-        <?= e($link['label']) ?>
+    <?php foreach ($filters as $option): ?>
+      <a class="vt-subnav-link<?= $option['key'] === $filter ? ' is-active' : '' ?>" href="/events?filter=<?= urlencode($option['key']) ?>">
+        <?= e($option['label']) ?>
       </a>
     <?php endforeach; ?>
   </nav>
@@ -43,6 +41,12 @@
       endforeach; ?>
     </div>
   <?php else: ?>
-    <p class="vt-text-muted">No events found.</p>
+    <p class="vt-text-muted">
+      <?php if ($filter === 'my'): ?>
+        You do not have any upcoming events yet.
+      <?php else: ?>
+        No events found.
+      <?php endif; ?>
+    </p>
   <?php endif; ?>
 </section>

@@ -122,10 +122,7 @@ if (!function_exists('vt_container')) {
             });
 
             $container->register('controller.events', static function (VTContainer $c): EventController {
-                return new EventController(
-                    $c->get('event.service'),
-                    $c->get('circle.service')
-                );
+                return new EventController($c->get('event.service'));
             }, false);
 
             $container->register('controller.communities', static function (VTContainer $c): CommunityController {

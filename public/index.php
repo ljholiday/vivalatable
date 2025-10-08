@@ -33,7 +33,7 @@ if ($path === '/') {
 if ($path === '/events') {
     $view = vt_service('controller.events')->index();
     $events = $view['events'];
-    $circle = $view['circle'] ?? 'all';
+    $filter = $view['filter'] ?? 'all';
     require __DIR__ . '/../templates/events-list.php';
     return;
 }
