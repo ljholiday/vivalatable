@@ -10,6 +10,9 @@ VivalaTable keeps application code under `src/`, grouped by domain (`App\Domain`
 - `./test.sh` executes every automated PHP test script in `tests/`.
 - `php clear-cache.php` clears cached view/data artifacts after configuration or schema tweaks.
 
+## External Documentation
+- Most supporting docs now live in the sibling repository `../vivalatable-docs/`. Check there for refactor plans, style guides, and operational runbooks before starting new work.
+
 ## Coding Style & Naming Conventions
 Follow PSR-12 with 4-space indentation, braces on new lines, and camelCase methods (reinforced in `dev/doctrine/php.xml`). Declare `<?php declare(strict_types=1); ?>` at the top of new files and use typed properties/arguments (PHP 8.1+). Mirror namespaces to directories (`App\Http\ControllerName`, `App\Service\...`). Templates should follow the `*-content.php` pattern; services end with `Service`; tests end in `*-test.php`.
 

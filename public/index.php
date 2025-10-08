@@ -16,31 +16,43 @@ if ($path !== '/' && str_ends_with($path, '/')) {
     $path = rtrim($path, '/');
 }
 
-switch ($path) {
-    case '/':
-        // Minimal home template to prove render path works
-        $home = __DIR__ . '/../templates/home.php';
-        if (!is_file($home)) {
-            echo "<h1>Home</h1>";
-            exit;
-        }
-        require $home;
-        break;
-
-    case '/events':
-        $events = vt_service('event.service')->listRecent();
-        require __DIR__ . '/../templates/events-list.php';
-        break;
-
-    case preg_match('#^/events/([^/]+)$#', $path, $m):
-        $slug = $m[1];
-        $event = vt_service('event.service')->getBySlugOrId($slug);
-        require __DIR__ . '/../templates/event-detail.php';
-        break;
-
-    default:
-        // Not implemented yet: e.g., /events/{slug}, /events/{slug}/edit
-        http_response_code(404);
-        echo 'Not Found';
+if ($path === '/') {
+    // Minimal home template to prove render path works
+    $home = __DIR__ . '/../templates/home.php';
+    if (!is_file($home)) {
+        echo "<h1>Home</h1>";
+        exit;
+    }
+    require $home;
+    return;
 }
 
+if ($path === '/events') {
+    $events = vt_service('event.service')->listRecent();
+    require __DIR__ . '/../templates/events-list.php';
+    return;
+}
+
+if (preg_match('#^/events/([^/]+)$#', $path, $m)) {
+    $slug = $m[1];
+    $event = vt_service('event.service')->getBySlugOrId($slug);
+    require __DIR__ . '/../templates/event-detail.php';
+    return;
+}
+
+if ($path === '/communities') {
+    $communities = vt_service('community.service')->listRecent();
+    require __DIR__ . '/../templates/communities-list.php';
+    return;
+}
+
+if (preg_match('#^/communities/([^/]+)$#', $path, $m)) {
+    $slug = $m[1];
+    $community = vt_service('community.service')->getBySlugOrId($slug);
+    require __DIR__ . '/../templates/community-detail.php';
+    return;
+}
+
+// Not implemented yet: e.g., /events/{slug}/edit, /communities/{slug}/manage
+http_response_code(404);
+echo 'Not Found';

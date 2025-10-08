@@ -15,10 +15,13 @@ final class CommunityService
     {
         $sql = "SELECT
                     id,
-                    COALESCE(title, name) AS title,
+                    name AS title,
                     slug,
                     description,
-                    created_at
+                    created_at,
+                    privacy,
+                    member_count,
+                    event_count
                 FROM vt_communities
                 ORDER BY COALESCE(created_at, id) DESC
                 LIMIT :lim";
@@ -35,7 +38,7 @@ final class CommunityService
 
         if (ctype_digit($slugOrId)) {
             $stmt = $pdo->prepare(
-                "SELECT id, COALESCE(title, name) AS title, slug, description, created_at
+                "SELECT id, name AS title, slug, description, created_at, privacy, member_count, event_count
                  FROM vt_communities
                  WHERE id = :id
                  LIMIT 1"
@@ -43,7 +46,7 @@ final class CommunityService
             $stmt->execute([':id' => (int)$slugOrId]);
         } else {
             $stmt = $pdo->prepare(
-                "SELECT id, COALESCE(title, name) AS title, slug, description, created_at
+                "SELECT id, name AS title, slug, description, created_at, privacy, member_count, event_count
                  FROM vt_communities
                  WHERE slug = :slug
                  LIMIT 1"
@@ -55,4 +58,3 @@ final class CommunityService
         return $row !== false ? $row : null;
     }
 }
-

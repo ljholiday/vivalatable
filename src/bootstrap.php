@@ -102,6 +102,10 @@ if (!function_exists('vt_container')) {
             $container->register('event.service', static function (VTContainer $c): EventService {
                 return new EventService($c->get('database.connection'));
             });
+
+            $container->register('community.service', static function (VTContainer $c): CommunityService {
+                return new CommunityService($c->get('database.connection'));
+            });
         }
 
         return $container;
