@@ -135,6 +135,27 @@ if ($path === '/communities/create') {
     return;
 }
 
+if ($path === '/conversations/create') {
+    $controller = vt_service('controller.conversations');
+
+    if ($request->method() === 'POST') {
+        $result = $controller->store();
+        if (isset($result['redirect'])) {
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        $errors = $result['errors'] ?? [];
+        $input = $result['input'] ?? [];
+    } else {
+        $view = $controller->create();
+        $errors = $view['errors'];
+        $input = $view['input'];
+    }
+
+    require __DIR__ . '/../templates/conversation-create.php';
+    return;
+}
+
 if ($path === '/conversations') {
     $view = vt_service('controller.conversations')->index();
     $conversations = $view['conversations'];

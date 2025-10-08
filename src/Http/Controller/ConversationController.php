@@ -30,4 +30,70 @@ final class ConversationController
             'conversation' => $this->conversations->getBySlugOrId($slugOrId),
         ];
     }
+
+    /**
+     * @return array{
+     *   errors: array<string,string>,
+     *   input: array<string,string>
+     * }
+     */
+    public function create(): array
+    {
+        return [
+            'errors' => [],
+            'input' => [
+                'title' => '',
+                'content' => '',
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *   redirect?: string,
+     *   errors?: array<string,string>,
+     *   input?: array<string,string>
+     * }
+     */
+    public function store(): array
+    {
+        $request = $this->request();
+
+        $input = [
+            'title' => trim((string)$request->input('title', '')),
+            'content' => trim((string)$request->input('content', '')),
+        ];
+
+        $errors = [];
+
+        if ($input['title'] === '') {
+            $errors['title'] = 'Title is required.';
+        }
+        if ($input['content'] === '') {
+            $errors['content'] = 'Content is required.';
+        }
+
+        if ($errors) {
+            return [
+                'errors' => $errors,
+                'input' => $input,
+            ];
+        }
+
+        $slug = $this->conversations->create([
+            'title' => $input['title'],
+            'content' => $input['content'],
+        ]);
+
+        return [
+            'redirect' => '/conversations/' . $slug,
+        ];
+    }
+
+    private function request(): \App\Http\Request
+    {
+        /** @var \App\Http\Request $request */
+        $request = vt_service('http.request');
+        return $request;
+    }
 }
