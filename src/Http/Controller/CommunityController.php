@@ -207,4 +207,16 @@ final class CommunityController
         $request = vt_service('http.request');
         return $request;
     }
+
+    private function viewerId(): int
+    {
+        // TODO: Integrate with real authentication once migrated.
+        return 1;
+    }
+
+    private function normalizeCircle(?string $circle): string
+    {
+        $circle = strtolower((string) $circle);
+        return in_array($circle, self::VALID_CIRCLES, true) ? $circle : 'all';
+    }
 }

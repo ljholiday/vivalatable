@@ -82,29 +82,9 @@ final class EventService
                 ORDER BY event_date DESC
                 LIMIT $limit";
 
-        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt = $this->db->pdo()->query($sql);
 
-        $bindValues = [];
-        if ($allowedCommunities === null) {
-            foreach ($memberCommunities as $id) {
-                $bindValues[] = $id;
-            }
-        } else {
-            foreach ($allowedCommunities as $id) {
-                $bindValues[] = $id;
-            }
-            foreach ($memberCommunities as $id) {
-                $bindValues[] = $id;
-            }
-        }
-
-        foreach ($bindValues as $index => $value) {
-            $stmt->bindValue($index + 1, $value, PDO::PARAM_INT);
-        }
-
-        $stmt->execute();
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt !== false ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
     }
 
     /**

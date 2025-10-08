@@ -208,6 +208,17 @@ final class EventController
         return $request;
     }
 
+    private function viewerId(): int
+    {
+        return 1;
+    }
+
+    private function normalizeCircle(?string $circle): string
+    {
+        $circle = strtolower((string) $circle);
+        return in_array($circle, self::VALID_CIRCLES, true) ? $circle : 'all';
+    }
+
     private function formatForInput(?string $dbDate): string
     {
         if (!$dbDate) {
