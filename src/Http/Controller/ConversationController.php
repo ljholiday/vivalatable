@@ -26,8 +26,17 @@ final class ConversationController
      */
     public function show(string $slugOrId): array
     {
+        $conversation = $this->conversations->getBySlugOrId($slugOrId);
+        $replies = [];
+        if ($conversation !== null && isset($conversation['id'])) {
+            $replies = $this->conversations->listReplies((int)$conversation['id']);
+        }
+
         return [
-            'conversation' => $this->conversations->getBySlugOrId($slugOrId),
+            'conversation' => $conversation,
+            'replies' => $replies,
+            'reply_errors' => [],
+            'reply_input' => ['content' => ''],
         ];
     }
 
@@ -164,6 +173,57 @@ final class ConversationController
 
         return [
             'redirect' => '/conversations/' . $slug,
+        ];
+    }
+
+    /**
+     * @return array{
+     *   conversation: array<string,mixed>|null,
+     *   replies: array<int,array<string,mixed>>,
+     *   reply_errors: array<string,string>,
+     *   reply_input: array<string,string>,
+     *   redirect?: string
+     * }
+     */
+    public function reply(string $slugOrId): array
+    {
+        $conversation = $this->conversations->getBySlugOrId($slugOrId);
+        if ($conversation === null || !isset($conversation['id'])) {
+            return [
+                'conversation' => null,
+                'replies' => [],
+                'reply_errors' => ['conversation' => 'Conversation not found.'],
+                'reply_input' => ['content' => ''],
+            ];
+        }
+
+        $request = $this->request();
+        $input = [
+            'content' => trim((string)$request->input('content', '')),
+        ];
+
+        $errors = [];
+        if ($input['content'] === '') {
+            $errors['content'] = 'Reply content is required.';
+        }
+
+        if ($errors) {
+            return [
+                'conversation' => $conversation,
+                'replies' => $this->conversations->listReplies((int)$conversation['id']),
+                'reply_errors' => $errors,
+                'reply_input' => $input,
+            ];
+        }
+
+        $this->conversations->addReply((int)$conversation['id'], $input);
+
+        return [
+            'redirect' => '/conversations/' . $conversation['slug'],
+            'conversation' => $conversation,
+            'replies' => [],
+            'reply_errors' => [],
+            'reply_input' => ['content' => ''],
         ];
     }
 

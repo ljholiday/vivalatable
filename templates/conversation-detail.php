@@ -28,5 +28,45 @@
         <span>Last reply <?= e(date_fmt($c->last_reply_date)) ?></span>
       <?php endif; ?>
     </div>
+
+    <section class="vt-section vt-mt-6">
+      <h2 class="vt-heading-sm">Replies</h2>
+      <?php if (!empty($replies)): ?>
+        <div class="vt-stack">
+          <?php foreach ($replies as $reply): $r = (object)$reply; ?>
+            <article class="vt-card">
+              <div class="vt-card-sub">
+                <?= e($r->author_name ?? 'Unknown') ?><?php if (!empty($r->created_at)): ?> · <?= e(date_fmt($r->created_at)) ?><?php endif; ?>
+              </div>
+              <p class="vt-card-desc"><?= nl2br(e($r->content ?? '')) ?></p>
+            </article>
+          <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <p class="vt-text-muted">No replies yet.</p>
+      <?php endif; ?>
+    </section>
+
+    <section class="vt-section vt-mt-6">
+      <h2 class="vt-heading-sm">Add Reply</h2>
+      <?php if (!empty($reply_errors)): ?>
+        <div class="vt-alert vt-alert-error vt-mb-4">
+          <ul>
+            <?php foreach ($reply_errors as $message): ?>
+              <li><?= e($message) ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
+      <form method="post" action="/conversations/<?= e($c->slug ?? '') ?>/reply" class="vt-form vt-stack">
+        <div class="vt-field">
+          <label class="vt-label" for="reply-content">Reply</label>
+          <textarea class="vt-textarea<?= isset($reply_errors['content']) ? ' is-invalid' : '' ?>" id="reply-content" name="content" rows="4" required><?= e($reply_input['content'] ?? '') ?></textarea>
+        </div>
+        <div class="vt-actions">
+          <button type="submit" class="vt-btn vt-btn-primary">Post Reply</button>
+        </div>
+      </form>
+    </section>
   <?php endif; ?>
 </section>

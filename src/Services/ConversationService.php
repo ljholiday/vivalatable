@@ -133,6 +133,60 @@ final class ConversationService
     /**
      * @param array{title:string,content:string} $data
      */
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function listReplies(int $conversationId): array
+    {
+        $stmt = $this->db->pdo()->prepare(
+            'SELECT id, conversation_id, parent_reply_id, content, author_name, created_at, depth_level
+             FROM vt_conversation_replies
+             WHERE conversation_id = :cid
+             ORDER BY created_at ASC'
+        );
+        $stmt->execute([':cid' => $conversationId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @param array{content:string} $data
+     */
+    public function addReply(int $conversationId, array $data): int
+    {
+        $conversation = $this->getBySlugOrId((string)$conversationId);
+        if ($conversation === null) {
+            throw new \RuntimeException('Conversation not found.');
+        }
+
+        $content = trim($data['content']);
+        if ($content === '') {
+            throw new \RuntimeException('Reply content is required.');
+        }
+
+        $pdo = $this->db->pdo();
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO vt_conversation_replies (conversation_id, parent_reply_id, content, author_id, author_name, author_email, depth_level, created_at, updated_at)
+             VALUES (:conversation_id, :parent_reply_id, :content, :author_id, :author_name, :author_email, :depth_level, :created_at, :updated_at)'
+        );
+
+        $stmt->execute([
+            ':conversation_id' => (int)$conversation['id'],
+            ':parent_reply_id' => null,
+            ':content' => $content,
+            ':author_id' => 1,
+            ':author_name' => 'Demo Author',
+            ':author_email' => 'demo@example.com',
+            ':depth_level' => 0,
+            ':created_at' => $now,
+            ':updated_at' => $now,
+        ]);
+
+        return (int)$pdo->lastInsertId();
+    }
+
     public function update(string $slugOrId, array $data): string
     {
         $conversation = $this->getBySlugOrId($slugOrId);

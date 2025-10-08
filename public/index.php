@@ -266,10 +266,37 @@ if (preg_match('#^/conversations/([^/]+)/delete$#', $path, $m)) {
     exit;
 }
 
+if (preg_match('#^/conversations/([^/]+)/reply$#', $path, $m)) {
+    if ($request->method() !== 'POST') {
+        http_response_code(405);
+        header('Allow: POST');
+        echo 'Method Not Allowed';
+        return;
+    }
+
+    $slug = $m[1];
+    $controller = vt_service('controller.conversations');
+    $result = $controller->reply($slug);
+    if (isset($result['redirect'])) {
+        header('Location: ' . $result['redirect']);
+        exit;
+    }
+    $conversation = $result['conversation'] ?? null;
+    $replies = $result['replies'] ?? [];
+    $reply_errors = $result['reply_errors'] ?? [];
+    $reply_input = $result['reply_input'] ?? ['content' => ''];
+
+    require __DIR__ . '/../templates/conversation-detail.php';
+    return;
+}
+
 if (preg_match('#^/conversations/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.conversations')->show($slug);
-    $conversation = $view['conversation'];
+    $conversation = $view['conversation'] ?? null;
+    $replies = $view['replies'] ?? [];
+    $reply_errors = $view['reply_errors'] ?? [];
+    $reply_input = $view['reply_input'] ?? ['content' => ''];
     require __DIR__ . '/../templates/conversation-detail.php';
     return;
 }
