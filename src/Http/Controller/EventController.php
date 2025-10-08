@@ -5,6 +5,7 @@ namespace App\Http\Controller;
 
 use App\Http\Request;
 use App\Services\EventService;
+use App\Services\CircleService;
 
 /**
  * Thin HTTP controller for event listings and detail views.
@@ -12,8 +13,12 @@ use App\Services\EventService;
  */
 final class EventController
 {
-    public function __construct(private EventService $events)
-    {
+    private const VALID_CIRCLES = ['all', 'inner', 'trusted', 'extended'];
+
+    public function __construct(
+        private EventService $events,
+        private CircleService $circles
+    ) {
     }
 
     /**
@@ -21,8 +26,18 @@ final class EventController
      */
     public function index(): array
     {
+        $request = $this->request();
+        $circle = $this->normalizeCircle($request->query('circle'));
+        $viewerId = $this->viewerId();
+        $context = $this->circles->buildContext($viewerId);
+        $allowed = $this->circles->resolveCommunitiesForCircle($context, $circle);
+        $memberCommunities = $this->circles->memberCommunities($context);
+
+        $events = $this->events->listByCircle($allowed, $memberCommunities);
+
         return [
-            'events' => $this->events->listRecent(),
+            'events' => $events,
+            'circle' => $circle,
         ];
     }
 

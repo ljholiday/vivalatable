@@ -46,6 +46,68 @@ final class EventService
     }
 
     /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function listByCircle(?array $allowedCommunities, array $memberCommunities, int $limit = 20): array
+    {
+        $allowedCommunities = $allowedCommunities === null ? null : $this->uniqueInts($allowedCommunities);
+        $memberCommunities = $this->uniqueInts($memberCommunities);
+
+        if ($allowedCommunities !== null && $allowedCommunities === []) {
+            return [];
+        }
+
+        $conditions = ["event_status = 'active'", "status = 'active'"];
+
+        if ($allowedCommunities === null) {
+            $privacyParts = ["privacy = 'public'"];
+            if ($memberCommunities !== []) {
+                $privacyParts[] = 'community_id IN (' . $this->buildInClause($memberCommunities) . ')';
+            }
+            $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
+        } else {
+            $conditions[] = 'community_id IN (' . $this->buildInClause($allowedCommunities) . ')';
+            $privacyParts = ["privacy = 'public'"];
+            if ($memberCommunities !== []) {
+                $privacyParts[] = 'community_id IN (' . $this->buildInClause($memberCommunities) . ')';
+            }
+            $conditions[] = '(' . implode(' OR ', $privacyParts) . ')';
+        }
+
+        $where = 'WHERE ' . implode(' AND ', $conditions);
+
+        $sql = "SELECT id, title, event_date, slug, description
+                FROM vt_events
+                $where
+                ORDER BY event_date DESC
+                LIMIT $limit";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+
+        $bindValues = [];
+        if ($allowedCommunities === null) {
+            foreach ($memberCommunities as $id) {
+                $bindValues[] = $id;
+            }
+        } else {
+            foreach ($allowedCommunities as $id) {
+                $bindValues[] = $id;
+            }
+            foreach ($memberCommunities as $id) {
+                $bindValues[] = $id;
+            }
+        }
+
+        foreach ($bindValues as $index => $value) {
+            $stmt->bindValue($index + 1, $value, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Fetch a single event by slug or numeric id.
      *
      * @param string $slugOrId Slug like "my-event" or numeric id like "42".
@@ -221,5 +283,30 @@ final class EventService
             }
             $slug = $base . '-' . ++$i;
         }
+    }
+
+    /**
+     * @param array<int|string> $values
+     * @return array<int>
+     */
+    private function uniqueInts(array $values): array
+    {
+        if ($values === []) {
+            return [];
+        }
+
+        $ints = array_map(static fn($value) => (int)$value, $values);
+        $ints = array_values(array_unique($ints));
+        sort($ints);
+
+        return $ints;
+    }
+
+    /**
+     * @param array<int> $ids
+     */
+    private function buildInClause(array $ids): string
+    {
+        return implode(',', array_map(static fn($id) => (string)(int)$id, $ids));
     }
 }
