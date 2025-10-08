@@ -129,7 +129,10 @@ if (!function_exists('vt_container')) {
             }, false);
 
             $container->register('controller.communities', static function (VTContainer $c): CommunityController {
-                return new CommunityController($c->get('community.service'));
+                return new CommunityController(
+                    $c->get('community.service'),
+                    $c->get('circle.service')
+                );
             }, false);
 
             $container->register('controller.conversations', static function (VTContainer $c): ConversationController {
