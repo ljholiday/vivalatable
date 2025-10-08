@@ -37,6 +37,27 @@ if ($path === '/events') {
     return;
 }
 
+if ($path === '/events/create') {
+    $controller = vt_service('controller.events');
+
+    if ($request->method() === 'POST') {
+        $result = $controller->store();
+        if (isset($result['redirect'])) {
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        $errors = $result['errors'] ?? [];
+        $input = $result['input'] ?? [];
+    } else {
+        $view = $controller->create();
+        $errors = $view['errors'];
+        $input = $view['input'];
+    }
+
+    require __DIR__ . '/../templates/event-create.php';
+    return;
+}
+
 if (preg_match('#^/events/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.events')->show($slug);
