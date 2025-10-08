@@ -114,6 +114,27 @@ if (preg_match('#^/events/([^/]+)$#', $path, $m)) {
     return;
 }
 
+if ($path === '/communities/create') {
+    $controller = vt_service('controller.communities');
+
+    if ($request->method() === 'POST') {
+        $result = $controller->store();
+        if (isset($result['redirect'])) {
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        $errors = $result['errors'] ?? [];
+        $input = $result['input'] ?? [];
+    } else {
+        $view = $controller->create();
+        $errors = $view['errors'];
+        $input = $view['input'];
+    }
+
+    require __DIR__ . '/../templates/community-create.php';
+    return;
+}
+
 if ($path === '/communities') {
     $view = vt_service('controller.communities')->index();
     $communities = $view['communities'];
