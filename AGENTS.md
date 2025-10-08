@@ -9,6 +9,7 @@ VivalaTable keeps application code under `src/`, grouped by domain (`App\Domain`
 - `./install.sh` provisions the database using `config/schema.sql` and sanity checks connectivity.
 - `./test.sh` executes every automated PHP test script in `tests/`.
 - `php clear-cache.php` clears cached view/data artifacts after configuration or schema tweaks.
+- `php dev/scripts/seed-modern-demo.php` seeds sample events and communities for the modern routes.
 
 ## External Documentation
 - Most supporting docs now live in the sibling repository `../vivalatable-docs/`. Check there for refactor plans, style guides, and operational runbooks before starting new work.

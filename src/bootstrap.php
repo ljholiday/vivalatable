@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use App\Database\Database;
+use App\Http\Controller\EventController;
+use App\Http\Controller\CommunityController;
 use App\Services\EventService;
 use App\Services\CommunityService;
 
@@ -106,6 +108,14 @@ if (!function_exists('vt_container')) {
             $container->register('community.service', static function (VTContainer $c): CommunityService {
                 return new CommunityService($c->get('database.connection'));
             });
+
+            $container->register('controller.events', static function (VTContainer $c): EventController {
+                return new EventController($c->get('event.service'));
+            }, false);
+
+            $container->register('controller.communities', static function (VTContainer $c): CommunityController {
+                return new CommunityController($c->get('community.service'));
+            }, false);
         }
 
         return $container;

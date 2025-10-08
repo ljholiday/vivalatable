@@ -28,27 +28,31 @@ if ($path === '/') {
 }
 
 if ($path === '/events') {
-    $events = vt_service('event.service')->listRecent();
+    $view = vt_service('controller.events')->index();
+    $events = $view['events'];
     require __DIR__ . '/../templates/events-list.php';
     return;
 }
 
 if (preg_match('#^/events/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
-    $event = vt_service('event.service')->getBySlugOrId($slug);
+    $view = vt_service('controller.events')->show($slug);
+    $event = $view['event'];
     require __DIR__ . '/../templates/event-detail.php';
     return;
 }
 
 if ($path === '/communities') {
-    $communities = vt_service('community.service')->listRecent();
+    $view = vt_service('controller.communities')->index();
+    $communities = $view['communities'];
     require __DIR__ . '/../templates/communities-list.php';
     return;
 }
 
 if (preg_match('#^/communities/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
-    $community = vt_service('community.service')->getBySlugOrId($slug);
+    $view = vt_service('controller.communities')->show($slug);
+    $community = $view['community'];
     require __DIR__ . '/../templates/community-detail.php';
     return;
 }
