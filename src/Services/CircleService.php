@@ -111,11 +111,17 @@ final class CircleService
             return [];
         }
 
-        $in = implode(',', $userIds);
-        $sql = "SELECT DISTINCT community_id FROM vt_community_members WHERE user_id IN ($in) AND status = 'active'";
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $sql = "SELECT DISTINCT community_id FROM vt_community_members WHERE user_id IN ($placeholders) AND status = 'active'";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        foreach ($userIds as $index => $id) {
+            $stmt->bindValue($index + 1, $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
 
         /** @var array<int> $rows */
-        $rows = $this->db->pdo()->query($sql)->fetchAll(PDO::FETCH_COLUMN);
+        $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         return $this->uniqueInts($rows);
     }
@@ -131,11 +137,17 @@ final class CircleService
             return [];
         }
 
-        $in = implode(',', $communityIds);
-        $sql = "SELECT DISTINCT user_id FROM vt_community_members WHERE community_id IN ($in) AND status = 'active'";
+        $placeholders = implode(',', array_fill(0, count($communityIds), '?'));
+        $sql = "SELECT DISTINCT user_id FROM vt_community_members WHERE community_id IN ($placeholders) AND status = 'active'";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        foreach ($communityIds as $index => $id) {
+            $stmt->bindValue($index + 1, $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
 
         /** @var array<int> $rows */
-        $rows = $this->db->pdo()->query($sql)->fetchAll(PDO::FETCH_COLUMN);
+        $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         return $this->uniqueInts($rows);
     }
