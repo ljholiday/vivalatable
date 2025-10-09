@@ -7,6 +7,7 @@ use App\Services\AuthService;
 use App\Services\CircleService;
 use App\Services\ConversationService;
 use App\Services\AuthorizationService;
+use App\Services\ValidatorService;
 
 final class ConversationController
 {
@@ -16,7 +17,8 @@ final class ConversationController
         private ConversationService $conversations,
         private CircleService $circles,
         private AuthService $auth,
-        private AuthorizationService $authz
+        private AuthorizationService $authz,
+        private ValidatorService $validator
     ) {
     }
 
@@ -134,18 +136,20 @@ final class ConversationController
 
         $request = $this->request();
 
-        $input = [
-            'title' => trim((string)$request->input('title', '')),
-            'content' => trim((string)$request->input('content', '')),
-        ];
+        $titleValidation = $this->validator->required($request->input('title', ''));
+        $contentValidation = $this->validator->required($request->input('content', ''));
 
         $errors = [];
+        $input = [
+            'title' => $titleValidation['value'],
+            'content' => $contentValidation['value'],
+        ];
 
-        if ($input['title'] === '') {
-            $errors['title'] = 'Title is required.';
+        if (!$titleValidation['is_valid']) {
+            $errors['title'] = $titleValidation['errors'][0] ?? 'Title is required.';
         }
-        if ($input['content'] === '') {
-            $errors['content'] = 'Content is required.';
+        if (!$contentValidation['is_valid']) {
+            $errors['content'] = $contentValidation['errors'][0] ?? 'Content is required.';
         }
 
         if ($errors) {
@@ -228,17 +232,21 @@ final class ConversationController
         }
 
         $request = $this->request();
-        $input = [
-            'title' => trim((string)$request->input('title', '')),
-            'content' => trim((string)$request->input('content', '')),
-        ];
+
+        $titleValidation = $this->validator->required($request->input('title', ''));
+        $contentValidation = $this->validator->required($request->input('content', ''));
 
         $errors = [];
-        if ($input['title'] === '') {
-            $errors['title'] = 'Title is required.';
+        $input = [
+            'title' => $titleValidation['value'],
+            'content' => $contentValidation['value'],
+        ];
+
+        if (!$titleValidation['is_valid']) {
+            $errors['title'] = $titleValidation['errors'][0] ?? 'Title is required.';
         }
-        if ($input['content'] === '') {
-            $errors['content'] = 'Content is required.';
+        if (!$contentValidation['is_valid']) {
+            $errors['content'] = $contentValidation['errors'][0] ?? 'Content is required.';
         }
 
         if ($errors) {
@@ -321,13 +329,15 @@ final class ConversationController
             ];
         }
 
-        $input = [
-            'content' => trim((string)$request->input('content', '')),
-        ];
+        $contentValidation = $this->validator->required($request->input('content', ''));
 
         $errors = [];
-        if ($input['content'] === '') {
-            $errors['content'] = 'Reply content is required.';
+        $input = [
+            'content' => $contentValidation['value'],
+        ];
+
+        if (!$contentValidation['is_valid']) {
+            $errors['content'] = $contentValidation['errors'][0] ?? 'Reply content is required.';
         }
 
         if ($errors) {

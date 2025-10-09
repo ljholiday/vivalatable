@@ -6,6 +6,7 @@ namespace App\Http\Controller;
 use App\Http\Request;
 use App\Services\EventService;
 use App\Services\AuthService;
+use App\Services\ValidatorService;
 
 /**
  * Thin HTTP controller for event listings and detail views.
@@ -15,8 +16,11 @@ final class EventController
 {
     private const VALID_FILTERS = ['all', 'my'];
 
-    public function __construct(private EventService $events, private AuthService $auth)
-    {
+    public function __construct(
+        private EventService $events,
+        private AuthService $auth,
+        private ValidatorService $validator
+    ) {
     }
 
     /**
@@ -222,20 +226,24 @@ final class EventController
 
     private function validateEventInput(Request $request): array
     {
-        $input = [
-            'title' => trim((string)$request->input('title', '')),
-            'description' => trim((string)$request->input('description', '')),
-            'event_date' => trim((string)$request->input('event_date', '')),
-        ];
+        $titleValidation = $this->validator->required($request->input('title', ''));
+        $descriptionValidation = $this->validator->textField($request->input('description', ''));
+        $eventDateRaw = trim((string)$request->input('event_date', ''));
 
         $errors = [];
-        if ($input['title'] === '') {
-            $errors['title'] = 'Title is required.';
+        $input = [
+            'title' => $titleValidation['value'],
+            'description' => $descriptionValidation['value'],
+            'event_date' => $eventDateRaw,
+        ];
+
+        if (!$titleValidation['is_valid']) {
+            $errors['title'] = $titleValidation['errors'][0] ?? 'Title is required.';
         }
 
         $eventDateDb = null;
-        if ($input['event_date'] !== '') {
-            $timestamp = strtotime($input['event_date']);
+        if ($eventDateRaw !== '') {
+            $timestamp = strtotime($eventDateRaw);
             if ($timestamp === false) {
                 $errors['event_date'] = 'Provide a valid date/time.';
             } else {

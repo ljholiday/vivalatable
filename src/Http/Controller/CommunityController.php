@@ -8,6 +8,7 @@ use App\Services\CommunityService;
 use App\Services\CircleService;
 use App\Services\AuthService;
 use App\Services\AuthorizationService;
+use App\Services\ValidatorService;
 
 final class CommunityController
 {
@@ -17,7 +18,8 @@ final class CommunityController
         private CommunityService $communities,
         private CircleService $circles,
         private AuthService $auth,
-        private AuthorizationService $authz
+        private AuthorizationService $authz,
+        private ValidatorService $validator
     ) {
     }
 
@@ -263,18 +265,22 @@ final class CommunityController
 
     private function validateCommunityInput(Request $request): array
     {
-        $input = [
-            'name' => trim((string)$request->input('name', '')),
-            'description' => trim((string)$request->input('description', '')),
-            'privacy' => strtolower(trim((string)$request->input('privacy', 'public'))),
-        ];
+        $nameValidation = $this->validator->required($request->input('name', ''));
+        $descriptionValidation = $this->validator->textField($request->input('description', ''));
+        $privacyRaw = strtolower(trim((string)$request->input('privacy', 'public')));
 
         $errors = [];
-        if ($input['name'] === '') {
-            $errors['name'] = 'Name is required.';
+        $input = [
+            'name' => $nameValidation['value'],
+            'description' => $descriptionValidation['value'],
+            'privacy' => $privacyRaw,
+        ];
+
+        if (!$nameValidation['is_valid']) {
+            $errors['name'] = $nameValidation['errors'][0] ?? 'Name is required.';
         }
 
-        if (!in_array($input['privacy'], ['public', 'private'], true)) {
+        if (!in_array($privacyRaw, ['public', 'private'], true)) {
             $errors['privacy'] = 'Privacy must be public or private.';
         }
 

@@ -189,7 +189,11 @@ if (!function_exists('vt_container')) {
             }, false);
 
             $container->register('controller.events', static function (VTContainer $c): EventController {
-                return new EventController($c->get('event.service'), $c->get('auth.service'));
+                return new EventController(
+                    $c->get('event.service'),
+                    $c->get('auth.service'),
+                    $c->get('validator.service')
+                );
             }, false);
 
             $container->register('controller.communities', static function (VTContainer $c): CommunityController {
@@ -197,7 +201,8 @@ if (!function_exists('vt_container')) {
                     $c->get('community.service'),
                     $c->get('circle.service'),
                     $c->get('auth.service'),
-                    $c->get('authorization.service')
+                    $c->get('authorization.service'),
+                    $c->get('validator.service')
                 );
             }, false);
 
@@ -214,7 +219,8 @@ if (!function_exists('vt_container')) {
                     $c->get('conversation.service'),
                     $c->get('circle.service'),
                     $c->get('auth.service'),
-                    $c->get('authorization.service')
+                    $c->get('authorization.service'),
+                    $c->get('validator.service')
                 );
             }, false);
 
