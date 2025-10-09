@@ -7,6 +7,7 @@ use App\Http\Controller\EventController;
 use App\Http\Controller\CommunityController;
 use App\Http\Controller\ConversationController;
 use App\Http\Controller\ConversationApiController;
+use App\Http\Controller\InvitationApiController;
 use App\Http\Request;
 use App\Services\EventService;
 use App\Services\CommunityService;
@@ -16,6 +17,9 @@ use App\Services\AuthService;
 
 
 require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../legacy/includes/includes/class-security.php';
+require_once __DIR__ . '/../legacy/includes/includes/Security/SecurityService.php';
+require_once __DIR__ . '/../legacy/includes/includes/class-invitation-service.php';
 
 if (!defined('VT_VERSION')) {
     define('VT_VERSION', '2.0-dev');
@@ -128,6 +132,14 @@ if (!function_exists('vt_container')) {
                 return new AuthService($c->get('database.connection'));
             });
 
+            $container->register('security.service', static function (): \VT_Security_SecurityService {
+                return new \VT_Security_SecurityService();
+            });
+
+            $container->register('invitation.service', static function (): \VT_Invitation_Service {
+                return new \VT_Invitation_Service();
+            });
+
             $container->register('controller.auth', static function (VTContainer $c): AuthController {
                 return new AuthController($c->get('auth.service'));
             }, false);
@@ -158,6 +170,10 @@ if (!function_exists('vt_container')) {
                     $c->get('circle.service'),
                     $c->get('auth.service')
                 );
+            }, false);
+
+            $container->register('controller.invitations', static function (VTContainer $c): InvitationApiController {
+                return new InvitationApiController($c->get('database.connection'), $c->get('auth.service'));
             }, false);
 
             $container->register('http.request', static function (): Request {

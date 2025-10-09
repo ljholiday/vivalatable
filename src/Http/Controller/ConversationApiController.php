@@ -8,6 +8,8 @@ use App\Services\AuthService;
 use App\Services\CircleService;
 use App\Services\ConversationService;
 
+require_once dirname(__DIR__, 3) . '/templates/_helpers.php';
+
 final class ConversationApiController
 {
     private const VALID_CIRCLES = ['inner', 'trusted', 'extended', 'all'];
@@ -71,6 +73,58 @@ final class ConversationApiController
                 'filter' => $filter,
             ],
         ]);
+    }
+
+    /**
+     * @return array{status:int, body:array<string,mixed>}
+     */
+    public function reply(string $slugOrId): array
+    {
+        $request = $this->request();
+        $nonce = (string)$request->input('nonce', '');
+
+        if (!$this->verifyNonce($nonce, 'vt_conversation_reply')) {
+            return $this->error('Security verification failed', 403);
+        }
+
+        $viewerId = $this->auth->currentUserId();
+        if ($viewerId === null || $viewerId <= 0) {
+            return $this->error('User not authenticated', 401);
+        }
+
+        $conversation = $this->conversations->getBySlugOrId($slugOrId);
+        if ($conversation === null || !isset($conversation['id'])) {
+            return $this->error('Conversation not found', 404);
+        }
+
+        $context = $this->circles->buildContext($viewerId);
+        $memberCommunities = $context['inner']['communities'] ?? [];
+        if (!$this->conversations->canViewerAccess($conversation, $viewerId, $memberCommunities)) {
+            return $this->error('Conversation not found', 404);
+        }
+
+        $content = trim((string)$request->input('content', ''));
+        if ($content === '') {
+            return $this->error('Reply content is required.', 422);
+        }
+
+        $viewer = $this->auth->getCurrentUser();
+        $replyId = $this->conversations->addReply((int)$conversation['id'], [
+            'content' => $content,
+            'author_id' => isset($viewer->id) ? (int)$viewer->id : 0,
+            'author_name' => isset($viewer->display_name) && $viewer->display_name !== ''
+                ? (string)$viewer->display_name
+                : ((isset($viewer->username) && $viewer->username !== '') ? (string)$viewer->username : 'Anonymous'),
+            'author_email' => isset($viewer->email) ? (string)$viewer->email : '',
+        ]);
+
+        $replies = $this->conversations->listReplies((int)$conversation['id']);
+        $html = $this->renderReplyCards($replies);
+
+        return $this->success([
+            'reply_id' => $replyId,
+            'html' => $html,
+        ], 201);
     }
 
     private function request(): Request
@@ -175,6 +229,30 @@ final class ConversationApiController
                 echo '</article>';
             }
         }
+
+        return (string)ob_get_clean();
+    }
+
+    private function renderReplyCards(array $rows): string
+    {
+        if ($rows === []) {
+            return '<p class="vt-text-muted">No replies yet.</p>';
+        }
+
+        ob_start();
+        echo '<div class="vt-stack">';
+        foreach ($rows as $reply) {
+            $r = (object)$reply;
+            echo '<article class="vt-card" id="reply-' . htmlspecialchars((string)($r->id ?? '')) . '">';
+            echo '<div class="vt-card-sub">' . htmlspecialchars($r->author_name ?? 'Unknown');
+            if (!empty($r->created_at)) {
+                echo ' · ' . htmlspecialchars(date_fmt($r->created_at));
+            }
+            echo '</div>';
+            echo '<p class="vt-card-desc">' . nl2br(htmlspecialchars($r->content ?? '')) . '</p>';
+            echo '</article>';
+        }
+        echo '</div>';
 
         return (string)ob_get_clean();
     }

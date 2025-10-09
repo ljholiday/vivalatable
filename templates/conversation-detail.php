@@ -59,6 +59,9 @@
         </div>
       <?php endif; ?>
       <form method="post" action="/conversations/<?= e($c->slug ?? '') ?>/reply" class="vt-form vt-stack">
+        <?php if (function_exists('vt_service')): ?>
+          <?php echo vt_service('security.service')->nonceField('vt_conversation_reply', 'reply_nonce'); ?>
+        <?php endif; ?>
         <div class="vt-field">
           <label class="vt-label" for="reply-content">Reply</label>
           <textarea class="vt-textarea<?= isset($reply_errors['content']) ? ' is-invalid' : '' ?>" id="reply-content" name="content" rows="4" required><?= e($reply_input['content'] ?? '') ?></textarea>

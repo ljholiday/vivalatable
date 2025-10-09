@@ -266,6 +266,16 @@ final class ConversationController
         }
 
         $request = $this->request();
+        $nonce = (string)$request->input('reply_nonce', '');
+        if (!$this->verifyNonce($nonce, 'vt_conversation_reply')) {
+            return [
+                'conversation' => $conversation,
+                'replies' => $this->conversations->listReplies((int)$conversation['id']),
+                'reply_errors' => ['nonce' => 'Security verification failed. Please refresh and try again.'],
+                'reply_input' => ['content' => (string)$request->input('content', '')],
+            ];
+        }
+
         $input = [
             'content' => trim((string)$request->input('content', '')),
         ];
@@ -284,7 +294,15 @@ final class ConversationController
             ];
         }
 
-        $this->conversations->addReply((int)$conversation['id'], $input);
+        $viewer = $this->auth->getCurrentUser();
+        $this->conversations->addReply((int)$conversation['id'], [
+            'content' => $input['content'],
+            'author_id' => isset($viewer->id) ? (int)$viewer->id : 0,
+            'author_name' => isset($viewer->display_name) && $viewer->display_name !== ''
+                ? (string)$viewer->display_name
+                : ((isset($viewer->username) && $viewer->username !== '') ? (string)$viewer->username : 'Anonymous'),
+            'author_email' => isset($viewer->email) ? (string)$viewer->email : '',
+        ]);
 
         $redirect = '/conversations/' . $conversation['slug'];
         $circleParam = $request->query('circle');
@@ -330,5 +348,43 @@ final class ConversationController
         $filter = strtolower((string)$filter);
         $allowed = ['my-events', 'all-events', 'communities', ''];
         return in_array($filter, $allowed, true) ? $filter : '';
+    }
+
+    private function verifyNonce(string $nonce, string $action): bool
+    {
+        if ($nonce === '') {
+            return false;
+        }
+
+        $this->ensureLegacySecurityLoaded();
+
+        if (class_exists('\VT_Security')) {
+            try {
+                return \VT_Security::verifyNonce($nonce, $action);
+            } catch (\Throwable $e) {
+                // fall through to other strategies
+            }
+        }
+
+        try {
+            $security = vt_service('security.service');
+            if (is_object($security) && method_exists($security, 'verifyNonce')) {
+                return (bool)$security->verifyNonce($nonce, $action);
+            }
+        } catch (\Throwable $e) {
+            // ignore and treat as failure
+        }
+
+        return false;
+    }
+
+    private function ensureLegacySecurityLoaded(): void
+    {
+        if (!class_exists('\VT_Security')) {
+            $path = dirname(__DIR__, 3) . '/legacy/includes/includes/class-security.php';
+            if (is_file($path)) {
+                require_once $path;
+            }
+        }
     }
 }

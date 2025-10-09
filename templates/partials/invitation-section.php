@@ -83,13 +83,21 @@ $base_url = VT_Http::getBaseUrl() . '/' . $entity_type . 's/' . htmlspecialchars
 	</form>
 
 	<?php if ($show_pending) : ?>
-	<div class="vt-mt-6">
-		<h4 class="vt-heading vt-heading-sm">Pending Invitations</h4>
-		<div id="invitations-list">
-			<div class="vt-loading-placeholder">
-				<p>Loading pending invitations...</p>
-			</div>
-		</div>
-	</div>
-	<?php endif; ?>
+    <div class="vt-mt-6">
+        <h4 class="vt-heading vt-heading-sm">Pending Invitations</h4>
+        <div id="invitations-list">
+            <div class="vt-loading-placeholder">
+                <p>Loading pending invitations...</p>
+            </div>
+        </div>
+    </div>
+    <div class="vt-mt-6">
+        <h4 class="vt-heading vt-heading-sm">Members</h4>
+        <div id="members-list">
+            <div class="vt-loading-placeholder">
+                <p>Loading members...</p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>

@@ -95,6 +95,19 @@ final class AuthService
         return $this->currentUserId() !== null;
     }
 
+    public function currentUserCan(string $capability): bool
+    {
+        if (class_exists('\VT_Auth')) {
+            try {
+                return (bool)\VT_Auth::currentUserCan($capability);
+            } catch (\Throwable $e) {
+                // fall through to session-based check
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @return array{
      *   success: bool,

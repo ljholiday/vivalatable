@@ -386,7 +386,12 @@ final class ConversationService
     }
 
     /**
-     * @param array{content:string} $data
+     * @param array{
+     *   content:string,
+     *   author_id?:int,
+     *   author_name?:string,
+     *   author_email?:string
+     * } $data
      */
     public function addReply(int $conversationId, array $data): int
     {
@@ -395,9 +400,17 @@ final class ConversationService
             throw new \RuntimeException('Conversation not found.');
         }
 
-        $content = trim($data['content']);
+        $content = trim((string)($data['content'] ?? ''));
         if ($content === '') {
             throw new \RuntimeException('Reply content is required.');
+        }
+
+        $authorId = isset($data['author_id']) ? (int)$data['author_id'] : 0;
+        $authorName = trim((string)($data['author_name'] ?? ''));
+        $authorEmail = trim((string)($data['author_email'] ?? ''));
+
+        if ($authorName === '') {
+            $authorName = 'Anonymous';
         }
 
         $pdo = $this->db->pdo();
@@ -412,9 +425,9 @@ final class ConversationService
             ':conversation_id' => (int)$conversation['id'],
             ':parent_reply_id' => null,
             ':content' => $content,
-            ':author_id' => 1,
-            ':author_name' => 'Demo Author',
-            ':author_email' => 'demo@example.com',
+            ':author_id' => $authorId,
+            ':author_name' => $authorName,
+            ':author_email' => $authorEmail,
             ':depth_level' => 0,
             ':created_at' => $now,
             ':updated_at' => $now,

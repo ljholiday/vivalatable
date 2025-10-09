@@ -252,6 +252,7 @@ function initInvitationForm() {
         if (message) {
             formData.append('message', message);
         }
+        formData.append('nonce', getCSRFToken());
 
         const entityTypePlural = entityType === 'community' ? 'communities' : 'events';
 
@@ -299,6 +300,7 @@ function initPendingInvitations() {
     const entityId = form.getAttribute('data-entity-id');
 
     loadPendingInvitations(entityType, entityId);
+    loadMemberList(entityType, entityId);
 }
 
 /**
@@ -310,7 +312,8 @@ function loadPendingInvitations(entityType, entityId) {
 
     const entityTypePlural = entityType === 'community' ? 'communities' : 'events';
 
-    fetch(`/api/${entityTypePlural}/${entityId}/invitations`, {
+    const nonce = getCSRFToken();
+    fetch(`/api/${entityTypePlural}/${entityId}/invitations?nonce=${encodeURIComponent(nonce)}`, {
         method: 'GET'
     })
     .then(response => response.json())
@@ -334,6 +337,28 @@ function loadPendingInvitations(entityType, entityId) {
         console.error('Error loading invitations:', error);
         invitationsList.innerHTML = '<div class="vt-text-center vt-text-muted">Error loading invitations.</div>';
     });
+}
+
+function loadMemberList(entityType, entityId) {
+    if (entityType !== 'community') {
+        return;
+    }
+
+    const membersList = document.getElementById('members-list');
+    if (!membersList) {
+        return;
+    }
+
+    fetch(`/api/communities/${entityId}/members?nonce=${encodeURIComponent(getCSRFToken())}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data && data.data.html) {
+                membersList.innerHTML = data.data.html;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading members:', error);
+        });
 }
 
 /**
@@ -386,7 +411,8 @@ function attachCancelInvitationHandlers(entityType, entityId) {
 
             const entityTypePlural = entityType === 'community' ? 'communities' : 'events';
 
-            fetch(`/api/${entityTypePlural}/${entityId}/invitations/${invitationId}`, {
+            const nonce = getCSRFToken();
+            fetch(`/api/${entityTypePlural}/${entityId}/invitations/${invitationId}?nonce=${encodeURIComponent(nonce)}`, {
                 method: 'DELETE'
             })
             .then(response => response.json())

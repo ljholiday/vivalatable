@@ -86,6 +86,56 @@ if ($path === '/api/conversations' && $request->method() === 'POST') {
     return;
 }
 
+if (preg_match('#^/api/conversations/([^/]+)/replies$#', $path, $m) && $request->method() === 'POST') {
+    $response = vt_service('controller.conversations.api')->reply($m[1]);
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
+if (preg_match('#^/api/(communities|events)/(\d+)/invitations$#', $path, $m)) {
+    $type = $m[1];
+    $entityId = (int)$m[2];
+    $controller = vt_service('controller.invitations');
+
+    if ($request->method() === 'POST') {
+        $response = $type === 'communities'
+            ? $controller->sendCommunity($entityId)
+            : $controller->sendEvent($entityId);
+    } elseif ($request->method() === 'GET') {
+        $response = $type === 'communities'
+            ? $controller->listCommunity($entityId)
+            : $controller->listEvent($entityId);
+    } else {
+        http_response_code(405);
+        header('Allow: GET, POST');
+        echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+        return;
+    }
+
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
+if (preg_match('#^/api/(communities|events)/(\d+)/invitations/(\d+)$#', $path, $m) && $request->method() === 'DELETE') {
+    $type = $m[1];
+    $entityId = (int)$m[2];
+    $invitationId = (int)$m[3];
+    $controller = vt_service('controller.invitations');
+
+    $response = $type === 'communities'
+        ? $controller->deleteCommunity($entityId, $invitationId)
+        : $controller->deleteEvent($entityId, $invitationId);
+
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
 if ($path === '/events') {
     $view = vt_service('controller.events')->index();
     $events = $view['events'];
