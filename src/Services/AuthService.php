@@ -370,4 +370,291 @@ final class AuthService
             ':id' => $userId,
         ]);
     }
+
+    /**
+     * Request password reset
+     *
+     * @return array{success:bool, errors?:array<string,string>, message?:string}
+     */
+    public function requestPasswordReset(string $email): array
+    {
+        $email = trim($email);
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return [
+                'success' => false,
+                'errors' => ['email' => 'Valid email address required.'],
+            ];
+        }
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare("SELECT id FROM vt_users WHERE email = :email AND status = 'active' LIMIT 1");
+        $stmt->execute([':email' => $email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user === false) {
+            return [
+                'success' => true,
+                'message' => 'If that email exists, a reset link has been sent.',
+            ];
+        }
+
+        $userId = (int)$user['id'];
+        $token = $this->generateSecureToken();
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+        $insertStmt = $pdo->prepare(
+            "INSERT INTO vt_password_reset_tokens (user_id, token, expires_at)
+             VALUES (:user_id, :token, :expires_at)"
+        );
+        $insertStmt->execute([
+            ':user_id' => $userId,
+            ':token' => $token,
+            ':expires_at' => $expiresAt,
+        ]);
+
+        $this->sendPasswordResetEmail($email, $token);
+
+        return [
+            'success' => true,
+            'message' => 'If that email exists, a reset link has been sent.',
+        ];
+    }
+
+    /**
+     * Validate password reset token
+     *
+     * @return array{valid:bool, user_id?:int, error?:string}
+     */
+    public function validateResetToken(string $token): array
+    {
+        if ($token === '') {
+            return ['valid' => false, 'error' => 'Token is required.'];
+        }
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare(
+            "SELECT id, user_id, expires_at, used_at
+             FROM vt_password_reset_tokens
+             WHERE token = :token
+             LIMIT 1"
+        );
+        $stmt->execute([':token' => $token]);
+        $tokenRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($tokenRecord === false) {
+            return ['valid' => false, 'error' => 'Invalid token.'];
+        }
+
+        if ($tokenRecord['used_at'] !== null) {
+            return ['valid' => false, 'error' => 'Token already used.'];
+        }
+
+        if (strtotime($tokenRecord['expires_at']) < time()) {
+            return ['valid' => false, 'error' => 'Token expired.'];
+        }
+
+        return [
+            'valid' => true,
+            'user_id' => (int)$tokenRecord['user_id'],
+        ];
+    }
+
+    /**
+     * Reset password with token
+     *
+     * @return array{success:bool, errors?:array<string,string>, message?:string}
+     */
+    public function resetPasswordWithToken(string $token, string $newPassword): array
+    {
+        $validation = $this->validateResetToken($token);
+        if (!$validation['valid']) {
+            return [
+                'success' => false,
+                'errors' => ['token' => $validation['error'] ?? 'Invalid token.'],
+            ];
+        }
+
+        if (strlen($newPassword) < 8) {
+            return [
+                'success' => false,
+                'errors' => ['password' => 'Password must be at least 8 characters.'],
+            ];
+        }
+
+        $userId = $validation['user_id'];
+        $pdo = $this->database->pdo();
+
+        $updateStmt = $pdo->prepare(
+            "UPDATE vt_users
+             SET password_hash = :password_hash, updated_at = :updated_at
+             WHERE id = :id"
+        );
+        $updateStmt->execute([
+            ':password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
+            ':updated_at' => date('Y-m-d H:i:s'),
+            ':id' => $userId,
+        ]);
+
+        $markUsedStmt = $pdo->prepare(
+            "UPDATE vt_password_reset_tokens
+             SET used_at = :used_at
+             WHERE token = :token"
+        );
+        $markUsedStmt->execute([
+            ':used_at' => date('Y-m-d H:i:s'),
+            ':token' => $token,
+        ]);
+
+        return [
+            'success' => true,
+            'message' => 'Password reset successfully.',
+        ];
+    }
+
+    /**
+     * Send email verification
+     *
+     * @return array{success:bool, message?:string}
+     */
+    public function sendVerificationEmail(int $userId, string $email): array
+    {
+        $token = $this->generateSecureToken();
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare(
+            "INSERT INTO vt_email_verification_tokens (user_id, email, token, expires_at)
+             VALUES (:user_id, :email, :token, :expires_at)"
+        );
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':email' => $email,
+            ':token' => $token,
+            ':expires_at' => $expiresAt,
+        ]);
+
+        $this->sendEmailVerificationEmail($email, $token);
+
+        return [
+            'success' => true,
+            'message' => 'Verification email sent.',
+        ];
+    }
+
+    /**
+     * Verify email with token
+     *
+     * @return array{success:bool, errors?:array<string,string>, message?:string}
+     */
+    public function verifyEmail(string $token): array
+    {
+        if ($token === '') {
+            return [
+                'success' => false,
+                'errors' => ['token' => 'Token is required.'],
+            ];
+        }
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare(
+            "SELECT id, user_id, email, expires_at, verified_at
+             FROM vt_email_verification_tokens
+             WHERE token = :token
+             LIMIT 1"
+        );
+        $stmt->execute([':token' => $token]);
+        $tokenRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($tokenRecord === false) {
+            return [
+                'success' => false,
+                'errors' => ['token' => 'Invalid verification token.'],
+            ];
+        }
+
+        if ($tokenRecord['verified_at'] !== null) {
+            return [
+                'success' => false,
+                'errors' => ['token' => 'Email already verified.'],
+            ];
+        }
+
+        if (strtotime($tokenRecord['expires_at']) < time()) {
+            return [
+                'success' => false,
+                'errors' => ['token' => 'Verification token expired.'],
+            ];
+        }
+
+        $markVerifiedStmt = $pdo->prepare(
+            "UPDATE vt_email_verification_tokens
+             SET verified_at = :verified_at
+             WHERE id = :id"
+        );
+        $markVerifiedStmt->execute([
+            ':verified_at' => date('Y-m-d H:i:s'),
+            ':id' => $tokenRecord['id'],
+        ]);
+
+        return [
+            'success' => true,
+            'message' => 'Email verified successfully.',
+        ];
+    }
+
+    private function generateSecureToken(): string
+    {
+        return bin2hex(random_bytes(32));
+    }
+
+    private function sendPasswordResetEmail(string $email, string $token): void
+    {
+        if (!class_exists('\VT_Mail')) {
+            $path = dirname(__DIR__, 2) . '/legacy/includes/includes/class-mail.php';
+            if (is_file($path)) {
+                require_once $path;
+            }
+        }
+
+        $resetUrl = $this->getSiteUrl() . '/reset-password/' . $token;
+
+        $variables = [
+            'reset_url' => $resetUrl,
+            'site_name' => 'VivalaTable',
+            'subject' => 'Reset Your Password',
+        ];
+
+        if (class_exists('\VT_Mail')) {
+            \VT_Mail::sendTemplate($email, 'password_reset', $variables);
+        }
+    }
+
+    private function sendEmailVerificationEmail(string $email, string $token): void
+    {
+        if (!class_exists('\VT_Mail')) {
+            $path = dirname(__DIR__, 2) . '/legacy/includes/includes/class-mail.php';
+            if (is_file($path)) {
+                require_once $path;
+            }
+        }
+
+        $verifyUrl = $this->getSiteUrl() . '/verify-email/' . $token;
+
+        $variables = [
+            'verify_url' => $verifyUrl,
+            'site_name' => 'VivalaTable',
+            'subject' => 'Verify Your Email Address',
+        ];
+
+        if (class_exists('\VT_Mail')) {
+            \VT_Mail::sendTemplate($email, 'email_verification', $variables);
+        }
+    }
+
+    private function getSiteUrl(): string
+    {
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return $protocol . '://' . $host;
+    }
 }

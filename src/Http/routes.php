@@ -72,6 +72,70 @@ return static function (Router $router): void {
         exit;
     });
 
+    // Password Reset
+    $router->get('/reset-password', static function (Request $request) {
+        $view = vt_service('controller.auth')->requestReset();
+        $errors = $view['errors'];
+        $input = $view['input'];
+        require dirname(__DIR__, 2) . '/templates/password-reset-request.php';
+        return null;
+    });
+
+    $router->post('/reset-password', static function (Request $request) {
+        $result = vt_service('controller.auth')->sendResetEmail();
+        if (isset($result['message'])) {
+            $message = $result['message'];
+            $errors = [];
+            $input = ['email' => ''];
+        } else {
+            $message = null;
+            $errors = $result['errors'] ?? [];
+            $input = $result['input'] ?? ['email' => ''];
+        }
+        require dirname(__DIR__, 2) . '/templates/password-reset-request.php';
+        return null;
+    });
+
+    $router->get('/reset-password/{token}', static function (Request $request, string $token) {
+        $view = vt_service('controller.auth')->showResetForm($token);
+        if (!$view['valid']) {
+            http_response_code(400);
+            $error = $view['error'] ?? 'Invalid or expired token.';
+            require dirname(__DIR__, 2) . '/templates/password-reset-error.php';
+            return null;
+        }
+        $token = $view['token'];
+        $errors = [];
+        require dirname(__DIR__, 2) . '/templates/password-reset-form.php';
+        return null;
+    });
+
+    $router->post('/reset-password/{token}', static function (Request $request, string $token) {
+        $result = vt_service('controller.auth')->processReset($token);
+        if (isset($result['redirect'])) {
+            $_SESSION['flash_message'] = $result['message'] ?? 'Password reset successfully.';
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        $errors = $result['errors'] ?? [];
+        $token = $result['token'] ?? $token;
+        require dirname(__DIR__, 2) . '/templates/password-reset-form.php';
+        return null;
+    });
+
+    // Email Verification
+    $router->get('/verify-email/{token}', static function (Request $request, string $token) {
+        $result = vt_service('controller.auth')->verifyEmail($token);
+        if ($result['success']) {
+            $_SESSION['flash_message'] = $result['message'] ?? 'Email verified successfully.';
+            header('Location: ' . ($result['redirect'] ?? '/'));
+            exit;
+        }
+        $errors = $result['errors'] ?? ['token' => 'Verification failed.'];
+        require dirname(__DIR__, 2) . '/templates/email-verification-error.php';
+        return null;
+    });
+
     // API: Conversations
     $router->post('/api/conversations', static function (Request $request) {
         $response = vt_service('controller.conversations.api')->list();

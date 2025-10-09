@@ -134,6 +134,112 @@ final class AuthController
         ];
     }
 
+    /**
+     * @return array{errors: array<string,string>, input: array<string,string>}
+     */
+    public function requestReset(): array
+    {
+        return [
+            'errors' => [],
+            'input' => ['email' => ''],
+        ];
+    }
+
+    /**
+     * @return array{errors?: array<string,string>, message?: string, input?: array<string,string>}
+     */
+    public function sendResetEmail(): array
+    {
+        $request = $this->request();
+        $email = trim((string)$request->input('email', ''));
+
+        $result = $this->auth->requestPasswordReset($email);
+
+        if ($result['success']) {
+            return [
+                'message' => $result['message'] ?? 'If that email exists, a reset link has been sent.',
+            ];
+        }
+
+        return [
+            'errors' => $result['errors'] ?? ['email' => 'An error occurred.'],
+            'input' => ['email' => $email],
+        ];
+    }
+
+    /**
+     * @return array{valid: bool, token: string, error?: string}
+     */
+    public function showResetForm(string $token): array
+    {
+        $validation = $this->auth->validateResetToken($token);
+
+        return [
+            'valid' => $validation['valid'],
+            'token' => $token,
+            'error' => $validation['error'] ?? null,
+        ];
+    }
+
+    /**
+     * @return array{redirect?: string, errors?: array<string,string>, message?: string, token?: string}
+     */
+    public function processReset(string $token): array
+    {
+        $request = $this->request();
+        $password = (string)$request->input('password', '');
+        $confirm = (string)$request->input('confirm_password', '');
+
+        $errors = [];
+        if ($password === '') {
+            $errors['password'] = 'Password is required.';
+        } elseif ($password !== $confirm) {
+            $errors['confirm_password'] = 'Passwords do not match.';
+        }
+
+        if ($errors !== []) {
+            return [
+                'errors' => $errors,
+                'token' => $token,
+            ];
+        }
+
+        $result = $this->auth->resetPasswordWithToken($token, $password);
+
+        if ($result['success']) {
+            return [
+                'redirect' => '/auth',
+                'message' => $result['message'] ?? 'Password reset successfully.',
+            ];
+        }
+
+        return [
+            'errors' => $result['errors'] ?? ['token' => 'An error occurred.'],
+            'token' => $token,
+        ];
+    }
+
+    /**
+     * @return array{success: bool, message?: string, errors?: array<string,string>, redirect?: string}
+     */
+    public function verifyEmail(string $token): array
+    {
+        $result = $this->auth->verifyEmail($token);
+
+        if ($result['success']) {
+            return [
+                'success' => true,
+                'message' => $result['message'] ?? 'Email verified successfully.',
+                'redirect' => '/',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'errors' => $result['errors'] ?? ['token' => 'Verification failed.'],
+        ];
+    }
+
     private function request(): Request
     {
         /** @var Request $request */
