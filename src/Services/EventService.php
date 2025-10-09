@@ -48,11 +48,13 @@ final class EventService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function listMine(int $viewerId, int $limit = 20): array
+    public function listMine(int $viewerId, ?string $viewerEmail = null, int $limit = 20): array
     {
         if ($viewerId <= 0) {
             return [];
         }
+
+        $email = $viewerEmail !== null ? trim($viewerEmail) : $this->lookupUserEmail($viewerId);
 
         $sql = "SELECT DISTINCT e.id, e.title, e.event_date, e.slug, e.description
                 FROM vt_events e
@@ -70,7 +72,11 @@ final class EventService
         $stmt = $this->db->pdo()->prepare($sql);
         $stmt->bindValue(':viewer_author', $viewerId, PDO::PARAM_INT);
         $stmt->bindValue(':viewer_guest', $viewerId, PDO::PARAM_INT);
-        $stmt->bindValue(':viewer_email', $this->lookupUserEmail($viewerId) ?? '', PDO::PARAM_STR);
+        if ($email !== null && $email !== '') {
+            $stmt->bindValue(':viewer_email', $email, PDO::PARAM_STR);
+        } else {
+            $stmt->bindValue(':viewer_email', '', PDO::PARAM_STR);
+        }
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
         $stmt->execute();
 

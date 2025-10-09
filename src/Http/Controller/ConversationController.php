@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controller;
 
+use App\Services\AuthService;
 use App\Services\CircleService;
 use App\Services\ConversationService;
 
@@ -12,7 +13,8 @@ final class ConversationController
 
     public function __construct(
         private ConversationService $conversations,
-        private CircleService $circles
+        private CircleService $circles,
+        private AuthService $auth
     ) {
     }
 
@@ -29,7 +31,7 @@ final class ConversationController
         $request = $this->request();
         $circle = $this->normalizeCircle($request->query('circle'));
 
-        $viewerId = $this->viewerId();
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $context = $this->circles->buildContext($viewerId);
         $allowedCommunities = $this->circles->resolveCommunitiesForCircle($context, $circle);
         $memberCommunities = $this->circles->memberCommunities($context);
@@ -66,7 +68,7 @@ final class ConversationController
     public function show(string $slugOrId): array
     {
         $conversation = $this->conversations->getBySlugOrId($slugOrId);
-        $viewerId = $this->viewerId();
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $context = $this->circles->buildContext($viewerId);
         $memberCommunities = $context['inner']['communities'] ?? [];
 
@@ -246,7 +248,7 @@ final class ConversationController
             ];
         }
 
-        $viewerId = $this->viewerId();
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $context = $this->circles->buildContext($viewerId);
         $memberCommunities = $context['inner']['communities'] ?? [];
         if (!$this->conversations->canViewerAccess($conversation, $viewerId, $memberCommunities)) {
@@ -310,15 +312,6 @@ final class ConversationController
         /** @var \App\Http\Request $request */
         $request = vt_service('http.request');
         return $request;
-    }
-
-    private function viewerId(): int
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        return isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
     }
 
     private function normalizeCircle(?string $circle): string

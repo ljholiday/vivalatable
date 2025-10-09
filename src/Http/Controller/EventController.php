@@ -5,6 +5,7 @@ namespace App\Http\Controller;
 
 use App\Http\Request;
 use App\Services\EventService;
+use App\Services\AuthService;
 
 /**
  * Thin HTTP controller for event listings and detail views.
@@ -14,7 +15,7 @@ final class EventController
 {
     private const VALID_FILTERS = ['all', 'my'];
 
-    public function __construct(private EventService $events)
+    public function __construct(private EventService $events, private AuthService $auth)
     {
     }
 
@@ -25,10 +26,11 @@ final class EventController
     {
         $request = $this->request();
         $filter = $this->normalizeFilter($request->query('filter'));
-        $viewerId = $this->viewerId();
+        $viewerId = $this->auth->currentUserId() ?? 0;
+        $viewerEmail = $this->auth->currentUserEmail();
 
         if ($filter === 'my') {
-            $events = $viewerId > 0 ? $this->events->listMine($viewerId) : [];
+            $events = $viewerId > 0 ? $this->events->listMine($viewerId, $viewerEmail) : [];
         } else {
             $events = $this->events->listRecent();
         }
@@ -201,15 +203,6 @@ final class EventController
         /** @var Request $request */
         $request = vt_service('http.request');
         return $request;
-    }
-
-    private function viewerId(): int
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        return isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
     }
 
     private function normalizeFilter(?string $filter): string

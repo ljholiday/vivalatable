@@ -1,82 +1,97 @@
-<?php
-/**
- * Simple Database Test
- */
+<?php declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/includes/bootstrap.php';
+use App\Http\Controller\EventController;
+use App\Services\AuthService;
+use App\Services\CircleService;
+use App\Services\CommunityService;
+use App\Services\ConversationService;
+use App\Services\EventService;
 
-// Turn on error reporting
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-$db = VT_Database::getInstance();
+final class SimpleSmokeTest
+{
+    /** @var array<int, string> */
+    private array $messages = [];
 
-echo "Simple Database Test\n";
-echo "===================\n";
+    public function run(): void
+    {
+        echo "Running container smoke test...\n\n";
 
-// Test 1: Basic connection
-echo "1. Testing connection: ";
-$result = $db->getVar("SELECT 1");
-echo ($result == 1) ? "✅ PASS\n" : "❌ FAIL\n";
+        $this->assertService('event.service', EventService::class);
+        $this->assertService('community.service', CommunityService::class);
+        $this->assertService('conversation.service', ConversationService::class);
+        $this->assertService('circle.service', CircleService::class);
+        $this->assertService('auth.service', AuthService::class);
+        $this->assertController('controller.events', EventController::class);
 
-// Test 2: Table exists
-echo "2. Testing table existence: ";
-$exists = $db->getVar("SHOW TABLES LIKE 'vt_config'");
-echo $exists ? "✅ PASS (table: $exists)\n" : "❌ FAIL\n";
-
-// Test 3: Direct SQL insert
-echo "3. Testing direct SQL insert: ";
-$test_option = 'test_' . time() . '_' . rand(100, 999);
-$test_value = 'value_' . rand(1000, 9999);
-
-try {
-    $result = $db->query("INSERT INTO vt_config (option_name, option_value, autoload) VALUES ('$test_option', '$test_value', 'no')");
-
-    if ($result) {
-        echo "✅ PASS\n";
-
-        // Verify
-        $retrieved = $db->getVar("SELECT option_value FROM vt_config WHERE option_name = '$test_option'");
-        echo "   Retrieved: $retrieved\n";
-
-        // Cleanup
-        $db->query("DELETE FROM vt_config WHERE option_name = '$test_option'");
-    } else {
-        echo "❌ FAIL (query method returned false)\n";
+        $this->report();
     }
-} catch (Exception $e) {
-    echo "❌ FAIL (exception: " . $e->getMessage() . ")\n";
+
+    private function assertService(string $id, string $expectedClass): void
+    {
+        echo "Resolving service '{$id}'... ";
+        try {
+            $instance = vt_service($id);
+            if ($instance instanceof $expectedClass) {
+                echo "PASS\n";
+                $this->messages[] = "PASS: Service '{$id}' resolved to {$expectedClass}.";
+            } else {
+                echo "FAIL\n";
+                $resolved = is_object($instance) ? get_class($instance) : gettype($instance);
+                $this->messages[] = "FAIL: Service '{$id}' resolved to {$resolved}, expected {$expectedClass}.";
+            }
+        } catch (\Throwable $e) {
+            echo "FAIL\n";
+            $this->messages[] = "FAIL: Service '{$id}' threw exception: " . $e->getMessage();
+        }
+    }
+
+    private function assertController(string $id, string $expectedClass): void
+    {
+        echo "Resolving controller '{$id}'... ";
+        try {
+            $resolved = vt_service($id);
+            if ($resolved instanceof $expectedClass) {
+                echo "PASS\n";
+                $this->messages[] = "PASS: Controller '{$id}' resolved to {$expectedClass}.";
+            } else {
+                echo "FAIL\n";
+                $type = is_object($resolved) ? get_class($resolved) : gettype($resolved);
+                $this->messages[] = "FAIL: Controller '{$id}' resolved to {$type}, expected {$expectedClass}.";
+            }
+        } catch (\Throwable $e) {
+            echo "FAIL\n";
+            $this->messages[] = "FAIL: Controller '{$id}' threw exception: " . $e->getMessage();
+        }
+    }
+
+    private function report(): void
+    {
+        echo "\nSummary:\n";
+        foreach ($this->messages as $message) {
+            echo "  - {$message}\n";
+        }
+
+        $hasFailures = $this->hasFailures();
+        if ($hasFailures) {
+            echo "\nContainer smoke test detected issues.\n";
+        } else {
+            echo "\nContainer smoke test succeeded.\n";
+        }
+        exit($hasFailures ? 1 : 0);
+    }
+
+    private function hasFailures(): bool
+    {
+        foreach ($this->messages as $message) {
+            if (str_starts_with($message, 'FAIL:')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
-// Test 4: VT_Database insert method
-echo "4. Testing VT_Database insert method: ";
-$test_data = [
-    'option_name' => 'vt_test_' . time() . '_' . rand(100, 999),
-    'option_value' => 'vt_value_' . rand(1000, 9999),
-    'autoload' => 'no'
-];
-
-try {
-    $insert_id = $db->insert('config', $test_data);
-
-    if ($insert_id) {
-        echo "✅ PASS (ID: $insert_id)\n";
-
-        // Verify
-        $retrieved = $db->getVar("SELECT option_value FROM vt_config WHERE id = $insert_id");
-        echo "   Retrieved: $retrieved\n";
-
-        // Cleanup
-        $db->delete('config', ['id' => $insert_id]);
-    } else {
-        echo "❌ FAIL (insert method returned false/0)\n";
-
-        // Check if it was actually inserted
-        $check = $db->getVar("SELECT COUNT(*) FROM vt_config WHERE option_name = '{$test_data['option_name']}'");
-        echo "   Rows with this option_name: $check\n";
-    }
-} catch (Exception $e) {
-    echo "❌ FAIL (exception: " . $e->getMessage() . ")\n";
-}
-
-echo "\nDone.\n";
+(new SimpleSmokeTest())->run();

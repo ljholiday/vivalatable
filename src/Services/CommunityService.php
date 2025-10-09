@@ -155,7 +155,7 @@ final class CommunityService
 
         if (ctype_digit($slugOrId)) {
             $stmt = $pdo->prepare(
-                "SELECT id, name AS title, slug, description, created_at, privacy, member_count, event_count
+                "SELECT id, name AS title, slug, description, created_at, privacy, member_count, event_count, creator_id
                  FROM vt_communities
                  WHERE id = :id
                  LIMIT 1"
@@ -163,7 +163,7 @@ final class CommunityService
             $stmt->execute([':id' => (int)$slugOrId]);
         } else {
             $stmt = $pdo->prepare(
-                "SELECT id, name AS title, slug, description, created_at, privacy, member_count, event_count
+                "SELECT id, name AS title, slug, description, created_at, privacy, member_count, event_count, creator_id
                  FROM vt_communities
                  WHERE slug = :slug
                  LIMIT 1"

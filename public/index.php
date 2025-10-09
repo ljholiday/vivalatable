@@ -311,6 +311,10 @@ if (preg_match('#^/communities/([^/]+)$#', $path, $m)) {
     $slug = $m[1];
     $view = vt_service('controller.communities')->show($slug);
     $community = $view['community'];
+    $status = (int)($view['status'] ?? ($community === null ? 404 : 200));
+    if ($status !== 200) {
+        http_response_code($status);
+    }
     require __DIR__ . '/../templates/community-detail.php';
     return;
 }

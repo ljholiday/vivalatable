@@ -6,6 +6,7 @@ namespace App\Http\Controller;
 use App\Http\Request;
 use App\Services\CommunityService;
 use App\Services\CircleService;
+use App\Services\AuthService;
 
 final class CommunityController
 {
@@ -13,7 +14,8 @@ final class CommunityController
 
     public function __construct(
         private CommunityService $communities,
-        private CircleService $circles
+        private CircleService $circles,
+        private AuthService $auth
     ) {
     }
 
@@ -24,7 +26,7 @@ final class CommunityController
     {
         $request = $this->request();
         $circle = $this->normalizeCircle($request->query('circle'));
-        $viewerId = $this->viewerId();
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $context = $this->circles->buildContext($viewerId);
         $allowed = $this->circles->resolveCommunitiesForCircle($context, $circle);
         $memberCommunities = $this->circles->memberCommunities($context);
@@ -39,12 +41,50 @@ final class CommunityController
     }
 
     /**
-     * @return array{community: array<string, mixed>|null}
+     * @return array{
+     *   community: array<string, mixed>|null,
+     *   status: int,
+     *   viewer?: array<string, mixed>,
+     *   circle_context?: array<string, array{communities: array<int>, creators: array<int>}>
+     * }
      */
     public function show(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
+        $context = $this->circles->buildContext($viewerId);
+        $memberCommunities = $this->circles->memberCommunities($context);
+
+        $community = $this->communities->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return [
+                'community' => null,
+                'status' => 404,
+                'circle_context' => $context,
+            ];
+        }
+
+        $communityId = (int)($community['id'] ?? 0);
+        $privacy = strtolower((string)($community['privacy'] ?? 'public'));
+        $isMember = $communityId > 0 && in_array($communityId, $memberCommunities, true);
+        $isCreator = $viewerId > 0 && isset($community['creator_id']) && (int)$community['creator_id'] === $viewerId;
+
+        if ($privacy === 'private' && !$isMember && !$isCreator) {
+            return [
+                'community' => null,
+                'status' => 404,
+                'circle_context' => $context,
+            ];
+        }
+
         return [
-            'community' => $this->communities->getBySlugOrId($slugOrId),
+            'community' => $community,
+            'status' => 200,
+            'viewer' => [
+                'id' => $viewerId,
+                'is_member' => $isMember,
+                'is_creator' => $isCreator,
+            ],
+            'circle_context' => $context,
         ];
     }
 
@@ -206,15 +246,6 @@ final class CommunityController
         /** @var Request $request */
         $request = vt_service('http.request');
         return $request;
-    }
-
-    private function viewerId(): int
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        return isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
     }
 
     private function normalizeCircle(?string $circle): string
