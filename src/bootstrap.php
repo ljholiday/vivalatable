@@ -20,6 +20,7 @@ use App\Services\SanitizerService;
 use App\Services\ValidatorService;
 use App\Services\InvitationService;
 use App\Services\AuthorizationService;
+use App\Services\ImageService;
 use PHPMailer\PHPMailer\PHPMailer;
 
 
@@ -167,6 +168,12 @@ if (!function_exists('vt_container')) {
                 $fromName = $_ENV['MAIL_FROM_NAME'] ?? 'VivalaTable';
 
                 return new MailService($mailer, $fromEmail, $fromName);
+            });
+
+            $container->register('image.service', static function (): ImageService {
+                $uploadBasePath = dirname(__DIR__) . '/uploads';
+                $uploadBaseUrl = '/uploads';
+                return new ImageService($uploadBasePath, $uploadBaseUrl);
             });
 
             $container->register('security.service', static function (): \VT_Security_SecurityService {
