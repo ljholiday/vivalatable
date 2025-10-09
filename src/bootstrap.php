@@ -15,6 +15,8 @@ use App\Services\CommunityService;
 use App\Services\ConversationService;
 use App\Services\CircleService;
 use App\Services\AuthService;
+use App\Services\MailService;
+use PHPMailer\PHPMailer\PHPMailer;
 
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -130,7 +132,25 @@ if (!function_exists('vt_container')) {
             });
 
             $container->register('auth.service', static function (VTContainer $c): AuthService {
-                return new AuthService($c->get('database.connection'));
+                return new AuthService($c->get('database.connection'), $c->get('mail.service'));
+            });
+
+            $container->register('mail.service', static function (): MailService {
+                $mailer = new PHPMailer(true);
+                $mailer->isSMTP();
+                $mailer->Host = $_ENV['SMTP_HOST'] ?? 'localhost';
+                $mailer->Port = (int)($_ENV['SMTP_PORT'] ?? 587);
+                $mailer->SMTPAuth = !empty($_ENV['SMTP_USERNAME']);
+                if ($mailer->SMTPAuth) {
+                    $mailer->Username = $_ENV['SMTP_USERNAME'];
+                    $mailer->Password = $_ENV['SMTP_PASSWORD'];
+                }
+                $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+
+                $fromEmail = $_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@vivalatable.com';
+                $fromName = $_ENV['MAIL_FROM_NAME'] ?? 'VivalaTable';
+
+                return new MailService($mailer, $fromEmail, $fromName);
             });
 
             $container->register('security.service', static function (): \VT_Security_SecurityService {

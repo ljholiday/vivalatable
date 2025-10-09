@@ -10,8 +10,10 @@ final class AuthService
 {
     private ?array $cachedUser = null;
 
-    public function __construct(private Database $database)
-    {
+    public function __construct(
+        private Database $database,
+        private MailService $mail
+    ) {
     }
 
     public function currentUserId(): ?int
@@ -609,46 +611,24 @@ final class AuthService
 
     private function sendPasswordResetEmail(string $email, string $token): void
     {
-        if (!class_exists('\VT_Mail')) {
-            $path = dirname(__DIR__, 2) . '/legacy/includes/includes/class-mail.php';
-            if (is_file($path)) {
-                require_once $path;
-            }
-        }
-
         $resetUrl = $this->getSiteUrl() . '/reset-password/' . $token;
 
-        $variables = [
+        $this->mail->sendTemplate($email, 'password_reset', [
             'reset_url' => $resetUrl,
             'site_name' => 'VivalaTable',
             'subject' => 'Reset Your Password',
-        ];
-
-        if (class_exists('\VT_Mail')) {
-            \VT_Mail::sendTemplate($email, 'password_reset', $variables);
-        }
+        ]);
     }
 
     private function sendEmailVerificationEmail(string $email, string $token): void
     {
-        if (!class_exists('\VT_Mail')) {
-            $path = dirname(__DIR__, 2) . '/legacy/includes/includes/class-mail.php';
-            if (is_file($path)) {
-                require_once $path;
-            }
-        }
-
         $verifyUrl = $this->getSiteUrl() . '/verify-email/' . $token;
 
-        $variables = [
+        $this->mail->sendTemplate($email, 'email_verification', [
             'verify_url' => $verifyUrl,
             'site_name' => 'VivalaTable',
             'subject' => 'Verify Your Email Address',
-        ];
-
-        if (class_exists('\VT_Mail')) {
-            \VT_Mail::sendTemplate($email, 'email_verification', $variables);
-        }
+        ]);
     }
 
     private function getSiteUrl(): string
