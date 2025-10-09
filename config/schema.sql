@@ -588,13 +588,15 @@ CREATE TABLE `vt_users` (
   `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `display_name` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
+  `role` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'member',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `last_login_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`),
-  KEY `status` (`status`)
+  KEY `status` (`status`),
+  KEY `role` (`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

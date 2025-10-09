@@ -637,4 +637,73 @@ final class AuthService
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $protocol . '://' . $host;
     }
+
+    /**
+     * Set user role
+     *
+     * @param int $userId User ID
+     * @param string $role Role (member, admin, super_admin)
+     * @return bool True if role was updated
+     */
+    public function setUserRole(int $userId, string $role): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $validRoles = ['member', 'admin', 'super_admin'];
+        if (!in_array($role, $validRoles, true)) {
+            return false;
+        }
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare('UPDATE vt_users SET role = ? WHERE id = ?');
+        $stmt->execute([$role, $userId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Get user role
+     *
+     * @param int $userId User ID
+     * @return string|null Role or null if user not found
+     */
+    public function getUserRole(int $userId): ?string
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare('SELECT role FROM vt_users WHERE id = ?');
+        $stmt->execute([$userId]);
+
+        $role = $stmt->fetchColumn();
+        return $role !== false ? (string)$role : null;
+    }
+
+    /**
+     * Check if user is an admin
+     *
+     * @param int $userId User ID
+     * @return bool True if user has admin or super_admin role
+     */
+    public function isAdmin(int $userId): bool
+    {
+        $role = $this->getUserRole($userId);
+        return in_array($role, ['admin', 'super_admin'], true);
+    }
+
+    /**
+     * Check if user is a super admin
+     *
+     * @param int $userId User ID
+     * @return bool True if user has super_admin role
+     */
+    public function isSuperAdmin(int $userId): bool
+    {
+        $role = $this->getUserRole($userId);
+        return $role === 'super_admin';
+    }
 }
