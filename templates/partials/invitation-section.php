@@ -91,13 +91,5 @@ $base_url = VT_Http::getBaseUrl() . '/' . $entity_type . 's/' . htmlspecialchars
             </div>
         </div>
     </div>
-    <div class="vt-mt-6">
-        <h4 class="vt-heading vt-heading-sm">Members</h4>
-        <div id="members-list">
-            <div class="vt-loading-placeholder">
-                <p>Loading members...</p>
-            </div>
-        </div>
-    </div>
     <?php endif; ?>
 </div>

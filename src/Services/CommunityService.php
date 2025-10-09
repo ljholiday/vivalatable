@@ -326,4 +326,105 @@ final class CommunityService
             $slug = $base . '-' . ++$i;
         }
     }
+
+    public function isMember(int $communityId, int $userId): bool
+    {
+        if ($communityId <= 0 || $userId <= 0) {
+            return false;
+        }
+
+        $pdo = $this->db->pdo();
+        $stmt = $pdo->prepare(
+            "SELECT id FROM vt_community_members
+             WHERE community_id = :community_id
+               AND user_id = :user_id
+               AND status = 'active'
+             LIMIT 1"
+        );
+        $stmt->execute([
+            ':community_id' => $communityId,
+            ':user_id' => $userId,
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
+    }
+
+    /**
+     * @param array{user_id:int,email:string,display_name:string,role?:string,status?:string} $memberData
+     */
+    public function addMember(int $communityId, array $memberData): int
+    {
+        if ($communityId <= 0) {
+            throw new RuntimeException('Invalid community ID.');
+        }
+
+        if (!isset($memberData['user_id']) || $memberData['user_id'] <= 0) {
+            throw new RuntimeException('User ID is required.');
+        }
+
+        if (!isset($memberData['email']) || trim($memberData['email']) === '') {
+            throw new RuntimeException('Email is required.');
+        }
+
+        if ($this->isMember($communityId, $memberData['user_id'])) {
+            throw new RuntimeException('User is already a member.');
+        }
+
+        $pdo = $this->db->pdo();
+        $now = date('Y-m-d H:i:s');
+
+        $role = $memberData['role'] ?? 'member';
+        if (!in_array($role, ['admin', 'member'], true)) {
+            $role = 'member';
+        }
+
+        $status = $memberData['status'] ?? 'active';
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            $status = 'active';
+        }
+
+        $stmt = $pdo->prepare(
+            "INSERT INTO vt_community_members (
+                community_id,
+                user_id,
+                email,
+                display_name,
+                role,
+                status,
+                joined_at
+            ) VALUES (
+                :community_id,
+                :user_id,
+                :email,
+                :display_name,
+                :role,
+                :status,
+                :joined_at
+            )"
+        );
+
+        $stmt->execute([
+            ':community_id' => $communityId,
+            ':user_id' => $memberData['user_id'],
+            ':email' => $memberData['email'],
+            ':display_name' => $memberData['display_name'] ?? '',
+            ':role' => $role,
+            ':status' => $status,
+            ':joined_at' => $now,
+        ]);
+
+        $memberId = (int)$pdo->lastInsertId();
+
+        $updateStmt = $pdo->prepare(
+            "UPDATE vt_communities
+             SET member_count = (
+                 SELECT COUNT(*) FROM vt_community_members
+                 WHERE community_id = :community_id AND status = 'active'
+             )
+             WHERE id = :community_id"
+        );
+        $updateStmt->execute([':community_id' => $communityId]);
+
+        return $memberId;
+    }
 }

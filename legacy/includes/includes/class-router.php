@@ -92,20 +92,6 @@ class VT_Router {
 
 		// API routes
 		self::addRoute('GET', '/api/search', array('VT_Search_API', 'searchContent'));
-		self::addRoute('POST', '/api/events/{id}/rsvp', array('VT_Event_Ajax_Handler', 'handleRsvp'));
-		self::addRoute('POST', '/api/communities/{id}/join', array('VT_Community_Ajax_Handler', 'handleJoin'));
-		self::addRoute('POST', '/api/conversations', array('VT_Conversation_Ajax_Handler', 'handleCreate'));
-		self::addRoute('POST', '/api/communities/{id}/invitations', array('VT_Community_Ajax_Handler', 'handleSendInvitation'));
-		self::addRoute('GET', '/api/communities/{id}/invitations', array('VT_Community_Ajax_Handler', 'handleGetInvitations'));
-		self::addRoute('DELETE', '/api/communities/{id}/invitations/{invitation_id}', array('VT_Community_Ajax_Handler', 'handleCancelInvitation'));
-		self::addRoute('POST', '/api/invitations/accept', array('VT_Community_Ajax_Handler', 'handleAcceptInvitation'));
-		self::addRoute('POST', '/api/events/{id}/invitations', array('VT_Event_Ajax_Handler', 'handleSendInvitation'));
-		self::addRoute('GET', '/api/events/{id}/invitations', array('VT_Event_Ajax_Handler', 'handleGetInvitations'));
-		self::addRoute('DELETE', '/api/events/{id}/invitations/{invitation_id}', array('VT_Event_Ajax_Handler', 'handleCancelInvitation'));
-
-		// AJAX routes
-		self::addRoute('POST', '/ajax/conversations', array('VT_Conversation_Ajax_Handler', 'ajaxGetConversations'));
-		self::addRoute('POST', '/ajax/communities', array('VT_Community_Ajax_Handler', 'ajaxGetCommunities'));
 	}
 
 	/**

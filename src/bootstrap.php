@@ -5,6 +5,7 @@ use App\Database\Database;
 use App\Http\Controller\AuthController;
 use App\Http\Controller\EventController;
 use App\Http\Controller\CommunityController;
+use App\Http\Controller\CommunityApiController;
 use App\Http\Controller\ConversationController;
 use App\Http\Controller\ConversationApiController;
 use App\Http\Controller\InvitationApiController;
@@ -152,6 +153,13 @@ if (!function_exists('vt_container')) {
                 return new CommunityController(
                     $c->get('community.service'),
                     $c->get('circle.service'),
+                    $c->get('auth.service')
+                );
+            }, false);
+
+            $container->register('controller.communities.api', static function (VTContainer $c): CommunityApiController {
+                return new CommunityApiController(
+                    $c->get('community.service'),
                     $c->get('auth.service')
                 );
             }, false);

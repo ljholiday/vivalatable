@@ -94,6 +94,22 @@ if (preg_match('#^/api/conversations/([^/]+)/replies$#', $path, $m) && $request-
     return;
 }
 
+if (preg_match('#^/api/communities/(\d+)/join$#', $path, $m) && $request->method() === 'POST') {
+    $response = vt_service('controller.communities.api')->join((int)$m[1]);
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
+if ($path === '/api/invitations/accept' && $request->method() === 'POST') {
+    $response = vt_service('controller.invitations')->accept();
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
 if (preg_match('#^/api/(communities|events)/(\d+)/invitations$#', $path, $m)) {
     $type = $m[1];
     $entityId = (int)$m[2];
@@ -120,6 +136,15 @@ if (preg_match('#^/api/(communities|events)/(\d+)/invitations$#', $path, $m)) {
     return;
 }
 
+if (preg_match('#^/api/events/(\d+)/invitations/(\d+)/resend$#', $path, $m) && $request->method() === 'POST') {
+    $controller = vt_service('controller.invitations');
+    $response = $controller->resendEvent((int)$m[1], (int)$m[2]);
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
 if (preg_match('#^/api/(communities|events)/(\d+)/invitations/(\d+)$#', $path, $m) && $request->method() === 'DELETE') {
     $type = $m[1];
     $entityId = (int)$m[2];
@@ -130,6 +155,33 @@ if (preg_match('#^/api/(communities|events)/(\d+)/invitations/(\d+)$#', $path, $
         ? $controller->deleteCommunity($entityId, $invitationId)
         : $controller->deleteEvent($entityId, $invitationId);
 
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
+if (preg_match('#^/api/communities/(\d+)/members$#', $path, $m) && $request->method() === 'GET') {
+    $controller = vt_service('controller.invitations');
+    $response = $controller->listCommunityMembers((int)$m[1]);
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
+if (preg_match('#^/api/communities/(\d+)/members/(\d+)/role$#', $path, $m) && $request->method() === 'POST') {
+    $controller = vt_service('controller.invitations');
+    $response = $controller->updateCommunityMemberRole((int)$m[1], (int)$m[2]);
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
+if (preg_match('#^/api/communities/(\d+)/members/(\d+)$#', $path, $m) && $request->method() === 'DELETE') {
+    $controller = vt_service('controller.invitations');
+    $response = $controller->removeCommunityMember((int)$m[1], (int)$m[2]);
     http_response_code($response['status'] ?? 200);
     header('Content-Type: application/json');
     echo json_encode($response['body']);

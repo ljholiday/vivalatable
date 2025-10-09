@@ -104,8 +104,8 @@ $page_description = 'Manage members and invitations for your community';
 
 	<?php if (!empty($community_members)) : ?>
 		<div class="vt-table-responsive">
-			<table class="vt-table">
-				<thead>
+            <table class="vt-table">
+                <thead>
 					<tr>
 						<th>Name</th>
 						<th>Email</th>
@@ -114,7 +114,7 @@ $page_description = 'Manage members and invitations for your community';
 						<th>Actions</th>
 					</tr>
 				</thead>
-				<tbody>
+                <tbody id="members-table-body">
 					<?php foreach ($community_members as $member) : ?>
 						<tr id="member-row-<?php echo $member->id; ?>">
 							<td>

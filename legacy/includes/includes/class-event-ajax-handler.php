@@ -728,65 +728,13 @@ class VT_Event_Ajax_Handler {
 	 * REST API handler for sending event invitations
 	 */
 	public static function handleSendInvitation($params) {
-		if (!vt_service('auth.service')->isLoggedIn()) {
-			http_response_code(401);
-			echo json_encode(['success' => false, 'message' => 'You must be logged in']);
-			exit;
-		}
-
 		$event_id = intval($params['id'] ?? 0);
-		$email = vt_service('validation.sanitizer')->email($_POST['email'] ?? '');
-		$message = vt_service('validation.sanitizer')->textarea($_POST['message'] ?? '');
+		$controller = vt_service('controller.invitations');
+		$response = $controller->sendEvent($event_id);
 
-		if (!$event_id || !$email) {
-			http_response_code(400);
-			echo json_encode(['success' => false, 'message' => 'Event ID and email are required']);
-			exit;
-		}
-
-		$event_manager = new VT_Event_Manager();
-		$event = $event_manager->getEvent($event_id);
-
-		if (!$event) {
-			http_response_code(404);
-			echo json_encode(['success' => false, 'message' => 'Event not found']);
-			exit;
-		}
-
-		$current_user = vt_service('auth.service')->getCurrentUser();
-		$current_user_id = vt_service('auth.service')->getCurrentUserId();
-
-		if ($event->author_id != $current_user_id) {
-			http_response_code(403);
-			echo json_encode(['success' => false, 'message' => 'Only the event host can send invitations']);
-			exit;
-		}
-
-		$guest_manager = new VT_Guest_Manager();
-		$db = VT_Database::getInstance();
-
-		$existing_guest = $db->getRow(
-			$db->prepare(
-				"SELECT * FROM {$db->prefix}guests WHERE event_id = %d AND email = %s",
-				$event_id, $email
-			)
-		);
-
-		if ($existing_guest && $existing_guest->status !== 'declined') {
-			http_response_code(409);
-			echo json_encode(['success' => false, 'message' => 'This email has already been invited']);
-			exit;
-		}
-
-		$result = $guest_manager->createRsvpInvitation($event_id, $email);
-
-		if (is_vt_error($result)) {
-			http_response_code(500);
-			echo json_encode(['success' => false, 'message' => $result->getErrorMessage()]);
-			exit;
-		}
-
-		echo json_encode(['success' => true, 'message' => 'Invitation sent successfully!']);
+		http_response_code($response['status'] ?? 200);
+		header('Content-Type: application/json');
+		echo json_encode($response['body']);
 		exit;
 	}
 
@@ -794,55 +742,13 @@ class VT_Event_Ajax_Handler {
 	 * REST API handler for getting event invitations
 	 */
 	public static function handleGetInvitations($params) {
-		if (!vt_service('auth.service')->isLoggedIn()) {
-			http_response_code(401);
-			echo json_encode(['success' => false, 'message' => 'You must be logged in']);
-			exit;
-		}
-
 		$event_id = intval($params['id'] ?? 0);
-		if (!$event_id) {
-			http_response_code(400);
-			echo json_encode(['success' => false, 'message' => 'Event ID is required']);
-			exit;
-		}
+		$controller = vt_service('controller.invitations');
+		$response = $controller->listEvent($event_id);
 
-		$event_manager = new VT_Event_Manager();
-		$event = $event_manager->getEvent($event_id);
-
-		if (!$event) {
-			http_response_code(404);
-			echo json_encode(['success' => false, 'message' => 'Event not found']);
-			exit;
-		}
-
-		$current_user_id = vt_service('auth.service')->getCurrentUserId();
-		if ($event->author_id != $current_user_id) {
-			http_response_code(403);
-			echo json_encode(['success' => false, 'message' => 'Only the event host can view invitations']);
-			exit;
-		}
-
-		$db = VT_Database::getInstance();
-		$guests = $db->getResults(
-			$db->prepare(
-				"SELECT * FROM {$db->prefix}guests
-				WHERE event_id = %d
-				ORDER BY rsvp_date DESC",
-				$event_id
-			)
-		);
-
-		foreach ($guests as &$guest) {
-			if (!empty($guest->rsvp_token)) {
-				$guest->invitation_url = VT_Config::get('site_url') . '/events/' . $event->slug . '?token=' . $guest->rsvp_token;
-			} else {
-				$guest->invitation_url = VT_Config::get('site_url') . '/events/' . $event->slug . '?rsvp=1';
-			}
-		}
-		unset($guest);
-
-		echo json_encode(['success' => true, 'invitations' => $guests]);
+		http_response_code($response['status'] ?? 200);
+		header('Content-Type: application/json');
+		echo json_encode($response['body']);
 		exit;
 	}
 
@@ -850,59 +756,15 @@ class VT_Event_Ajax_Handler {
 	 * REST API handler for canceling event invitations
 	 */
 	public static function handleCancelInvitation($params) {
-		if (!vt_service('auth.service')->isLoggedIn()) {
-			http_response_code(401);
-			echo json_encode(['success' => false, 'message' => 'You must be logged in']);
-			exit;
-		}
-
 		$event_id = intval($params['id'] ?? 0);
 		$invitation_id = intval($params['invitation_id'] ?? 0);
 
-		if (!$invitation_id) {
-			http_response_code(400);
-			echo json_encode(['success' => false, 'message' => 'Invitation ID is required']);
-			exit;
-		}
+		$controller = vt_service('controller.invitations');
+		$response = $controller->deleteEvent($event_id, $invitation_id);
 
-		$db = VT_Database::getInstance();
-		$guest = $db->getRow(
-			$db->prepare(
-				"SELECT * FROM {$db->prefix}guests WHERE id = %d AND event_id = %d",
-				$invitation_id, $event_id
-			)
-		);
-
-		if (!$guest) {
-			http_response_code(404);
-			echo json_encode(['success' => false, 'message' => 'Guest invitation not found']);
-			exit;
-		}
-
-		$event_manager = new VT_Event_Manager();
-		$event = $event_manager->getEvent($event_id);
-
-		if (!$event) {
-			http_response_code(404);
-			echo json_encode(['success' => false, 'message' => 'Event not found']);
-			exit;
-		}
-
-		$current_user_id = vt_service('auth.service')->getCurrentUserId();
-		if ($event->author_id != $current_user_id) {
-			http_response_code(403);
-			echo json_encode(['success' => false, 'message' => 'Only the event host can remove guests']);
-			exit;
-		}
-
-		$result = $db->delete('guests', ['id' => $invitation_id]);
-
-		if ($result !== false) {
-			echo json_encode(['success' => true, 'message' => 'Guest removed successfully']);
-		} else {
-			http_response_code(500);
-			echo json_encode(['success' => false, 'message' => 'Failed to remove guest']);
-		}
+		http_response_code($response['status'] ?? 200);
+		header('Content-Type: application/json');
+		echo json_encode($response['body']);
 		exit;
 	}
 

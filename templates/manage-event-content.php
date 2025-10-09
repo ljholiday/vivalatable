@@ -54,9 +54,8 @@ $errors = array();
 $messages = array();
 
 // Get event data for display
-$guests = $guest_manager->getEventGuests($event->id);
-$guest_count = count($guests);
-$confirmed_count = count(array_filter($guests, function($guest) { return $guest->status === 'confirmed'; }));
+$guest_count = $guest_manager->getGuestCount($event->id);
+$confirmed_count = $guest_manager->getGuestCount($event->id, 'confirmed');
 
 // Set up template variables
 $page_title = 'Manage: ' . htmlspecialchars($event->title);
@@ -72,7 +71,7 @@ $page_description = 'Manage your event settings, guests, and invitations';
 		</a>
 		<a href="/events/<?php echo $event->slug; ?>/manage?tab=guests"
 		   class="vt-btn <?php echo ($active_tab === 'guests') ? 'is-active' : ''; ?>">
-			Guests (<?php echo $confirmed_count; ?>)
+			Guests (<span id="confirmed-guest-count" data-initial-count="<?php echo $confirmed_count; ?>"><?php echo $confirmed_count; ?></span>)
 		</a>
 		<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites"
 		   class="vt-btn <?php echo ($active_tab === 'invites') ? 'is-active' : ''; ?>">
@@ -148,62 +147,44 @@ $page_description = 'Manage your event settings, guests, and invitations';
 <?php elseif ($active_tab === 'guests') : ?>
 	<!-- Guests Tab -->
 	<div class="vt-section">
-		<div class="vt-flex vt-flex-between vt-mb-4">
+		<div class="vt-flex vt-flex-between vt-mb-4 vt-flex-wrap vt-gap-3">
 			<h3 class="vt-heading vt-heading-md">Event Guests</h3>
-			<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites" class="vt-btn">
-				Send Invitations
-			</a>
-		</div>
-
-		<?php if (!empty($guests)) : ?>
-			<div class="vt-table-responsive">
-				<table class="vt-table">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Email</th>
-							<th>Status</th>
-							<th>RSVP Date</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ($guests as $guest) : ?>
-							<tr>
-								<td>
-									<strong><?php echo htmlspecialchars($guest->name); ?></strong>
-									<?php if ($guest->plus_one) : ?>
-										<br><small class="vt-text-muted">+1: <?php echo htmlspecialchars($guest->plus_one_name ?: 'Guest'); ?></small>
-									<?php endif; ?>
-								</td>
-								<td><?php echo htmlspecialchars($guest->email); ?></td>
-								<td>
-									<span class="vt-badge vt-badge-<?php
-										echo $guest->status === 'confirmed' ? 'success' :
-											($guest->status === 'declined' ? 'danger' : 'warning');
-									?>">
-										<?php echo ucfirst($guest->status); ?>
-									</span>
-								</td>
-								<td><?php echo date('M j, Y', strtotime($guest->rsvp_date)); ?></td>
-								<td>
-									<button class="vt-btn vt-btn-sm vt-btn-secondary" onclick="viewGuestDetails(<?php echo $guest->id; ?>)">
-										View
-									</button>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
-		<?php else : ?>
-			<div class="vt-text-center vt-p-4">
-				<p class="vt-text-muted vt-mb-4">No guests have RSVP'd yet.</p>
+			<div class="vt-flex vt-gap-3 vt-align-center vt-flex-wrap">
+				<div class="vt-text-muted">
+					Total guests:
+					<strong id="event-guest-total" data-initial-count="<?php echo $guest_count; ?>"><?php echo $guest_count; ?></strong>
+				</div>
 				<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites" class="vt-btn">
-					Send Your First Invitations
+					Send Invitations
 				</a>
 			</div>
-		<?php endif; ?>
+		</div>
+
+		<div id="event-guests-section" class="vt-table-responsive" data-event-id="<?php echo $event->id; ?>">
+			<table class="vt-table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Email</th>
+						<th>Status</th>
+						<th>RSVP Date</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody id="event-guests-body">
+					<tr id="event-guests-loading">
+						<td colspan="5" class="vt-text-center vt-text-muted">Loading event guests...</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div id="event-guests-empty" class="vt-text-center vt-p-4" style="display: none;">
+			<p class="vt-text-muted vt-mb-4">No guests have RSVP'd yet.</p>
+			<a href="/events/<?php echo $event->slug; ?>/manage?tab=invites" class="vt-btn">
+				Send Your First Invitations
+			</a>
+		</div>
 	</div>
 
 <?php elseif ($active_tab === 'invites') : ?>
@@ -216,4 +197,3 @@ $page_description = 'Manage your event settings, guests, and invitations';
 	include VT_INCLUDES_DIR . '/../templates/partials/invitation-section.php';
 	?>
 <?php endif; ?>
-
