@@ -180,7 +180,7 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 							<?php echo $is_member ? 'Member' : 'Join'; ?>
 						</button>
 					<?php else : ?>
-						<a href="/login?redirect_to=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>"
+						<a href="/auth?redirect_to=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>"
 						   class="vt-btn vt-btn-sm vt-btn-primary"
 						   style="margin-top: -0.5rem; margin-left: 1rem;">
 							Login to Join
@@ -196,4 +196,3 @@ $page_description = 'Join communities of fellow hosts and guests to plan amazing
 		</div>
 	</div>
 </div>
-

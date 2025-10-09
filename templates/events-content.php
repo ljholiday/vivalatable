@@ -271,7 +271,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 						['label' => 'View', 'url' => '/events/' . $event->slug]
 					];
 					if (!$is_past) {
-						$actions[] = ['label' => 'Sign In to RSVP', 'url' => '/login', 'class' => 'vt-btn-primary'];
+						$actions[] = ['label' => 'Sign In to RSVP', 'url' => '/auth', 'class' => 'vt-btn-primary'];
 					}
 
 					// Render entity card
@@ -282,7 +282,7 @@ $page_description = 'Discover amazing events and manage your gatherings';
 				<div class="vt-text-center vt-p-8">
 					<h3 class="vt-heading vt-heading-md vt-mb-4">No Events Found</h3>
 					<p class="vt-text-muted vt-mb-4">No public events are currently available.</p>
-					<a href="/login" class="vt-btn">Sign In to Create Events</a>
+				<a href="/auth" class="vt-btn">Sign In to Create Events</a>
 				</div>
 			<?php endif; ?>
 		<?php endif; ?>

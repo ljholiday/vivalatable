@@ -173,7 +173,7 @@ $page_description = 'Your social event hub';
                     <h3 class="vt-heading vt-mb">Welcome to VivalaTable!</h3>
                     <p class="vt-text-muted vt-mb">Your social event hub for connecting, planning, and celebrating together.</p>
                     <div class="vt-flex vt-gap-4 vt-justify-center">
-                        <a href="/login" class="vt-btn vt-btn-lg">
+                        <a href="/auth" class="vt-btn vt-btn-lg">
                             Sign In
                         </a>
                         <a href="/register" class="vt-btn vt-btn-lg">

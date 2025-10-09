@@ -84,7 +84,7 @@ $guest_data = $guest_data ?? null;
 	</form>
 
 	<div class="vt-text-center vt-mt-4">
-		<p>Already have an account? <a href="/login" class="vt-text-primary">Sign in here</a></p>
+	<p>Already have an account? <a href="/auth" class="vt-text-primary">Sign in here</a></p>
 	</div>
 </div>
 

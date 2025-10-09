@@ -58,7 +58,7 @@ $community_manager = new VT_Community_Manager();
                 Browse Communities
             </a>
 
-            <a href="/login" class="vt-btn vt-btn-secondary">
+            <a href="/auth" class="vt-btn vt-btn-secondary">
                 Sign In
             </a>
         <?php endif; ?>

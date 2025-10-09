@@ -56,7 +56,7 @@ if (!$can_view) {
 		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Access Restricted</h3>
 		<p class="vt-text-muted vt-mb-4">This conversation is private. You need permission to view it.</p>
 		<?php if (!$is_logged_in) : ?>
-			<a href="/login" class="vt-btn vt-btn-primary">Login</a>
+		<a href="/auth" class="vt-btn vt-btn-primary">Login</a>
 		<?php endif; ?>
 		<a href="/conversations" class="vt-btn vt-btn-secondary">Browse Public Conversations</a>
 	</div>
@@ -227,7 +227,7 @@ $active_tab = $_GET['tab'] ?? 'conversation';
 <?php elseif (!$is_logged_in) : ?>
 	<div class="vt-section vt-mb-6 vt-text-center">
 		<p class="vt-text-muted vt-mb-4">Want to join the conversation?</p>
-		<a href="/login" class="vt-btn vt-btn-primary">Login to Reply</a>
+	<a href="/auth" class="vt-btn vt-btn-primary">Login to Reply</a>
 	</div>
 <?php endif; ?>
 
@@ -271,4 +271,3 @@ $active_tab = $_GET['tab'] ?? 'conversation';
 		</div>
 	<?php endif; ?>
 </div>
-

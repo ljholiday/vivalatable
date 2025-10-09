@@ -159,7 +159,7 @@ $active_tab = $_GET['tab'] ?? 'overview';
 	<?php else: ?>
 		<div class="vt-section">
 			<div class="vt-alert vt-alert-info">
-				<p><a href="/login">Log in</a> to RSVP to this event.</p>
+			<p><a href="/auth">Log in</a> to RSVP to this event.</p>
 			</div>
 		</div>
 	<?php endif; ?>

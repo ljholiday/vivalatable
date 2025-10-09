@@ -10,6 +10,7 @@ require __DIR__ . '/../src/bootstrap.php';
 
 /** @var \App\Http\Request $request */
 $request = vt_service('http.request');
+$authService = vt_service('auth.service');
 
 // Basic front controller & very simple router.
 $path = $request->path();
@@ -19,8 +20,17 @@ if ($path !== '/' && str_ends_with($path, '/')) {
     $path = rtrim($path, '/');
 }
 
+if ($path === '/login' || $path === '/register') {
+    header('Location: /auth');
+    exit;
+}
+
 if ($path === '/') {
-    // Minimal home template to prove render path works
+    if (!$authService->isLoggedIn()) {
+        header('Location: /auth');
+        exit;
+    }
+
     $home = __DIR__ . '/../templates/home.php';
     if (!is_file($home)) {
         echo "<h1>Home</h1>";
@@ -28,6 +38,44 @@ if ($path === '/') {
     }
     require $home;
     return;
+}
+
+if ($path === '/auth') {
+    $view = vt_service('controller.auth')->landing();
+    require __DIR__ . '/../templates/auth-landing.php';
+    return;
+}
+
+if ($path === '/auth/login' && $request->method() === 'POST') {
+    $view = vt_service('controller.auth')->login();
+    if (isset($view['redirect'])) {
+        header('Location: ' . $view['redirect']);
+        exit;
+    }
+    require __DIR__ . '/../templates/auth-landing.php';
+    return;
+}
+
+if ($path === '/auth/register' && $request->method() === 'POST') {
+    $view = vt_service('controller.auth')->register();
+    if (isset($view['redirect'])) {
+        header('Location: ' . $view['redirect']);
+        exit;
+    }
+    require __DIR__ . '/../templates/auth-landing.php';
+    return;
+}
+
+if ($path === '/auth/logout') {
+    if ($request->method() !== 'POST') {
+        http_response_code(405);
+        header('Allow: POST');
+        echo 'Method Not Allowed';
+        return;
+    }
+    $result = vt_service('controller.auth')->logout();
+    header('Location: ' . ($result['redirect'] ?? '/auth'));
+    exit;
 }
 
 if ($path === '/events') {

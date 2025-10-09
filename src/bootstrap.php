@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Database\Database;
+use App\Http\Controller\AuthController;
 use App\Http\Controller\EventController;
 use App\Http\Controller\CommunityController;
 use App\Http\Controller\ConversationController;
@@ -122,9 +123,13 @@ if (!function_exists('vt_container')) {
                 return new CircleService($c->get('database.connection'));
             });
 
-            $container->register('auth.service', static function (): App\Services\AuthService {
-                return new App\Services\AuthService();
+            $container->register('auth.service', static function (VTContainer $c): AuthService {
+                return new AuthService($c->get('database.connection'));
             });
+
+            $container->register('controller.auth', static function (VTContainer $c): AuthController {
+                return new AuthController($c->get('auth.service'));
+            }, false);
 
             $container->register('controller.events', static function (VTContainer $c): EventController {
                 return new EventController($c->get('event.service'), $c->get('auth.service'));

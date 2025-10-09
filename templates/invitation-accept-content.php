@@ -145,7 +145,7 @@ if ($is_logged_in && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acce
 					<div class="vt-mb-4">
 						<p class="vt-text-muted vt-mb-4">To accept this invitation, you need to log in or create an account.</p>
 						<div class="vt-flex vt-gap-2">
-							<a href="/login?redirect_to=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>" class="vt-btn vt-btn-primary">
+							<a href="/auth?redirect_to=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>" class="vt-btn vt-btn-primary">
 								Log In
 							</a>
 							<a href="/register?redirect_to=<?php echo urlencode('/invitation/accept?token=' . urlencode($invitation_token)); ?>&email=<?php echo urlencode($invitation->invited_email); ?>" class="vt-btn vt-btn-secondary">

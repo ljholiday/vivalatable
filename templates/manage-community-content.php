@@ -46,7 +46,7 @@ if (!$is_logged_in) {
 	<div class="vt-section vt-text-center">
 		<h3 class="vt-heading vt-heading-md vt-text-primary vt-mb-4">Access Denied</h3>
 		<p class="vt-text-muted vt-mb-4">You must be logged in to manage communities.</p>
-		<a href="/login" class="vt-btn vt-btn-primary">Login</a>
+	<a href="/auth" class="vt-btn vt-btn-primary">Login</a>
 	</div>
 	<?php
 	return;
@@ -166,4 +166,3 @@ include VT_INCLUDES_DIR . '/../templates/partials/invitation-section.php';
 ?>
 
 <?php endif; ?>
-
