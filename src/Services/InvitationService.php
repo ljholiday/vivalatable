@@ -5,15 +5,18 @@ namespace App\Services;
 
 use App\Database\Database;
 
-require_once dirname(__DIR__, 2) . '/legacy/includes/includes/class-community-manager.php';
 require_once dirname(__DIR__, 2) . '/legacy/includes/includes/class-guest-manager.php';
-require_once dirname(__DIR__, 2) . '/legacy/includes/includes/class-invitation-service.php';
 
 final class InvitationService
 {
+    private const TOKEN_LENGTH = 32;
+    private const EXPIRY_DAYS = 7;
+
     public function __construct(
         private Database $database,
-        private AuthService $auth
+        private AuthService $auth,
+        private MailService $mail,
+        private SanitizerService $sanitizer
     ) {
     }
 
@@ -31,19 +34,42 @@ final class InvitationService
             return $this->failure('You do not have permission to send invitations.', 403);
         }
 
+        $email = $this->sanitizer->email($email);
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->failure('Valid email address required.', 422);
         }
 
-        $manager = new \VT_Community_Manager();
-        $result = $manager->sendInvitation($communityId, [
-            'invited_email' => $email,
-            'personal_message' => $message,
+        // Check if already invited
+        if ($this->isAlreadyInvited('community', $communityId, $email)) {
+            return $this->failure('This email has already been invited.', 400);
+        }
+
+        // Create invitation
+        $token = $this->generateToken();
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+' . self::EXPIRY_DAYS . ' days'));
+        $sanitizedMessage = $this->sanitizer->textarea($message);
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare('
+            INSERT INTO vt_community_invitations
+            (community_id, invited_by_member_id, invited_email, invitation_token, message, status, expires_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+        ');
+
+        $stmt->execute([
+            $communityId,
+            $viewerId,
+            $email,
+            $token,
+            $sanitizedMessage,
+            'pending',
+            $expiresAt
         ]);
 
-        if (is_vt_error($result)) {
-            return $this->failure($result->getErrorMessage(), 400);
-        }
+        // Send email
+        $inviterName = $this->auth->getCurrentUser()->display_name ?? 'A member';
+        $communityName = $community['name'] ?? 'a community';
+        $this->sendInvitationEmail($email, 'community', $communityName, $token, $inviterName, $sanitizedMessage);
 
         return $this->success([
             'message' => 'Invitation sent successfully!',
@@ -114,11 +140,12 @@ final class InvitationService
             return $this->failure('Only the event host can send invitations.', 403);
         }
 
+        $email = $this->sanitizer->email($email);
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->failure('Valid email address required.', 422);
         }
 
-        $guestManager = new \VT_Guest_Manager();
+        // Check if already invited
         $db = $this->database->pdo();
         $existing = $db->prepare(
             "SELECT id FROM vt_guests WHERE event_id = :event_id AND email = :email AND status != 'declined'"
@@ -131,40 +158,42 @@ final class InvitationService
             return $this->failure('This email has already been invited.', 400);
         }
 
-        $sendResult = $guestManager->sendRsvpInvitation(
+        // Create guest entry with token
+        $token = $this->generateToken();
+        $sanitizedMessage = $this->sanitizer->textarea($message);
+
+        $stmt = $db->prepare('
+            INSERT INTO vt_guests
+            (event_id, email, name, status, rsvp_token, notes, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
+        ');
+
+        $stmt->execute([
             $eventId,
             $email,
-            $this->auth->getCurrentUser()->display_name ?? '',
-            $message
-        );
+            '', // Name will be filled when they RSVP
+            'pending',
+            $token,
+            $sanitizedMessage
+        ]);
 
-        if (is_vt_error($sendResult)) {
-            return $this->failure($sendResult->getErrorMessage(), 400);
-        }
+        $guestId = (int)$db->lastInsertId();
 
-        $emailSent = false;
-        $temporaryId = null;
-        $token = '';
-        if (is_array($sendResult)) {
-            $emailSent = (bool)($sendResult['email_sent'] ?? false);
-            $temporaryId = $sendResult['temporary_guest_id'] ?? null;
-            $token = (string)($sendResult['token'] ?? '');
-        }
+        // Send email
+        $inviterName = $this->auth->getCurrentUser()->display_name ?? 'The host';
+        $eventName = $event['title'] ?? 'an event';
+        $this->sendInvitationEmail($email, 'event', $eventName, $token, $inviterName, $sanitizedMessage);
 
-        $invitationService = new \VT_Invitation_Service();
-        $invitationUrl = $token !== '' ? $invitationService->buildInvitationUrl('event', (string)$event['slug'], $token) : '';
-
-        $responseMessage = 'RSVP invitation created successfully!';
-        if (!$emailSent) {
-            $responseMessage .= ' Note: Email delivery may have failed.';
-        }
-
+        // Get updated guest list
+        $guestManager = new \VT_Guest_Manager();
         $guestRecords = $guestManager->getEventGuests($eventId);
 
+        $invitationUrl = $this->buildInvitationUrl('event', $token);
+
         return $this->success([
-            'message' => $responseMessage,
+            'message' => 'RSVP invitation created successfully!',
             'invitation_url' => $invitationUrl,
-            'temporary_guest_id' => $temporaryId,
+            'temporary_guest_id' => $guestId,
             'guests' => $this->normalizeEventGuests($guestRecords),
             'guest_records' => $guestRecords,
         ], 201);
@@ -277,6 +306,78 @@ final class InvitationService
             'guests' => $this->normalizeEventGuests($guestRecords),
             'guest_records' => $guestRecords,
         ]);
+    }
+
+    /**
+     * Send invitation email
+     */
+    private function sendInvitationEmail(
+        string $email,
+        string $type,
+        string $entityName,
+        string $token,
+        string $inviterName,
+        string $message = ''
+    ): bool {
+        $url = $this->buildInvitationUrl($type, $token);
+
+        $subject = $type === 'community'
+            ? "You've been invited to join {$entityName} on VivalaTable"
+            : "You're invited to {$entityName} on VivalaTable";
+
+        $variables = [
+            'inviter_name' => $inviterName,
+            'entity_name' => $entityName,
+            'entity_type' => $type,
+            'invitation_url' => $url,
+            'personal_message' => $message,
+            'subject' => $subject,
+        ];
+
+        return $this->mail->sendTemplate($email, 'invitation', $variables);
+    }
+
+    /**
+     * Build invitation URL
+     */
+    private function buildInvitationUrl(string $type, string $token): string
+    {
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $baseUrl = $protocol . '://' . $host;
+
+        if ($type === 'community') {
+            return "{$baseUrl}/invitation/accept?token={$token}";
+        } else {
+            return "{$baseUrl}/rsvp/{$token}";
+        }
+    }
+
+    /**
+     * Check if email has already been invited
+     */
+    private function isAlreadyInvited(string $type, int $entityId, string $email): bool
+    {
+        $email = $this->sanitizer->email($email);
+        $table = $type === 'community' ? 'vt_community_invitations' : 'vt_event_invitations';
+        $idField = $type === 'community' ? 'community_id' : 'event_id';
+
+        $pdo = $this->database->pdo();
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM {$table}
+            WHERE {$idField} = ? AND invited_email = ? AND status = 'pending'
+        ");
+        $stmt->execute([$entityId, $email]);
+
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Generate cryptographically secure token
+     */
+    private function generateToken(): string
+    {
+        return bin2hex(random_bytes(self::TOKEN_LENGTH));
     }
 
     /**

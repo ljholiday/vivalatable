@@ -187,7 +187,9 @@ if (!function_exists('vt_container')) {
             $container->register('invitation.manager', static function (VTContainer $c): InvitationService {
                 return new InvitationService(
                     $c->get('database.connection'),
-                    $c->get('auth.service')
+                    $c->get('auth.service'),
+                    $c->get('mail.service'),
+                    $c->get('sanitizer.service')
                 );
             });
 
