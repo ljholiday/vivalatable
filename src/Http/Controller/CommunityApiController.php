@@ -6,12 +6,14 @@ namespace App\Http\Controller;
 use App\Http\Request;
 use App\Services\AuthService;
 use App\Services\CommunityService;
+use App\Services\AuthorizationService;
 
 final class CommunityApiController
 {
     public function __construct(
         private CommunityService $communities,
-        private AuthService $auth
+        private AuthService $auth,
+        private AuthorizationService $authz
     ) {
     }
 
@@ -40,6 +42,10 @@ final class CommunityApiController
         $actualId = (int)($community['id'] ?? 0);
         if ($actualId <= 0) {
             return $this->error('Invalid community', 400);
+        }
+
+        if (!$this->authz->canJoinCommunity($community, $viewerId)) {
+            return $this->error('This community is private and requires an invitation', 403);
         }
 
         if ($this->communities->isMember($actualId, $viewerId)) {

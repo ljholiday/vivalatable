@@ -7,6 +7,7 @@ use App\Http\Request;
 use App\Services\CommunityService;
 use App\Services\CircleService;
 use App\Services\AuthService;
+use App\Services\AuthorizationService;
 
 final class CommunityController
 {
@@ -15,7 +16,8 @@ final class CommunityController
     public function __construct(
         private CommunityService $communities,
         private CircleService $circles,
-        private AuthService $auth
+        private AuthService $auth,
+        private AuthorizationService $authz
     ) {
     }
 
@@ -115,6 +117,14 @@ final class CommunityController
      */
     public function store(): array
     {
+        $viewerId = $this->auth->currentUserId();
+        if ($viewerId === null || $viewerId <= 0) {
+            return [
+                'errors' => ['auth' => 'You must be logged in to create a community.'],
+                'input' => [],
+            ];
+        }
+
         $validated = $this->validateCommunityInput($this->request());
 
         if ($validated['errors']) {
@@ -144,11 +154,20 @@ final class CommunityController
      */
     public function edit(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $community = $this->communities->getBySlugOrId($slugOrId);
         if ($community === null) {
             return [
                 'community' => null,
                 'errors' => [],
+                'input' => [],
+            ];
+        }
+
+        if (!$this->authz->canEditCommunity($community, $viewerId)) {
+            return [
+                'community' => null,
+                'errors' => ['auth' => 'You do not have permission to edit this community.'],
                 'input' => [],
             ];
         }
@@ -174,10 +193,18 @@ final class CommunityController
      */
     public function update(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $community = $this->communities->getBySlugOrId($slugOrId);
         if ($community === null) {
             return [
                 'community' => null,
+            ];
+        }
+
+        if (!$this->authz->canEditCommunity($community, $viewerId)) {
+            return [
+                'community' => null,
+                'errors' => ['auth' => 'You do not have permission to edit this community.'],
             ];
         }
 
@@ -208,10 +235,26 @@ final class CommunityController
      * }
      */
     /**
-     * @return array{redirect: string}
+     * @return array{redirect?: string, error?: string}
      */
     public function destroy(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
+        $community = $this->communities->getBySlugOrId($slugOrId);
+
+        if ($community === null) {
+            return [
+                'redirect' => '/communities',
+            ];
+        }
+
+        if (!$this->authz->canDeleteCommunity($community, $viewerId)) {
+            return [
+                'error' => 'You do not have permission to delete this community.',
+                'redirect' => '/communities/' . $community['slug'],
+            ];
+        }
+
         $this->communities->delete($slugOrId);
         return [
             'redirect' => '/communities',

@@ -6,6 +6,7 @@ namespace App\Http\Controller;
 use App\Services\AuthService;
 use App\Services\CircleService;
 use App\Services\ConversationService;
+use App\Services\AuthorizationService;
 
 final class ConversationController
 {
@@ -14,7 +15,8 @@ final class ConversationController
     public function __construct(
         private ConversationService $conversations,
         private CircleService $circles,
-        private AuthService $auth
+        private AuthService $auth,
+        private AuthorizationService $authz
     ) {
     }
 
@@ -122,6 +124,14 @@ final class ConversationController
      */
     public function store(): array
     {
+        $viewerId = $this->auth->currentUserId();
+        if ($viewerId === null || $viewerId <= 0) {
+            return [
+                'errors' => ['auth' => 'You must be logged in to create a conversation.'],
+                'input' => [],
+            ];
+        }
+
         $request = $this->request();
 
         $input = [
@@ -164,11 +174,20 @@ final class ConversationController
      */
     public function edit(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $conversation = $this->conversations->getBySlugOrId($slugOrId);
         if ($conversation === null) {
             return [
                 'conversation' => null,
                 'errors' => [],
+                'input' => [],
+            ];
+        }
+
+        if (!$this->authz->canEditConversation($conversation, $viewerId)) {
+            return [
+                'conversation' => null,
+                'errors' => ['auth' => 'You do not have permission to edit this conversation.'],
                 'input' => [],
             ];
         }
@@ -193,10 +212,18 @@ final class ConversationController
      */
     public function update(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
         $conversation = $this->conversations->getBySlugOrId($slugOrId);
         if ($conversation === null) {
             return [
                 'conversation' => null,
+            ];
+        }
+
+        if (!$this->authz->canEditConversation($conversation, $viewerId)) {
+            return [
+                'conversation' => null,
+                'errors' => ['auth' => 'You do not have permission to edit this conversation.'],
             ];
         }
 
@@ -243,6 +270,16 @@ final class ConversationController
      */
     public function reply(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
+        if ($viewerId <= 0) {
+            return [
+                'conversation' => null,
+                'replies' => [],
+                'reply_errors' => ['auth' => 'You must be logged in to reply.'],
+                'reply_input' => ['content' => ''],
+            ];
+        }
+
         $conversation = $this->conversations->getBySlugOrId($slugOrId);
         if ($conversation === null || !isset($conversation['id'])) {
             return [
@@ -253,7 +290,6 @@ final class ConversationController
             ];
         }
 
-        $viewerId = $this->auth->currentUserId() ?? 0;
         $context = $this->circles->buildContext($viewerId);
         $memberCommunities = $context['inner']['communities'] ?? [];
         if (!$this->conversations->canViewerAccess($conversation, $viewerId, $memberCommunities)) {
@@ -261,6 +297,15 @@ final class ConversationController
                 'conversation' => null,
                 'replies' => [],
                 'reply_errors' => ['conversation' => 'Conversation not found.'],
+                'reply_input' => ['content' => ''],
+            ];
+        }
+
+        if (!$this->authz->canReplyToConversation($conversation, $viewerId, $memberCommunities)) {
+            return [
+                'conversation' => $conversation,
+                'replies' => $this->conversations->listReplies((int)$conversation['id']),
+                'reply_errors' => ['auth' => 'You cannot reply to this conversation.'],
                 'reply_input' => ['content' => ''],
             ];
         }
@@ -320,10 +365,26 @@ final class ConversationController
     }
 
     /**
-     * @return array{redirect: string}
+     * @return array{redirect?: string, error?: string}
      */
     public function destroy(string $slugOrId): array
     {
+        $viewerId = $this->auth->currentUserId() ?? 0;
+        $conversation = $this->conversations->getBySlugOrId($slugOrId);
+
+        if ($conversation === null) {
+            return [
+                'redirect' => '/conversations',
+            ];
+        }
+
+        if (!$this->authz->canDeleteConversation($conversation, $viewerId)) {
+            return [
+                'error' => 'You do not have permission to delete this conversation.',
+                'redirect' => '/conversations/' . $conversation['slug'],
+            ];
+        }
+
         $this->conversations->delete($slugOrId);
         return [
             'redirect' => '/conversations',

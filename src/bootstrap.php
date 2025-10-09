@@ -19,6 +19,7 @@ use App\Services\MailService;
 use App\Services\SanitizerService;
 use App\Services\ValidatorService;
 use App\Services\InvitationService;
+use App\Services\AuthorizationService;
 use PHPMailer\PHPMailer\PHPMailer;
 
 
@@ -142,6 +143,10 @@ if (!function_exists('vt_container')) {
                 return new ValidatorService($c->get('sanitizer.service'));
             });
 
+            $container->register('authorization.service', static function (VTContainer $c): AuthorizationService {
+                return new AuthorizationService($c->get('database.connection'));
+            });
+
             $container->register('auth.service', static function (VTContainer $c): AuthService {
                 return new AuthService($c->get('database.connection'), $c->get('mail.service'));
             });
@@ -191,14 +196,16 @@ if (!function_exists('vt_container')) {
                 return new CommunityController(
                     $c->get('community.service'),
                     $c->get('circle.service'),
-                    $c->get('auth.service')
+                    $c->get('auth.service'),
+                    $c->get('authorization.service')
                 );
             }, false);
 
             $container->register('controller.communities.api', static function (VTContainer $c): CommunityApiController {
                 return new CommunityApiController(
                     $c->get('community.service'),
-                    $c->get('auth.service')
+                    $c->get('auth.service'),
+                    $c->get('authorization.service')
                 );
             }, false);
 
@@ -206,7 +213,8 @@ if (!function_exists('vt_container')) {
                 return new ConversationController(
                     $c->get('conversation.service'),
                     $c->get('circle.service'),
-                    $c->get('auth.service')
+                    $c->get('auth.service'),
+                    $c->get('authorization.service')
                 );
             }, false);
 
