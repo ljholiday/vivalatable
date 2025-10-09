@@ -1,0 +1,104 @@
+<?php
+/**
+ * VivalaTable Member Display Component
+ * Reusable member display with avatar, display name, and profile link
+ * Ported from PartyMinder WordPress plugin
+ *
+ * Usage:
+ * include VT_ROOT_DIR . '/templates/partials/member-display.php';
+ *
+ * Required variables:
+ * - $user_id (int): User ID or user object/email
+ *
+ * Optional variables:
+ * - $args (array): Display arguments
+ *   - 'avatar_size' => 32 (int): Avatar size in pixels
+ *   - 'show_avatar' => true (bool): Whether to show avatar
+ *   - 'show_name' => true (bool): Whether to show name
+ *   - 'link_profile' => true (bool): Whether to make it clickable
+ *   - 'class' => 'vt-member-display' (string): CSS classes
+ */
+
+// Prevent direct access
+if (!defined('VT_VERSION')) {
+    exit;
+}
+
+// Set defaults
+$defaults = array(
+    'avatar_size'    => 32,
+    'show_avatar'    => true,
+    'show_name'      => true,
+    'link_profile'   => true,
+    'fallback_email' => true,
+    'class'          => 'vt-member-display',
+);
+
+$args = isset($args) ? array_merge($defaults, $args) : $defaults;
+
+// Get user object
+$user_obj = null;
+if (is_numeric($user_id)) {
+    $user_obj = vt_service('auth.user_repository')->getUserById($user_id);
+} elseif (is_string($user_id) && filter_var($user_id, FILTER_VALIDATE_EMAIL)) {
+    $user_obj = vt_service('auth.user_repository')->getUserByEmail($user_id);
+}
+
+if (!$user_obj) {
+    // Fallback for email-only cases
+    if ($args['fallback_email'] && filter_var($user_id, FILTER_VALIDATE_EMAIL)) {
+        echo '<span class="' . vt_service('validation.validator')->escHtml($args['class']) . '">' . vt_service('validation.validator')->escHtml($user_id) . '</span>';
+        return;
+    }
+    echo '<span class="' . vt_service('validation.validator')->escHtml($args['class']) . '">Unknown User</span>';
+    return;
+}
+
+// Get display name using Profile Manager
+$display_name = VT_Profile_Manager::getDisplayName($user_obj->id);
+
+// Get profile URL
+$profile_url = VT_Profile_Manager::getProfileUrl($user_obj->id);
+
+// Get profile data for avatar
+$profile_data = VT_Profile_Manager::getUserProfile($user_obj->id);
+
+// Get avatar URL using same logic as profile page
+$avatar_url = '';
+if (!empty($profile_data['profile_image']) && ($profile_data['avatar_source'] ?? 'gravatar') === 'custom') {
+    $avatar_url = VT_Image_Manager::getImageUrl($profile_data['profile_image']);
+} elseif (!empty($user_obj->email)) {
+    $hash = md5(strtolower(trim($user_obj->email)));
+    $avatar_url = "https://www.gravatar.com/avatar/{$hash}?s=" . intval($args['avatar_size']) . "&d=identicon";
+}
+
+// Fallback to default gravatar if no URL
+if (!$avatar_url) {
+    $fallback_hash = md5('default@vivalatable.com');
+    $avatar_url = "https://www.gravatar.com/avatar/{$fallback_hash}?s=" . intval($args['avatar_size']) . "&d=identicon";
+}
+
+// Generate avatar HTML with actual image
+$avatar_html = '<img src="' . vt_service('validation.validator')->escUrl($avatar_url) . '" ' .
+               'alt="' . vt_service('validation.validator')->escHtml($display_name) . '" ' .
+               'class="vt-avatar vt-avatar-sm vt-rounded-full" ' .
+               'style="width: ' . intval($args['avatar_size']) . 'px; height: ' . intval($args['avatar_size']) . 'px; object-fit: cover;">';
+?>
+
+<div class="<?php echo vt_service('validation.validator')->escHtml($args['class']); ?> vt-flex vt-items-center vt-gap">
+    <?php if ($args['show_avatar']) : ?>
+        <?php if ($args['link_profile'] && $profile_url) : ?>
+            <a href="<?php echo vt_service('validation.validator')->escUrl($profile_url); ?>" class="vt-avatar-link"><?php echo $avatar_html; ?></a>
+        <?php else : ?>
+            <?php echo $avatar_html; ?>
+        <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ($args['show_name']) : ?>
+        <?php if ($args['link_profile'] && $profile_url) : ?>
+            <a href="<?php echo vt_service('validation.validator')->escUrl($profile_url); ?>" class="vt-member-name vt-link"><?php echo vt_service('validation.validator')->escHtml($display_name); ?></a>
+        <?php else : ?>
+            <span class="vt-member-name"><?php echo vt_service('validation.validator')->escHtml($display_name); ?></span>
+        <?php endif; ?>
+    <?php endif; ?>
+</div>

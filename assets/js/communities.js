@@ -590,11 +590,7 @@ function renderEventGuestsTable(guests) {
                     <span class="vt-badge vt-badge-${statusInfo.badge}">${statusInfo.label}</span>
                 </td>
                 <td>${rsvpDate}</td>
-                <td>
-                    <button class="vt-btn vt-btn-sm vt-btn-secondary" onclick="viewGuestDetails(${guestId})">
-                        View
-                    </button>
-                </td>
+                <td><span class="vt-text-muted">—</span></td>
             </tr>
         `;
     }).join('');

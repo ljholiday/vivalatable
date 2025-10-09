@@ -30,12 +30,13 @@ return static function (Router $router): void {
             exit;
         }
 
-        $home = dirname(__DIR__, 2) . '/templates/home.php';
-        if (!is_file($home)) {
-            echo "<h1>Home</h1>";
-            return null;
-        }
-        require $home;
+        $view = vt_service('controller.home')->dashboard();
+        $viewer = $view['viewer'];
+        $upcoming_events = $view['upcoming_events'];
+        $my_communities = $view['my_communities'];
+        $recent_conversations = $view['recent_conversations'];
+
+        require dirname(__DIR__, 2) . '/templates/home.php';
         return null;
     });
 

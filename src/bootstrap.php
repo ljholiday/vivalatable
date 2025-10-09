@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Database\Database;
 use App\Http\Controller\AuthController;
 use App\Http\Controller\EventController;
+use App\Http\Controller\HomeController;
 use App\Http\Controller\CommunityController;
 use App\Http\Controller\CommunityApiController;
 use App\Http\Controller\ConversationController;
@@ -205,6 +206,16 @@ if (!function_exists('vt_container')) {
                     $c->get('auth.service'),
                     $c->get('validator.service'),
                     $c->get('invitation.manager')
+                );
+            }, false);
+
+            $container->register('controller.home', static function (VTContainer $c): HomeController {
+                return new HomeController(
+                    $c->get('auth.service'),
+                    $c->get('event.service'),
+                    $c->get('community.service'),
+                    $c->get('conversation.service'),
+                    $c->get('circle.service')
                 );
             }, false);
 
