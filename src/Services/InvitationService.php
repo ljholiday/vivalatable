@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Database\Database;
-
-require_once dirname(__DIR__, 2) . '/legacy/includes/includes/class-guest-manager.php';
+use App\Services\EventGuestService;
+use App\Services\CommunityMemberService;
 
 final class InvitationService
 {
@@ -16,7 +16,9 @@ final class InvitationService
         private Database $database,
         private AuthService $auth,
         private MailService $mail,
-        private SanitizerService $sanitizer
+        private SanitizerService $sanitizer,
+        private EventGuestService $eventGuests,
+        private CommunityMemberService $communityMembers
     ) {
     }
 
@@ -129,6 +131,81 @@ final class InvitationService
     /**
      * @return array{success:bool,status:int,message:string,data:array<string,mixed>}
      */
+    public function acceptCommunityInvitation(string $token, int $viewerId): array
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return $this->failure('Invitation token is required.', 400);
+        }
+
+        $stmt = $this->database->pdo()->prepare(
+            "SELECT id, community_id, invited_email, invited_user_id, expires_at
+             FROM vt_community_invitations
+             WHERE invitation_token = :token AND status = 'pending'
+             LIMIT 1"
+        );
+        $stmt->execute([':token' => $token]);
+        $invitation = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($invitation === false) {
+            return $this->failure('Invalid or expired invitation.', 404);
+        }
+
+        $invitationId = (int)$invitation['id'];
+        $communityId = (int)$invitation['community_id'];
+        $invitedEmail = strtolower((string)($invitation['invited_email'] ?? ''));
+        $expiresAt = $invitation['expires_at'] ?? null;
+
+        if ($expiresAt !== null && $expiresAt !== '' && strtotime((string)$expiresAt) < time()) {
+            $this->updateCommunityInvitation($invitationId, 'expired');
+            return $this->failure('This invitation has expired.', 410);
+        }
+
+        if ($viewerId <= 0) {
+            return $this->failure('You must be logged in to accept this invitation.', 401);
+        }
+
+        $user = $this->auth->getUserById($viewerId);
+        if ($user === null) {
+            return $this->failure('User not found.', 404);
+        }
+
+        $userEmail = strtolower((string)($user->email ?? ''));
+        if ($userEmail === '' || $userEmail !== $invitedEmail) {
+            return $this->failure('This invitation was sent to a different email address.', 403);
+        }
+
+        if ($this->communityMembers->isMember($communityId, $viewerId)) {
+            $this->updateCommunityInvitation($invitationId, 'accepted', $viewerId, true);
+            return $this->failure('You are already a member of this community.', 409);
+        }
+
+        $displayName = (string)($user->display_name ?? $user->email ?? '');
+
+        try {
+            $memberId = $this->communityMembers->addMember(
+                $communityId,
+                $viewerId,
+                $user->email ?? '',
+                $displayName,
+                'member'
+            );
+        } catch (\RuntimeException $e) {
+            return $this->failure('Failed to add you to the community: ' . $e->getMessage(), 500);
+        }
+
+        $this->updateCommunityInvitation($invitationId, 'accepted', $viewerId, true);
+
+        return $this->success([
+            'message' => 'You have successfully joined the community!',
+            'member_id' => $memberId,
+            'community_id' => $communityId,
+        ]);
+    }
+
+    /**
+     * @return array{success:bool,status:int,message:string,data:array<string,mixed>}
+     */
     public function sendEventInvitation(int $eventId, int $viewerId, string $email, string $message): array
     {
         $event = $this->fetchEvent($eventId, includeSlug: true, includeTitle: true);
@@ -145,16 +222,7 @@ final class InvitationService
             return $this->failure('Valid email address required.', 422);
         }
 
-        // Check if already invited
-        $db = $this->database->pdo();
-        $existing = $db->prepare(
-            "SELECT id FROM vt_guests WHERE event_id = :event_id AND email = :email AND status != 'declined'"
-        );
-        $existing->execute([
-            ':event_id' => $eventId,
-            ':email' => $email,
-        ]);
-        if ($existing->fetchColumn()) {
+        if ($this->eventGuests->guestExists($eventId, $email)) {
             return $this->failure('This email has already been invited.', 400);
         }
 
@@ -162,22 +230,7 @@ final class InvitationService
         $token = $this->generateToken();
         $sanitizedMessage = $this->sanitizer->textarea($message);
 
-        $stmt = $db->prepare('
-            INSERT INTO vt_guests
-            (event_id, email, name, status, rsvp_token, notes, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, NOW())
-        ');
-
-        $stmt->execute([
-            $eventId,
-            $email,
-            '', // Name will be filled when they RSVP
-            'pending',
-            $token,
-            $sanitizedMessage
-        ]);
-
-        $guestId = (int)$db->lastInsertId();
+        $guestId = $this->eventGuests->createGuest($eventId, $email, $token, $sanitizedMessage);
 
         // Send email
         $inviterName = $this->auth->getCurrentUser()->display_name ?? 'The host';
@@ -185,8 +238,7 @@ final class InvitationService
         $this->sendInvitationEmail($email, 'event', $eventName, $token, $inviterName, $sanitizedMessage);
 
         // Get updated guest list
-        $guestManager = new \VT_Guest_Manager();
-        $guestRecords = $guestManager->getEventGuests($eventId);
+        $guestRecords = $this->eventGuests->listGuests($eventId);
 
         $invitationUrl = $this->buildInvitationUrl('event', $token);
 
@@ -213,8 +265,7 @@ final class InvitationService
             return $this->failure('Only the event host can view invitations.', 403);
         }
 
-        $guestManager = new \VT_Guest_Manager();
-        $guestRecords = $guestManager->getEventGuests($eventId);
+        $guestRecords = $this->eventGuests->listGuests($eventId);
 
         return $this->success([
             'invitations' => $this->normalizeEventGuests($guestRecords),
@@ -236,17 +287,13 @@ final class InvitationService
             return $this->failure('Only the event host can remove guests.', 403);
         }
 
-        $guestManager = new \VT_Guest_Manager();
-        $deleteResult = $guestManager->deleteGuest($invitationId);
-        if (is_vt_error($deleteResult)) {
-            return $this->failure($deleteResult->getErrorMessage(), 400);
+        try {
+            $this->eventGuests->deleteGuest($eventId, $invitationId);
+        } catch (\RuntimeException $e) {
+            return $this->failure($e->getMessage(), 400);
         }
 
-        if ($deleteResult !== true) {
-            return $this->failure('Failed to cancel invitation.', 400);
-        }
-
-        $guestRecords = $guestManager->getEventGuests($eventId);
+        $guestRecords = $this->eventGuests->listGuests($eventId);
 
         return $this->success([
             'message' => 'Invitation cancelled successfully.',
@@ -269,16 +316,8 @@ final class InvitationService
             return $this->failure('Only the event host can resend invitations.', 403);
         }
 
-        $guestStmt = $this->database->pdo()->prepare(
-            "SELECT id, status FROM vt_guests WHERE id = :id AND event_id = :event_id LIMIT 1"
-        );
-        $guestStmt->execute([
-            ':id' => $invitationId,
-            ':event_id' => $eventId,
-        ]);
-
-        $guest = $guestStmt->fetch(\PDO::FETCH_ASSOC);
-        if ($guest === false) {
+        $guest = $this->eventGuests->findGuestForEvent($eventId, $invitationId);
+        if ($guest === null) {
             return $this->failure('Invitation not found for this event.', 404);
         }
 
@@ -287,25 +326,46 @@ final class InvitationService
             return $this->failure('This guest has already responded. Remove them before sending a new invitation.', 409);
         }
 
-        $guestManager = new \VT_Guest_Manager();
-        $resendResult = $guestManager->resendInvitation($invitationId);
-        if (is_vt_error($resendResult)) {
-            return $this->failure($resendResult->getErrorMessage(), 400);
+        $newToken = $this->generateToken();
+
+        try {
+            $this->eventGuests->updateGuestToken($eventId, $invitationId, $newToken);
+        } catch (\RuntimeException $e) {
+            return $this->failure($e->getMessage(), 400);
         }
 
-        $emailSent = (bool)$resendResult;
-        $message = $emailSent
+        $eventName = $event['title'] ?? 'an event';
+        $inviterName = $this->auth->getCurrentUser()->display_name ?? 'The host';
+        $emailSent = $this->sendInvitationEmail(
+            (string)($guest['email'] ?? ''),
+            'event',
+            $eventName,
+            $newToken,
+            $inviterName,
+            (string)($guest['notes'] ?? '')
+        );
+
+        $messageText = $emailSent
             ? 'Invitation email resent successfully.'
             : 'Invitation resent. Email delivery may have failed.';
 
-        $guestRecords = $guestManager->getEventGuests($eventId);
+        $guestRecords = $this->eventGuests->listGuests($eventId);
 
         return $this->success([
-            'message' => $message,
+            'message' => $messageText,
             'email_sent' => $emailSent,
             'guests' => $this->normalizeEventGuests($guestRecords),
             'guest_records' => $guestRecords,
         ]);
+    }
+
+    /**
+     * @return array<int, array<string,mixed>>
+     */
+    public function getEventGuests(int $eventId): array
+    {
+        $records = $this->eventGuests->listGuests($eventId);
+        return $this->normalizeEventGuests($records);
     }
 
     /**
@@ -359,17 +419,39 @@ final class InvitationService
     private function isAlreadyInvited(string $type, int $entityId, string $email): bool
     {
         $email = $this->sanitizer->email($email);
-        $table = $type === 'community' ? 'vt_community_invitations' : 'vt_event_invitations';
-        $idField = $type === 'community' ? 'community_id' : 'event_id';
-
         $pdo = $this->database->pdo();
         $stmt = $pdo->prepare("
-            SELECT COUNT(*) FROM {$table}
-            WHERE {$idField} = ? AND invited_email = ? AND status = 'pending'
+            SELECT COUNT(*) FROM vt_community_invitations
+            WHERE community_id = ? AND invited_email = ? AND status = 'pending'
         ");
         $stmt->execute([$entityId, $email]);
 
         return (int)$stmt->fetchColumn() > 0;
+    }
+
+    private function updateCommunityInvitation(int $invitationId, string $status, ?int $userId = null, bool $markAccepted = false): void
+    {
+        $parts = [
+            'status = :status',
+            'responded_at = NOW()',
+        ];
+        $params = [
+            ':status' => $status,
+            ':id' => $invitationId,
+        ];
+
+        if ($userId !== null) {
+            $parts[] = 'invited_user_id = :user_id';
+            $params[':user_id'] = $userId;
+        }
+
+        if ($markAccepted && $status === 'accepted') {
+            $parts[] = 'accepted_at = NOW()';
+        }
+
+        $sql = 'UPDATE vt_community_invitations SET ' . implode(', ', $parts) . ' WHERE id = :id';
+        $stmt = $this->database->pdo()->prepare($sql);
+        $stmt->execute($params);
     }
 
     /**

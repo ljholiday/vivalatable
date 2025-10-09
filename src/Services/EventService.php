@@ -95,7 +95,7 @@ final class EventService
 
         if (ctype_digit($slugOrId)) {
             $stmt = $pdo->prepare(
-                "SELECT id, title, event_date, slug, description
+                "SELECT id, title, event_date, slug, description, author_id, event_status, privacy, guest_limit
                  FROM vt_events
                  WHERE id = :id
                  LIMIT 1"
@@ -103,7 +103,7 @@ final class EventService
             $stmt->execute([':id' => (int)$slugOrId]);
         } else {
             $stmt = $pdo->prepare(
-                "SELECT id, title, event_date, slug, description
+                "SELECT id, title, event_date, slug, description, author_id, event_status, privacy, guest_limit
                  FROM vt_events
                  WHERE slug = :slug
                  LIMIT 1"

@@ -7,6 +7,7 @@ use App\Http\Request;
 use App\Services\EventService;
 use App\Services\AuthService;
 use App\Services\ValidatorService;
+use App\Services\InvitationService;
 
 /**
  * Thin HTTP controller for event listings and detail views.
@@ -19,7 +20,8 @@ final class EventController
     public function __construct(
         private EventService $events,
         private AuthService $auth,
-        private ValidatorService $validator
+        private ValidatorService $validator,
+        private InvitationService $invitations
     ) {
     }
 
@@ -202,6 +204,60 @@ final class EventController
         ];
     }
 
+    /**
+     * @return array{
+     *   status:int,
+     *   event?: array<string,mixed>|null,
+     *   tab?: string,
+     *   guest_summary?: array<string,int>
+     * }
+     */
+    public function manage(string $slugOrId): array
+    {
+        $event = $this->events->getBySlugOrId($slugOrId);
+        if ($event === null) {
+            return [
+                'status' => 404,
+                'event' => null,
+            ];
+        }
+
+        $viewerId = $this->auth->currentUserId() ?? 0;
+        if (!$this->canManageEvent($event, $viewerId)) {
+            return [
+                'status' => 403,
+                'event' => null,
+            ];
+        }
+
+        $tab = $this->normalizeManageTab($this->request()->query('tab'));
+
+        $guestSummary = [
+            'total' => 0,
+            'confirmed' => 0,
+        ];
+
+        $eventId = (int)($event['id'] ?? 0);
+        if ($eventId > 0) {
+            $guests = $this->invitations->getEventGuests($eventId);
+            $guestSummary['total'] = count($guests);
+            $guestSummary['confirmed'] = count(array_filter(
+                $guests,
+                static function (array $guest): bool {
+                    $status = strtolower((string)($guest['status'] ?? ''));
+                    return in_array($status, ['confirmed', 'yes'], true);
+                }
+            ));
+        }
+
+        return [
+            'status' => 200,
+            'event' => $event,
+            'tab' => $tab,
+            'guest_summary' => $guestSummary,
+        ];
+    }
+
     private function request(): Request
     {
         /** @var Request $request */
@@ -256,5 +312,27 @@ final class EventController
             'errors' => $errors,
             'event_date_db' => $eventDateDb,
         ];
+    }
+
+    private function normalizeManageTab(?string $tab): string
+    {
+        $tab = strtolower((string)$tab);
+        return in_array($tab, ['settings', 'guests', 'invites'], true) ? $tab : 'settings';
+    }
+
+    /**
+     * @param array<string,mixed> $event
+     */
+    private function canManageEvent(array $event, int $viewerId): bool
+    {
+        if ($viewerId <= 0) {
+            return false;
+        }
+
+        if ((int)($event['author_id'] ?? 0) === $viewerId) {
+            return true;
+        }
+
+        return $this->auth->currentUserCan('edit_others_posts');
     }
 }

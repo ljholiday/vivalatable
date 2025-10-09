@@ -14,11 +14,6 @@
  * @param string $blocker_message Optional message about why deletion is blocked
  */
 
-// Prevent direct access
-if (!defined('VT_VERSION')) {
-    exit;
-}
-
 // Required parameters
 $entity_type = $entity_type ?? '';
 $entity_id = $entity_id ?? 0;

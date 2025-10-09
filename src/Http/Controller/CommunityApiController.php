@@ -7,13 +7,15 @@ use App\Http\Request;
 use App\Services\AuthService;
 use App\Services\CommunityService;
 use App\Services\AuthorizationService;
+use App\Services\SecurityService;
 
 final class CommunityApiController
 {
     public function __construct(
         private CommunityService $communities,
         private AuthService $auth,
-        private AuthorizationService $authz
+        private AuthorizationService $authz,
+        private SecurityService $security
     ) {
     }
 
@@ -89,44 +91,7 @@ final class CommunityApiController
             return false;
         }
 
-        $this->ensureLegacySecurityLoaded();
-
-        if (class_exists('\VT_Security')) {
-            try {
-                if (\VT_Security::verifyNonce($nonce, $action)) {
-                    return true;
-                }
-            } catch (\Throwable $e) {
-                // fall through
-            }
-        }
-
-        try {
-            $security = vt_service('security.service');
-            if (is_object($security) && method_exists($security, 'verifyNonce')) {
-                if ($userId > 0 && (bool)$security->verifyNonce($nonce, $action, $userId)) {
-                    return true;
-                }
-
-                if ((bool)$security->verifyNonce($nonce, $action, 0)) {
-                    return true;
-                }
-            }
-        } catch (\Throwable $e) {
-            // ignore
-        }
-
-        return false;
-    }
-
-    private function ensureLegacySecurityLoaded(): void
-    {
-        if (!class_exists('\VT_Security')) {
-            $path = dirname(__DIR__, 3) . '/legacy/includes/includes/class-security.php';
-            if (is_file($path)) {
-                require_once $path;
-            }
-        }
+        return $this->security->verifyNonce($nonce, $action, $userId);
     }
 
     /**

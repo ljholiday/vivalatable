@@ -5,18 +5,18 @@
  *
  * Required variables:
  * - $entity_type: 'community' or 'event'
- * - $entity_slug: slug for URL generation
  * - $entity_id: ID for form submission
  * - $show_pending: bool - whether to show pending invitations list
+ * - $invite_url: shareable invite link
  */
 
 $entity_type = $entity_type ?? 'community';
-$entity_slug = $entity_slug ?? '';
 $entity_id = $entity_id ?? 0;
 $show_pending = $show_pending ?? true;
+$invite_url = $invite_url ?? '';
 
 $entity_label = ucfirst($entity_type);
-$base_url = VT_Http::getBaseUrl() . '/' . $entity_type . 's/' . htmlspecialchars($entity_slug);
+$share_url = $invite_url !== '' ? $invite_url : '/' . $entity_type . 's';
 ?>
 
 <div class="vt-section">
@@ -38,7 +38,7 @@ $base_url = VT_Http::getBaseUrl() . '/' . $entity_type . 's/' . htmlspecialchars
 				<label class="vt-form-label"><?php echo $entity_label; ?> Invitation Link</label>
 				<div class="vt-flex vt-gap-2">
 					<input type="text" class="vt-form-input vt-flex-1" id="invitation-link"
-						   value="<?php echo $base_url . '?join=1'; ?>"
+						   value="<?php echo htmlspecialchars($share_url, ENT_QUOTES, 'UTF-8'); ?>"
 						   readonly>
 					<button type="button" class="vt-btn vt-copy-invitation-link">
 						Copy

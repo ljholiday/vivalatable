@@ -4,27 +4,6 @@ use App\Services\AuthService;
 
 require_once dirname(__DIR__) . '/src/bootstrap.php';
 
-if (!class_exists('VT_Auth')) {
-    /**
-     * Lightweight stub to simulate the legacy VT_Auth interface for fallback tests.
-     */
-    final class VT_Auth
-    {
-        public static ?int $currentUserId = null;
-        public static ?object $currentUser = null;
-
-        public static function getCurrentUserId(): ?int
-        {
-            return self::$currentUserId;
-        }
-
-        public static function getCurrentUser(): ?object
-        {
-            return self::$currentUser;
-        }
-    }
-}
-
 final class AuthServiceTest
 {
     private AuthService $auth;
@@ -54,12 +33,6 @@ final class AuthServiceTest
 
         $this->resetSession();
         $this->testSessionEmail();
-
-        $this->resetSession();
-        $this->testLegacyFallbackId();
-
-        $this->resetSession();
-        $this->testLegacyFallbackEmail();
 
         $this->resetSession();
         $this->testEmptyState();
@@ -93,38 +66,9 @@ final class AuthServiceTest
         }
     }
 
-    private function testLegacyFallbackId(): void
-    {
-        echo "Checking legacy fallback for currentUserId... ";
-        VT_Auth::$currentUserId = 456;
-
-        $value = $this->auth->currentUserId();
-        if ($value === 456) {
-            $this->pass('currentUserId falls back to VT_Auth when session empty.');
-        } else {
-            $this->fail('Expected 456, got ' . var_export($value, true));
-        }
-    }
-
-    private function testLegacyFallbackEmail(): void
-    {
-        echo "Checking legacy fallback for currentUserEmail... ";
-        VT_Auth::$currentUser = (object)['email' => 'legacy@example.com'];
-
-        $value = $this->auth->currentUserEmail();
-        if ($value === 'legacy@example.com') {
-            $this->pass('currentUserEmail falls back to VT_Auth user.');
-        } else {
-            $this->fail('Expected legacy@example.com, got ' . var_export($value, true));
-        }
-    }
-
     private function testEmptyState(): void
     {
         echo "Checking empty state returns nulls... ";
-        VT_Auth::$currentUserId = null;
-        VT_Auth::$currentUser = null;
-
         $id = $this->auth->currentUserId();
         $email = $this->auth->currentUserEmail();
 
@@ -171,8 +115,6 @@ final class AuthServiceTest
     private function resetSession(): void
     {
         $_SESSION = [];
-        VT_Auth::$currentUserId = null;
-        VT_Auth::$currentUser = null;
     }
 }
 

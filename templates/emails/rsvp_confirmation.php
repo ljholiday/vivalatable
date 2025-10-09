@@ -5,6 +5,8 @@
  * Ported from PartyMinder WordPress plugin
  */
 
+require_once dirname(__DIR__) . '/_helpers.php';
+
 // Set subject for email (can be overridden by template variables)
 if (!isset($subject)) {
 	$subject = 'RSVP Confirmation: ' . $event_title;
@@ -94,7 +96,7 @@ switch (strtolower($status)) {
 				<?php if (!empty($event_description)) : ?>
 				<div style="margin-top: 16px;">
 					<strong>About:</strong><br>
-					<?php echo htmlspecialchars(VT_Text::truncateWords($event_description, 25)); ?>
+					<?php echo htmlspecialchars(vt_truncate_words($event_description, 25)); ?>
 				</div>
 				<?php endif; ?>
 			</div>

@@ -281,6 +281,19 @@ return static function (Router $router): void {
         return null;
     });
 
+    $router->get('/events/{slug}/manage', static function (Request $request, string $slug) {
+        $view = vt_service('controller.events')->manage($slug);
+        $status = $view['status'] ?? 200;
+        if ($status !== 200) {
+            http_response_code($status);
+        }
+        $event = $view['event'] ?? null;
+        $tab = $view['tab'] ?? 'settings';
+        $guest_summary = $view['guest_summary'] ?? ['total' => 0, 'confirmed' => 0];
+        require dirname(__DIR__, 2) . '/templates/event-manage.php';
+        return null;
+    });
+
     $router->post('/events/{slug}/edit', static function (Request $request, string $slug) {
         $result = vt_service('controller.events')->update($slug);
         if (isset($result['redirect'])) {
@@ -353,6 +366,22 @@ return static function (Router $router): void {
         $errors = $view['errors'];
         $input = $view['input'];
         require dirname(__DIR__, 2) . '/templates/community-edit.php';
+        return null;
+    });
+
+    $router->get('/communities/{slug}/manage', static function (Request $request, string $slug) {
+        $view = vt_service('controller.communities')->manage($slug);
+        $status = $view['status'] ?? 200;
+        if ($status !== 200) {
+            http_response_code($status);
+        }
+        $community = $view['community'] ?? null;
+        $tab = $view['tab'] ?? 'members';
+        $members = $view['members'] ?? [];
+        $viewer_role = $view['viewer_role'] ?? null;
+        $viewer_id = $view['viewer_id'] ?? 0;
+        $can_manage_members = $view['can_manage_members'] ?? false;
+        require dirname(__DIR__, 2) . '/templates/community-manage.php';
         return null;
     });
 

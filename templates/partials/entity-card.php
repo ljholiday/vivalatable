@@ -12,11 +12,6 @@
  * @param int $truncate_length Number of words to show in description (default 15)
  */
 
-// Prevent direct access
-if (!defined('VT_VERSION')) {
-    exit;
-}
-
 // Required parameters
 $entity = $entity ?? null;
 $entity_type = $entity_type ?? '';
@@ -54,7 +49,7 @@ switch ($entity_type) {
     case 'community':
         $title = $entity->name ?? '';
         $url = '/communities/' . ($entity->slug ?? '');
-        $date_info = isset($entity->created_at) ? 'Created ' . VT_Text::timeAgo($entity->created_at) : '';
+        $date_info = isset($entity->created_at) ? 'Created ' . vt_time_ago($entity->created_at) : '';
         $time_info = '';
         break;
 }
@@ -107,7 +102,7 @@ switch ($entity_type) {
         <?php if (!empty($description)) : ?>
             <div class="vt-mb-4">
                 <p class="vt-text-muted">
-                    <?php echo htmlspecialchars(VT_Text::truncateWords($description, $truncate_length)); ?>
+                    <?php echo htmlspecialchars(vt_truncate_words($description, $truncate_length)); ?>
                 </p>
             </div>
         <?php endif; ?>

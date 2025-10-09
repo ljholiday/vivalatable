@@ -9,6 +9,7 @@ use App\Services\CircleService;
 use App\Services\AuthService;
 use App\Services\AuthorizationService;
 use App\Services\ValidatorService;
+use App\Services\CommunityMemberService;
 
 final class CommunityController
 {
@@ -19,7 +20,8 @@ final class CommunityController
         private CircleService $circles,
         private AuthService $auth,
         private AuthorizationService $authz,
-        private ValidatorService $validator
+        private ValidatorService $validator,
+        private CommunityMemberService $members
     ) {
     }
 
@@ -232,6 +234,61 @@ final class CommunityController
 
     /**
      * @return array{
+     *   status:int,
+     *   community?: array<string,mixed>|null,
+     *   tab?: string,
+     *   members?: array<int,array<string,mixed>>,
+     *   viewer_role?: ?string
+     * }
+     */
+    public function manage(string $slugOrId): array
+    {
+        $community = $this->communities->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return [
+                'status' => 404,
+                'community' => null,
+            ];
+        }
+
+        $communityId = (int)($community['id'] ?? 0);
+        if ($communityId <= 0) {
+            return [
+                'status' => 404,
+                'community' => null,
+            ];
+        }
+
+        $viewerId = $this->auth->currentUserId() ?? 0;
+        $viewerRole = null;
+        if ($viewerId > 0) {
+            $viewerRole = $this->members->getMemberRole($communityId, $viewerId);
+        }
+
+        $canManage = $this->canManageCommunity($viewerRole);
+        if (!$canManage) {
+            return [
+                'status' => 403,
+                'community' => null,
+            ];
+        }
+
+        $tab = $this->normalizeManageTab($this->request()->query('tab'));
+        $members = $this->members->listMembers($communityId);
+
+        return [
+            'status' => 200,
+            'community' => $community,
+            'tab' => $tab,
+            'members' => $members,
+            'viewer_role' => $viewerRole,
+            'viewer_id' => $viewerId,
+            'can_manage_members' => $this->canEditMembers($viewerRole),
+        ];
+    }
+
+    /**
+     * @return array{
      *   input: array<string,string>,
      *   errors: array<string,string>
      * }
@@ -295,6 +352,34 @@ final class CommunityController
         /** @var Request $request */
         $request = vt_service('http.request');
         return $request;
+    }
+
+    private function normalizeManageTab(?string $tab): string
+    {
+        $tab = strtolower((string)$tab);
+        return in_array($tab, ['members', 'invites'], true) ? $tab : 'members';
+    }
+
+    private function canManageCommunity(?string $viewerRole): bool
+    {
+        if ($this->auth->currentUserCan('manage_options')) {
+            return true;
+        }
+
+        if ($viewerRole === null) {
+            return false;
+        }
+
+        return in_array($viewerRole, ['admin', 'moderator'], true);
+    }
+
+    private function canEditMembers(?string $viewerRole): bool
+    {
+        if ($this->auth->currentUserCan('manage_options')) {
+            return true;
+        }
+
+        return $viewerRole === 'admin';
     }
 
     private function normalizeCircle(?string $circle): string

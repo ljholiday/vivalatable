@@ -27,13 +27,6 @@ final class AuthService
             }
         }
 
-        if (class_exists('\VT_Auth')) {
-            $legacyId = (int)\VT_Auth::getCurrentUserId();
-            if ($legacyId > 0) {
-                return $legacyId;
-            }
-        }
-
         return null;
     }
 
@@ -48,13 +41,6 @@ final class AuthService
         $user = $this->getCurrentUser();
         if ($user !== null && isset($user->email) && $user->email !== '') {
             return (string)$user->email;
-        }
-
-        if (class_exists('\VT_Auth')) {
-            $legacyUser = \VT_Auth::getCurrentUser();
-            if ($legacyUser && isset($legacyUser->email) && $legacyUser->email !== '') {
-                return (string)$legacyUser->email;
-            }
         }
 
         return null;
@@ -99,14 +85,6 @@ final class AuthService
 
     public function currentUserCan(string $capability): bool
     {
-        if (class_exists('\VT_Auth')) {
-            try {
-                return (bool)\VT_Auth::currentUserCan($capability);
-            } catch (\Throwable $e) {
-                // fall through to session-based check
-            }
-        }
-
         return false;
     }
 
@@ -282,13 +260,34 @@ final class AuthService
 
         $userId = (int)$pdo->lastInsertId();
         $this->createUserProfile($userId, $displayName);
-        $this->createPersonalCommunities($userId);
 
         return [
             'success' => true,
             'errors' => [],
             'user_id' => $userId,
         ];
+    }
+
+    public function getUserById(int $userId): ?object
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $stmt = $this->database->pdo()->prepare(
+            "SELECT id, username, email, display_name, status, created_at, updated_at
+             FROM vt_users
+             WHERE id = :id
+             LIMIT 1"
+        );
+        $stmt->execute([':id' => $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false || ($row['status'] ?? '') !== 'active') {
+            return null;
+        }
+
+        return (object)$row;
     }
 
     private function ensureSession(): void
@@ -346,19 +345,6 @@ final class AuthService
             ]);
         } catch (\Throwable $e) {
             // Profiles are optional for now; ignore failures.
-        }
-    }
-
-    private function createPersonalCommunities(int $userId): void
-    {
-        if (!class_exists('VT_Personal_Community_Service')) {
-            return;
-        }
-
-        try {
-            \VT_Personal_Community_Service::ensureBothCommunitiesForUser($userId);
-        } catch (\Throwable $e) {
-            // Ignore failures; legacy service is optional.
         }
     }
 

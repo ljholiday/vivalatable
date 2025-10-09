@@ -8,6 +8,7 @@ use App\Services\CircleService;
 use App\Services\ConversationService;
 use App\Services\AuthorizationService;
 use App\Services\ValidatorService;
+use App\Services\SecurityService;
 
 final class ConversationController
 {
@@ -18,7 +19,8 @@ final class ConversationController
         private CircleService $circles,
         private AuthService $auth,
         private AuthorizationService $authz,
-        private ValidatorService $validator
+        private ValidatorService $validator,
+        private SecurityService $security
     ) {
     }
 
@@ -427,35 +429,7 @@ final class ConversationController
             return false;
         }
 
-        $this->ensureLegacySecurityLoaded();
-
-        if (class_exists('\VT_Security')) {
-            try {
-                return \VT_Security::verifyNonce($nonce, $action);
-            } catch (\Throwable $e) {
-                // fall through to other strategies
-            }
-        }
-
-        try {
-            $security = vt_service('security.service');
-            if (is_object($security) && method_exists($security, 'verifyNonce')) {
-                return (bool)$security->verifyNonce($nonce, $action);
-            }
-        } catch (\Throwable $e) {
-            // ignore and treat as failure
-        }
-
-        return false;
-    }
-
-    private function ensureLegacySecurityLoaded(): void
-    {
-        if (!class_exists('\VT_Security')) {
-            $path = dirname(__DIR__, 3) . '/legacy/includes/includes/class-security.php';
-            if (is_file($path)) {
-                require_once $path;
-            }
-        }
+        $userId = $this->auth->currentUserId() ?? 0;
+        return $this->security->verifyNonce($nonce, $action, $userId);
     }
 }

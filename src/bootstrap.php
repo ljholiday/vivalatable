@@ -12,6 +12,7 @@ use App\Http\Controller\InvitationApiController;
 use App\Http\Request;
 use App\Services\EventService;
 use App\Services\CommunityService;
+use App\Services\CommunityMemberService;
 use App\Services\ConversationService;
 use App\Services\CircleService;
 use App\Services\AuthService;
@@ -19,19 +20,14 @@ use App\Services\MailService;
 use App\Services\SanitizerService;
 use App\Services\ValidatorService;
 use App\Services\InvitationService;
+use App\Services\EventGuestService;
 use App\Services\AuthorizationService;
 use App\Services\ImageService;
+use App\Services\SecurityService;
 use PHPMailer\PHPMailer\PHPMailer;
 
 
 require __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../legacy/includes/includes/class-security.php';
-require_once __DIR__ . '/../legacy/includes/includes/Security/SecurityService.php';
-require_once __DIR__ . '/../legacy/includes/includes/class-invitation-service.php';
-
-if (!defined('VT_VERSION')) {
-    define('VT_VERSION', '2.0-dev');
-}
 
 /**
  * Very small service container for modern code paths.
@@ -128,6 +124,14 @@ if (!function_exists('vt_container')) {
                 return new CommunityService($c->get('database.connection'));
             });
 
+            $container->register('community.member.service', static function (VTContainer $c): CommunityMemberService {
+                return new CommunityMemberService($c->get('database.connection'));
+            });
+
+            $container->register('event.guest.service', static function (VTContainer $c): EventGuestService {
+                return new EventGuestService($c->get('database.connection'));
+            });
+
             $container->register('conversation.service', static function (VTContainer $c): ConversationService {
                 return new ConversationService($c->get('database.connection'));
             });
@@ -176,12 +180,8 @@ if (!function_exists('vt_container')) {
                 return new ImageService($uploadBasePath, $uploadBaseUrl);
             });
 
-            $container->register('security.service', static function (): \VT_Security_SecurityService {
-                return new \VT_Security_SecurityService();
-            });
-
-            $container->register('invitation.service', static function (): \VT_Invitation_Service {
-                return new \VT_Invitation_Service();
+            $container->register('security.service', static function (): SecurityService {
+                return new SecurityService();
             });
 
             $container->register('invitation.manager', static function (VTContainer $c): InvitationService {
@@ -189,7 +189,9 @@ if (!function_exists('vt_container')) {
                     $c->get('database.connection'),
                     $c->get('auth.service'),
                     $c->get('mail.service'),
-                    $c->get('sanitizer.service')
+                    $c->get('sanitizer.service'),
+                    $c->get('event.guest.service'),
+                    $c->get('community.member.service')
                 );
             });
 
@@ -201,7 +203,8 @@ if (!function_exists('vt_container')) {
                 return new EventController(
                     $c->get('event.service'),
                     $c->get('auth.service'),
-                    $c->get('validator.service')
+                    $c->get('validator.service'),
+                    $c->get('invitation.manager')
                 );
             }, false);
 
@@ -211,7 +214,8 @@ if (!function_exists('vt_container')) {
                     $c->get('circle.service'),
                     $c->get('auth.service'),
                     $c->get('authorization.service'),
-                    $c->get('validator.service')
+                    $c->get('validator.service'),
+                    $c->get('community.member.service')
                 );
             }, false);
 
@@ -219,7 +223,8 @@ if (!function_exists('vt_container')) {
                 return new CommunityApiController(
                     $c->get('community.service'),
                     $c->get('auth.service'),
-                    $c->get('authorization.service')
+                    $c->get('authorization.service'),
+                    $c->get('security.service')
                 );
             }, false);
 
@@ -229,7 +234,8 @@ if (!function_exists('vt_container')) {
                     $c->get('circle.service'),
                     $c->get('auth.service'),
                     $c->get('authorization.service'),
-                    $c->get('validator.service')
+                    $c->get('validator.service'),
+                    $c->get('security.service')
                 );
             }, false);
 
@@ -237,7 +243,8 @@ if (!function_exists('vt_container')) {
                 return new ConversationApiController(
                     $c->get('conversation.service'),
                     $c->get('circle.service'),
-                    $c->get('auth.service')
+                    $c->get('auth.service'),
+                    $c->get('security.service')
                 );
             }, false);
 
@@ -245,7 +252,9 @@ if (!function_exists('vt_container')) {
                 return new InvitationApiController(
                     $c->get('database.connection'),
                     $c->get('auth.service'),
-                    $c->get('invitation.manager')
+                    $c->get('invitation.manager'),
+                    $c->get('security.service'),
+                    $c->get('community.member.service')
                 );
             }, false);
 
@@ -272,33 +281,29 @@ if (!function_exists('vt_service')) {
 }
 
 /**
- * Legacy compatibility shim: VT_Text
- * Keeps old partials (like templates/partials/entity-card.php) working.
+ * Legacy compatibility shim: VT_Mail
+ * Routes legacy mail helpers through the modern MailService.
  */
-if (!class_exists('VT_Text')) {
-    final class VT_Text {
-        public static function esc(string $text): string {
-            return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+if (!class_exists('VT_Mail')) {
+    final class VT_Mail {
+        /**
+         * @param string|array<string> $to
+         */
+        public static function send($to, string $subject, string $htmlBody, string $textBody = ''): bool
+        {
+            /** @var \App\Services\MailService $mail */
+            $mail = vt_service('mail.service');
+            return $mail->send($to, $subject, $htmlBody, $textBody);
         }
-        public static function plain(string $text): string {
-            return trim(strip_tags($text));
-        }
-        public static function truncate(string $text, int $limit = 120, string $ellipsis = '…'): string {
-            return self::truncate_chars($text, $limit, $ellipsis);
-        }
-        public static function truncate_chars(string $text, int $limit = 120, string $ellipsis = '…'): string {
-            $t = self::plain($text);
-            if (mb_strlen($t) <= $limit) return $t;
-            return rtrim(mb_substr($t, 0, $limit)) . $ellipsis;
-        }
-        public static function truncate_words(string $text, int $limit = 25, string $ellipsis = '…'): string {
-            $t = preg_replace('/\s+/u', ' ', self::plain($text));
-            $words = $t === '' ? [] : explode(' ', $t);
-            if (count($words) <= $limit) return $t;
-            return implode(' ', array_slice($words, 0, $limit)) . $ellipsis;
-        }
-        public static function excerpt(string $text, int $words = 30, string $ellipsis = '…'): string {
-            return self::truncate_words($text, $words, $ellipsis);
+
+        /**
+         * @param array<string,mixed> $variables
+         */
+        public static function sendTemplate(string $to, string $template, array $variables = []): bool
+        {
+            /** @var \App\Services\MailService $mail */
+            $mail = vt_service('mail.service');
+            return $mail->sendTemplate($to, $template, $variables);
         }
     }
 }

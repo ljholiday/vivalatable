@@ -5,6 +5,8 @@
  * Ported from PartyMinder WordPress plugin
  */
 
+require_once dirname(__DIR__) . '/_helpers.php';
+
 // Set subject for email
 $subject = sprintf('You\'re invited: %s', $event_title);
 
@@ -72,7 +74,7 @@ $rsvp_no_url = $invitation_url . '&rsvp=no';
 				<?php if (!empty($event_description)) : ?>
 				<div style="margin-top: 15px;">
 					<strong>About:</strong><br>
-					<?php echo htmlspecialchars(VT_Text::truncateWords($event_description, 25)); ?>
+					<?php echo htmlspecialchars(vt_truncate_words($event_description, 25)); ?>
 				</div>
 				<?php endif; ?>
 			</div>

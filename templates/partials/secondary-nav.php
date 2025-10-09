@@ -11,11 +11,6 @@
  * @param string $current_tab Current active tab identifier (optional, for manual control)
  */
 
-// Prevent direct access
-if (!defined('VT_VERSION')) {
-    exit;
-}
-
 // Ensure $tabs is set and is an array
 $tabs = $tabs ?? [];
 if (empty($tabs) || !is_array($tabs)) {
