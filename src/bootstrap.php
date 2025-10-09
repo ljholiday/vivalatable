@@ -16,6 +16,8 @@ use App\Services\ConversationService;
 use App\Services\CircleService;
 use App\Services\AuthService;
 use App\Services\MailService;
+use App\Services\SanitizerService;
+use App\Services\ValidatorService;
 use PHPMailer\PHPMailer\PHPMailer;
 
 
@@ -131,6 +133,14 @@ if (!function_exists('vt_container')) {
                 return new CircleService($c->get('database.connection'));
             });
 
+            $container->register('sanitizer.service', static function (): SanitizerService {
+                return new SanitizerService();
+            });
+
+            $container->register('validator.service', static function (VTContainer $c): ValidatorService {
+                return new ValidatorService($c->get('sanitizer.service'));
+            });
+
             $container->register('auth.service', static function (VTContainer $c): AuthService {
                 return new AuthService($c->get('database.connection'), $c->get('mail.service'));
             });
@@ -162,7 +172,7 @@ if (!function_exists('vt_container')) {
             });
 
             $container->register('controller.auth', static function (VTContainer $c): AuthController {
-                return new AuthController($c->get('auth.service'));
+                return new AuthController($c->get('auth.service'), $c->get('validator.service'));
             }, false);
 
             $container->register('controller.events', static function (VTContainer $c): EventController {

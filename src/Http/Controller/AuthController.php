@@ -5,11 +5,14 @@ namespace App\Http\Controller;
 
 use App\Http\Request;
 use App\Services\AuthService;
+use App\Services\ValidatorService;
 
 final class AuthController
 {
-    public function __construct(private AuthService $auth)
-    {
+    public function __construct(
+        private AuthService $auth,
+        private ValidatorService $validator
+    ) {
     }
 
     public function landing(): array
@@ -28,21 +31,25 @@ final class AuthController
     public function login(): array
     {
         $request = $this->request();
-        $identifier = trim((string)$request->input('identifier', ''));
-        $password = (string)$request->input('password', '');
+        $identifierRaw = (string)$request->input('identifier', '');
+        $passwordRaw = (string)$request->input('password', '');
         $redirect = $this->sanitizeRedirect($request->input('redirect_to'));
         $remember = (string)$request->input('remember', '') === '1';
 
+        // Validate inputs
+        $identifierValidation = $this->validator->required($identifierRaw, 'Email or username');
+        $passwordValidation = $this->validator->required($passwordRaw, 'Password');
+
         $errors = [];
-        if ($identifier === '') {
-            $errors['identifier'] = 'Email or username is required.';
+        if (!$identifierValidation['is_valid']) {
+            $errors['identifier'] = $identifierValidation['errors'][0] ?? 'Email or username is required.';
         }
-        if ($password === '') {
-            $errors['password'] = 'Password is required.';
+        if (!$passwordValidation['is_valid']) {
+            $errors['password'] = $passwordValidation['errors'][0] ?? 'Password is required.';
         }
 
         if ($errors === []) {
-            $result = $this->auth->attemptLogin($identifier, $password);
+            $result = $this->auth->attemptLogin($identifierValidation['value'], $passwordRaw);
             if ($result['success']) {
                 return [
                     'redirect' => $redirect !== '' ? $redirect : '/',
@@ -53,7 +60,7 @@ final class AuthController
 
         return $this->buildView(
             loginInput: [
-                'identifier' => $identifier,
+                'identifier' => $identifierValidation['value'] ?? $identifierRaw,
                 'remember' => $remember,
                 'redirect_to' => $redirect,
             ],
@@ -69,39 +76,45 @@ final class AuthController
     public function register(): array
     {
         $request = $this->request();
-        $displayName = trim((string)$request->input('display_name', ''));
-        $username = trim((string)$request->input('username', ''));
-        $email = trim((string)$request->input('email', ''));
-        $password = (string)$request->input('password', '');
-        $confirm = (string)$request->input('confirm_password', '');
+        $displayNameRaw = (string)$request->input('display_name', '');
+        $usernameRaw = (string)$request->input('username', '');
+        $emailRaw = (string)$request->input('email', '');
+        $passwordRaw = (string)$request->input('password', '');
+        $confirmRaw = (string)$request->input('confirm_password', '');
         $redirect = $this->sanitizeRedirect($request->input('redirect_to'));
 
+        // Validate inputs
+        $displayNameValidation = $this->validator->textField($displayNameRaw, 1, 100);
+        $usernameValidation = $this->validator->username($usernameRaw);
+        $emailValidation = $this->validator->email($emailRaw);
+        $passwordValidation = $this->validator->password($passwordRaw);
+
         $errors = [];
-        if ($displayName === '') {
-            $errors['display_name'] = 'Display name is required.';
+        if (!$displayNameValidation['is_valid']) {
+            $errors['display_name'] = $displayNameValidation['errors'][0] ?? 'Display name is required.';
         }
-        if ($username === '') {
-            $errors['username'] = 'Username is required.';
+        if (!$usernameValidation['is_valid']) {
+            $errors['username'] = $usernameValidation['errors'][0] ?? 'Username is invalid.';
         }
-        if ($email === '') {
-            $errors['email'] = 'Email is required.';
+        if (!$emailValidation['is_valid']) {
+            $errors['email'] = $emailValidation['errors'][0] ?? 'Email is invalid.';
         }
-        if ($password === '') {
-            $errors['password'] = 'Password is required.';
-        } elseif ($password !== $confirm) {
+        if (!$passwordValidation['is_valid']) {
+            $errors['password'] = $passwordValidation['errors'][0] ?? 'Password is required.';
+        } elseif ($passwordRaw !== $confirmRaw) {
             $errors['confirm_password'] = 'Passwords do not match.';
         }
 
         if ($errors === []) {
             $result = $this->auth->register([
-                'display_name' => $displayName,
-                'username' => $username,
-                'email' => $email,
-                'password' => $password,
+                'display_name' => $displayNameValidation['value'],
+                'username' => $usernameValidation['value'],
+                'email' => $emailValidation['value'],
+                'password' => $passwordRaw,
             ]);
 
             if ($result['success']) {
-                $this->auth->attemptLogin($email, $password);
+                $this->auth->attemptLogin($emailValidation['value'], $passwordRaw);
                 return [
                     'redirect' => $redirect !== '' ? $redirect : '/',
                 ];
@@ -113,9 +126,9 @@ final class AuthController
         return $this->buildView(
             loginInput: ['redirect_to' => $redirect],
             registerInput: [
-                'display_name' => $displayName,
-                'username' => $username,
-                'email' => $email,
+                'display_name' => $displayNameValidation['value'] ?? $displayNameRaw,
+                'username' => $usernameValidation['value'] ?? $usernameRaw,
+                'email' => $emailValidation['value'] ?? $emailRaw,
                 'redirect_to' => $redirect,
             ],
             registerErrors: $errors,
@@ -151,9 +164,18 @@ final class AuthController
     public function sendResetEmail(): array
     {
         $request = $this->request();
-        $email = trim((string)$request->input('email', ''));
+        $emailRaw = (string)$request->input('email', '');
 
-        $result = $this->auth->requestPasswordReset($email);
+        $emailValidation = $this->validator->email($emailRaw);
+
+        if (!$emailValidation['is_valid']) {
+            return [
+                'errors' => ['email' => $emailValidation['errors'][0] ?? 'Invalid email format.'],
+                'input' => ['email' => $emailRaw],
+            ];
+        }
+
+        $result = $this->auth->requestPasswordReset($emailValidation['value']);
 
         if ($result['success']) {
             return [
@@ -163,7 +185,7 @@ final class AuthController
 
         return [
             'errors' => $result['errors'] ?? ['email' => 'An error occurred.'],
-            'input' => ['email' => $email],
+            'input' => ['email' => $emailValidation['value']],
         ];
     }
 
@@ -187,13 +209,15 @@ final class AuthController
     public function processReset(string $token): array
     {
         $request = $this->request();
-        $password = (string)$request->input('password', '');
-        $confirm = (string)$request->input('confirm_password', '');
+        $passwordRaw = (string)$request->input('password', '');
+        $confirmRaw = (string)$request->input('confirm_password', '');
+
+        $passwordValidation = $this->validator->password($passwordRaw);
 
         $errors = [];
-        if ($password === '') {
-            $errors['password'] = 'Password is required.';
-        } elseif ($password !== $confirm) {
+        if (!$passwordValidation['is_valid']) {
+            $errors['password'] = $passwordValidation['errors'][0] ?? 'Password is required.';
+        } elseif ($passwordRaw !== $confirmRaw) {
             $errors['confirm_password'] = 'Passwords do not match.';
         }
 
@@ -204,7 +228,7 @@ final class AuthController
             ];
         }
 
-        $result = $this->auth->resetPasswordWithToken($token, $password);
+        $result = $this->auth->resetPasswordWithToken($token, $passwordRaw);
 
         if ($result['success']) {
             return [
