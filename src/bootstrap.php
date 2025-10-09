@@ -18,6 +18,7 @@ use App\Services\AuthService;
 use App\Services\MailService;
 use App\Services\SanitizerService;
 use App\Services\ValidatorService;
+use App\Services\InvitationService;
 use PHPMailer\PHPMailer\PHPMailer;
 
 
@@ -171,6 +172,13 @@ if (!function_exists('vt_container')) {
                 return new \VT_Invitation_Service();
             });
 
+            $container->register('invitation.manager', static function (VTContainer $c): InvitationService {
+                return new InvitationService(
+                    $c->get('database.connection'),
+                    $c->get('auth.service')
+                );
+            });
+
             $container->register('controller.auth', static function (VTContainer $c): AuthController {
                 return new AuthController($c->get('auth.service'), $c->get('validator.service'));
             }, false);
@@ -211,7 +219,11 @@ if (!function_exists('vt_container')) {
             }, false);
 
             $container->register('controller.invitations', static function (VTContainer $c): InvitationApiController {
-                return new InvitationApiController($c->get('database.connection'), $c->get('auth.service'));
+                return new InvitationApiController(
+                    $c->get('database.connection'),
+                    $c->get('auth.service'),
+                    $c->get('invitation.manager')
+                );
             }, false);
 
             $container->register('http.request', static function (): Request {

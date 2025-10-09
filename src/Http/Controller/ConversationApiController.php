@@ -30,13 +30,13 @@ final class ConversationApiController
         $request = $this->request();
         $nonce = (string)$request->input('nonce', '');
 
-        if (!$this->verifyNonce($nonce, 'vt_nonce')) {
-            return $this->error('Security verification failed', 403);
-        }
-
         $viewerId = $this->auth->currentUserId();
         if ($viewerId === null || $viewerId <= 0) {
             return $this->error('User not authenticated', 401);
+        }
+
+        if (!$this->verifyNonce($nonce, 'vt_nonce', $viewerId)) {
+            return $this->error('Security verification failed', 403);
         }
 
         $circle = $this->normalizeCircle($request->input('circle'));
@@ -83,13 +83,13 @@ final class ConversationApiController
         $request = $this->request();
         $nonce = (string)$request->input('nonce', '');
 
-        if (!$this->verifyNonce($nonce, 'vt_conversation_reply')) {
-            return $this->error('Security verification failed', 403);
-        }
-
         $viewerId = $this->auth->currentUserId();
         if ($viewerId === null || $viewerId <= 0) {
             return $this->error('User not authenticated', 401);
+        }
+
+        if (!$this->verifyNonce($nonce, 'vt_conversation_reply', $viewerId)) {
+            return $this->error('Security verification failed', 403);
         }
 
         $conversation = $this->conversations->getBySlugOrId($slugOrId);
@@ -146,7 +146,7 @@ final class ConversationApiController
         return in_array($filter, self::VALID_FILTERS, true) ? $filter : '';
     }
 
-    private function verifyNonce(string $nonce, string $action): bool
+    private function verifyNonce(string $nonce, string $action, int $userId = 0): bool
     {
         if ($nonce === '') {
             return false;
@@ -156,7 +156,9 @@ final class ConversationApiController
 
         if (class_exists('\VT_Security')) {
             try {
-                return \VT_Security::verifyNonce($nonce, $action);
+                if (\VT_Security::verifyNonce($nonce, $action)) {
+                    return true;
+                }
             } catch (\Throwable $e) {
                 // fall through
             }
@@ -165,14 +167,18 @@ final class ConversationApiController
         try {
             $security = vt_service('security.service');
             if (is_object($security) && method_exists($security, 'verifyNonce')) {
-                return (bool)$security->verifyNonce($nonce, $action);
+                if ($userId > 0 && (bool)$security->verifyNonce($nonce, $action, $userId)) {
+                    return true;
+                }
+                if ((bool)$security->verifyNonce($nonce, $action, 0)) {
+                    return true;
+                }
             }
         } catch (\Throwable $e) {
             // ignore
         }
 
-        // Fallback: accept to avoid blocking users, but this should be replaced with modern security service.
-        return true;
+        return false;
     }
 
     private function ensureLegacySecurityLoaded(): void

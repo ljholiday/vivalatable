@@ -279,7 +279,7 @@ class VT_Security_SecurityService {
     private function getOrGenerateSalts(): array {
         // Use constant salts from config or generate persistent ones
         // In a real app, these should be in config and never change
-        $config_path = dirname(__DIR__, 2) . '/config/security_salts.php';
+        $config_path = dirname(__DIR__, 3) . '/config/security_salts.php';
 
         if (file_exists($config_path)) {
             return require $config_path;
@@ -293,6 +293,10 @@ class VT_Security_SecurityService {
         ];
 
         $content = "<?php\n// Security salts - DO NOT commit to git\nreturn " . var_export($salts, true) . ";\n";
+        $directory = dirname($config_path);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
         file_put_contents($config_path, $content);
 
         return $salts;

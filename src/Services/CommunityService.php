@@ -419,11 +419,14 @@ final class CommunityService
             "UPDATE vt_communities
              SET member_count = (
                  SELECT COUNT(*) FROM vt_community_members
-                 WHERE community_id = :community_id AND status = 'active'
+                 WHERE community_id = :count_community_id AND status = 'active'
              )
-             WHERE id = :community_id"
+             WHERE id = :where_community_id"
         );
-        $updateStmt->execute([':community_id' => $communityId]);
+        $updateStmt->execute([
+            ':count_community_id' => $communityId,
+            ':where_community_id' => $communityId,
+        ]);
 
         return $memberId;
     }

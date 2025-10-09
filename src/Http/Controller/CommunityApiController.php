@@ -23,13 +23,13 @@ final class CommunityApiController
         $request = $this->request();
         $nonce = (string)$request->input('nonce', '');
 
-        if (!$this->verifyNonce($nonce, 'vt_nonce')) {
-            return $this->error('Security verification failed', 403);
-        }
-
         $viewerId = $this->auth->currentUserId();
         if ($viewerId === null || $viewerId <= 0) {
             return $this->error('You must be logged in to join a community', 401);
+        }
+
+        if (!$this->verifyNonce($nonce, 'vt_nonce', $viewerId)) {
+            return $this->error('Security verification failed', 403);
         }
 
         $community = $this->communities->getBySlugOrId((string)$communityId);
@@ -77,7 +77,7 @@ final class CommunityApiController
         return $request;
     }
 
-    private function verifyNonce(string $nonce, string $action): bool
+    private function verifyNonce(string $nonce, string $action, int $userId = 0): bool
     {
         if ($nonce === '') {
             return false;
@@ -87,7 +87,9 @@ final class CommunityApiController
 
         if (class_exists('\VT_Security')) {
             try {
-                return \VT_Security::verifyNonce($nonce, $action);
+                if (\VT_Security::verifyNonce($nonce, $action)) {
+                    return true;
+                }
             } catch (\Throwable $e) {
                 // fall through
             }
@@ -96,13 +98,19 @@ final class CommunityApiController
         try {
             $security = vt_service('security.service');
             if (is_object($security) && method_exists($security, 'verifyNonce')) {
-                return (bool)$security->verifyNonce($nonce, $action);
+                if ($userId > 0 && (bool)$security->verifyNonce($nonce, $action, $userId)) {
+                    return true;
+                }
+
+                if ((bool)$security->verifyNonce($nonce, $action, 0)) {
+                    return true;
+                }
             }
         } catch (\Throwable $e) {
             // ignore
         }
 
-        return true;
+        return false;
     }
 
     private function ensureLegacySecurityLoaded(): void

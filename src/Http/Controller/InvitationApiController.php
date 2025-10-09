@@ -6,6 +6,7 @@ namespace App\Http\Controller;
 use App\Database\Database;
 use App\Http\Request;
 use App\Services\AuthService;
+use App\Services\InvitationService;
 
 require_once dirname(__DIR__, 3) . '/templates/_helpers.php';
 require_once dirname(__DIR__, 3) . '/legacy/includes/includes/class-community-manager.php';
@@ -16,8 +17,11 @@ require_once dirname(__DIR__, 3) . '/legacy/includes/includes/class-guest-manage
 
 final class InvitationApiController
 {
-    public function __construct(private Database $database, private AuthService $auth)
-    {
+    public function __construct(
+        private Database $database,
+        private AuthService $auth,
+        private InvitationService $invitations
+    ) {
     }
 
     /**
@@ -39,36 +43,14 @@ final class InvitationApiController
             return $this->error('You must be logged in.', 401);
         }
 
-        $community = $this->database->pdo()->prepare('SELECT id, name FROM vt_communities WHERE id = :id LIMIT 1');
-        $community->execute([':id' => $communityId]);
-        $communityRow = $community->fetch(\PDO::FETCH_ASSOC);
-        if ($communityRow === false) {
-            return $this->error('Community not found.', 404);
-        }
-
-        if (!$this->canManageCommunity($communityId, $viewerId, ['admin', 'moderator'])) {
-            return $this->error('You do not have permission to send invitations.', 403);
-        }
-
         $email = trim((string)$request->input('email', ''));
         $message = trim((string)$request->input('message', ''));
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->error('Valid email address required.', 422);
+        $result = $this->invitations->sendCommunityInvitation($communityId, $viewerId, $email, $message);
+        if (!$result['success']) {
+            return $this->error($result['message'], $result['status']);
         }
 
-        $manager = new \VT_Community_Manager();
-        $result = $manager->sendInvitation($communityId, [
-            'invited_email' => $email,
-            'personal_message' => $message,
-        ]);
-
-        if (is_vt_error($result)) {
-            return $this->error($result->getErrorMessage(), 400);
-        }
-
-        return $this->success([
-            'message' => 'Invitation sent successfully!',
-        ], 201);
+        return $this->success($result['data'], $result['status']);
     }
 
     /**
@@ -90,22 +72,12 @@ final class InvitationApiController
             return $this->error('You must be logged in.', 401);
         }
 
-        if (!$this->canManageCommunity($communityId, $viewerId, ['admin', 'moderator'])) {
-            return $this->error('You do not have permission to view invitations.', 403);
+        $result = $this->invitations->listCommunityInvitations($communityId, $viewerId);
+        if (!$result['success']) {
+            return $this->error($result['message'], $result['status']);
         }
 
-        $stmt = $this->database->pdo()->prepare(
-            "SELECT id, invited_email, status, created_at
-             FROM vt_community_invitations
-             WHERE community_id = :community_id
-             ORDER BY created_at DESC"
-        );
-        $stmt->execute([':community_id' => $communityId]);
-        $invitations = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        return $this->success([
-            'invitations' => $invitations,
-        ]);
+        return $this->success($result['data'], $result['status']);
     }
 
     public function listCommunityMembers(int $communityId): array
@@ -153,24 +125,12 @@ final class InvitationApiController
             return $this->error('You must be logged in.', 401);
         }
 
-        if (!$this->canManageCommunity($communityId, $viewerId, ['admin', 'moderator'])) {
-            return $this->error('You do not have permission to cancel invitations.', 403);
+        $result = $this->invitations->deleteCommunityInvitation($communityId, $invitationId, $viewerId);
+        if (!$result['success']) {
+            return $this->error($result['message'], $result['status']);
         }
 
-        $stmt = $this->database->pdo()->prepare(
-            "DELETE FROM vt_community_invitations
-             WHERE id = :id AND community_id = :community_id"
-        );
-        $success = $stmt->execute([
-            ':id' => $invitationId,
-            ':community_id' => $communityId,
-        ]);
-
-        if ($success === false || $stmt->rowCount() === 0) {
-            return $this->error('Failed to cancel invitation.', 400);
-        }
-
-        return $this->success(['message' => 'Invitation cancelled successfully.']);
+        return $this->success($result['data'], $result['status']);
     }
 
     /**
@@ -192,77 +152,19 @@ final class InvitationApiController
             return $this->error('You must be logged in.', 401);
         }
 
-        $eventStmt = $this->database->pdo()->prepare(
-            "SELECT id, slug, title, author_id FROM vt_events WHERE id = :id LIMIT 1"
-        );
-        $eventStmt->execute([':id' => $eventId]);
-        $event = $eventStmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($event === false) {
-            return $this->error('Event not found.', 404);
-        }
-
-        if ((int)$event['author_id'] !== $viewerId && !$this->auth->currentUserCan('edit_others_posts')) {
-            return $this->error('Only the event host can send invitations.', 403);
-        }
-
         $email = trim((string)$request->input('email', ''));
         $message = trim((string)$request->input('message', ''));
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->error('Valid email address required.', 422);
+        $result = $this->invitations->sendEventInvitation($eventId, $viewerId, $email, $message);
+        if (!$result['success']) {
+            return $this->error($result['message'], $result['status']);
         }
 
-        $guestManager = new \VT_Guest_Manager();
+        $data = $result['data'];
+        $guestRecords = $data['guest_records'] ?? null;
+        unset($data['guest_records']);
+        $data['html'] = $this->renderEventGuests($eventId, is_array($guestRecords) ? $guestRecords : null);
 
-        $db = $this->database->pdo();
-        $existing = $db->prepare(
-            "SELECT id FROM vt_guests WHERE event_id = :event_id AND email = :email AND status != 'declined'"
-        );
-        $existing->execute([
-            ':event_id' => $eventId,
-            ':email' => $email,
-        ]);
-        if ($existing->fetchColumn()) {
-            return $this->error('This email has already been invited.', 400);
-        }
-
-        $sendResult = $guestManager->sendRsvpInvitation(
-            $eventId,
-            $email,
-            $this->auth->getCurrentUser()->display_name ?? '',
-            $message
-        );
-
-        if (is_vt_error($sendResult)) {
-            return $this->error($sendResult->getErrorMessage(), 400);
-        }
-
-        $emailSent = false;
-        $temporaryId = null;
-        if (is_array($sendResult)) {
-            $emailSent = (bool)($sendResult['email_sent'] ?? false);
-            $temporaryId = $sendResult['temporary_guest_id'] ?? null;
-        }
-
-        $invitationService = new \VT_Invitation_Service();
-        $eventSlug = (string)($event['slug'] ?? '');
-        $token = '';
-        if (is_array($sendResult)) {
-            $token = (string)($sendResult['token'] ?? '');
-        }
-        $invitationUrl = $token !== '' ? $invitationService->buildInvitationUrl('event', $eventSlug, $token) : '';
-
-        $responseMessage = 'RSVP invitation created successfully!';
-        if (!$emailSent) {
-            $responseMessage .= ' Note: Email delivery may have failed.';
-        }
-
-        return $this->success([
-            'message' => $responseMessage,
-            'invitation_url' => $invitationUrl,
-            'temporary_guest_id' => $temporaryId,
-            'html' => $this->renderEventGuests($eventId),
-        ], 201);
+        return $this->success($data, $result['status']);
     }
 
     /**
@@ -284,27 +186,16 @@ final class InvitationApiController
             return $this->error('You must be logged in.', 401);
         }
 
-        $eventStmt = $this->database->pdo()->prepare(
-            "SELECT id, author_id FROM vt_events WHERE id = :id LIMIT 1"
-        );
-        $eventStmt->execute([':id' => $eventId]);
-        $event = $eventStmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($event === false) {
-            return $this->error('Event not found.', 404);
+        $result = $this->invitations->listEventInvitations($eventId, $viewerId);
+        if (!$result['success']) {
+            return $this->error($result['message'], $result['status']);
         }
 
-        if ((int)$event['author_id'] !== $viewerId && !$this->auth->currentUserCan('edit_others_posts')) {
-            return $this->error('Only the event host can view invitations.', 403);
-        }
-
-        $guestManager = new \VT_Guest_Manager();
-        $guestRecords = $guestManager->getEventGuests($eventId);
-        $normalizedGuests = $this->normalizeEventGuests($guestRecords);
+        $guestRecords = $result['data']['guest_records'] ?? [];
 
         return $this->success([
-            'invitations' => $normalizedGuests,
-            'html' => $this->renderEventGuests($eventId, $guestRecords),
+            'invitations' => $result['data']['invitations'],
+            'html' => $this->renderEventGuests($eventId, is_array($guestRecords) ? $guestRecords : null),
         ]);
     }
 
@@ -327,47 +218,17 @@ final class InvitationApiController
             return $this->error('You must be logged in.', 401);
         }
 
-        $eventStmt = $this->database->pdo()->prepare(
-            "SELECT id, author_id FROM vt_events WHERE id = :id LIMIT 1"
-        );
-        $eventStmt->execute([':id' => $eventId]);
-        $event = $eventStmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($event === false) {
-            return $this->error('Event not found.', 404);
+        $result = $this->invitations->deleteEventInvitation($eventId, $invitationId, $viewerId);
+        if (!$result['success']) {
+            return $this->error($result['message'], $result['status']);
         }
 
-        if ((int)$event['author_id'] !== $viewerId && !$this->auth->currentUserCan('edit_others_posts')) {
-            return $this->error('Only the event host can remove guests.', 403);
-        }
+        $data = $result['data'];
+        $guestRecords = $data['guest_records'] ?? null;
+        unset($data['guest_records']);
+        $data['html'] = $this->renderEventGuests($eventId, is_array($guestRecords) ? $guestRecords : null);
 
-        $guestStmt = $this->database->pdo()->prepare(
-            "SELECT id, status FROM vt_guests WHERE id = :id AND event_id = :event_id LIMIT 1"
-        );
-        $guestStmt->execute([
-            ':id' => $invitationId,
-            ':event_id' => $eventId,
-        ]);
-
-        $guest = $guestStmt->fetch(\PDO::FETCH_ASSOC);
-        if ($guest === false) {
-            return $this->error('Invitation not found for this event.', 404);
-        }
-
-        $guestManager = new \VT_Guest_Manager();
-        $deleteResult = $guestManager->deleteGuest($invitationId);
-        if (is_vt_error($deleteResult)) {
-            return $this->error($deleteResult->getErrorMessage(), 400);
-        }
-
-        if ($deleteResult !== true) {
-            return $this->error('Failed to cancel invitation.', 400);
-        }
-
-        return $this->success([
-            'message' => 'Invitation cancelled successfully.',
-            'html' => $this->renderEventGuests($eventId),
-        ]);
+        return $this->success($data, $result['status']);
     }
 
     /**
@@ -390,54 +251,17 @@ final class InvitationApiController
             return $this->error('You must be logged in.', 401);
         }
 
-        $eventStmt = $this->database->pdo()->prepare(
-            "SELECT id, author_id FROM vt_events WHERE id = :id LIMIT 1"
-        );
-        $eventStmt->execute([':id' => $eventId]);
-        $event = $eventStmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($event === false) {
-            return $this->error('Event not found.', 404);
+        $result = $this->invitations->resendEventInvitation($eventId, $invitationId, $viewerId);
+        if (!$result['success']) {
+            return $this->error($result['message'], $result['status']);
         }
 
-        if ((int)$event['author_id'] !== $viewerId && !$this->auth->currentUserCan('edit_others_posts')) {
-            return $this->error('Only the event host can resend invitations.', 403);
-        }
+        $data = $result['data'];
+        $guestRecords = $data['guest_records'] ?? null;
+        unset($data['guest_records']);
+        $data['html'] = $this->renderEventGuests($eventId, is_array($guestRecords) ? $guestRecords : null);
 
-        $guestStmt = $this->database->pdo()->prepare(
-            "SELECT id, status FROM vt_guests WHERE id = :id AND event_id = :event_id LIMIT 1"
-        );
-        $guestStmt->execute([
-            ':id' => $invitationId,
-            ':event_id' => $eventId,
-        ]);
-
-        $guest = $guestStmt->fetch(\PDO::FETCH_ASSOC);
-        if ($guest === false) {
-            return $this->error('Invitation not found for this event.', 404);
-        }
-
-        $status = strtolower((string)($guest['status'] ?? ''));
-        if (!in_array($status, ['pending', 'maybe'], true)) {
-            return $this->error('This guest has already responded. Remove them before sending a new invitation.', 409);
-        }
-
-        $guestManager = new \VT_Guest_Manager();
-        $resendResult = $guestManager->resendInvitation($invitationId);
-        if (is_vt_error($resendResult)) {
-            return $this->error($resendResult->getErrorMessage(), 400);
-        }
-
-        $emailSent = (bool)$resendResult;
-        $message = $emailSent
-            ? 'Invitation email resent successfully.'
-            : 'Invitation resent. Email delivery may have failed.';
-
-        return $this->success([
-            'message' => $message,
-            'email_sent' => $emailSent,
-            'html' => $this->renderEventGuests($eventId),
-        ]);
+        return $this->success($data, $result['status']);
     }
 
     private function request(): Request
@@ -784,37 +608,4 @@ final class InvitationApiController
         return (string)ob_get_clean();
     }
 
-    /**
-     * @param array<int, object|array<string,mixed>> $guestRecords
-     * @return array<int, array<string, mixed>>
-     */
-    private function normalizeEventGuests(array $guestRecords): array
-    {
-        $normalized = [];
-
-        foreach ($guestRecords as $guest) {
-            if ($guest === null) {
-                continue;
-            }
-
-            $guestObject = is_object($guest) ? $guest : (object)$guest;
-
-            $normalized[] = [
-                'id' => (int)($guestObject->id ?? 0),
-                'name' => (string)($guestObject->name ?? ''),
-                'email' => (string)($guestObject->email ?? ''),
-                'status' => (string)($guestObject->status ?? 'pending'),
-                'rsvp_date' => isset($guestObject->rsvp_date) ? (string)$guestObject->rsvp_date : null,
-                'plus_one' => (int)($guestObject->plus_one ?? 0),
-                'plus_one_name' => (string)($guestObject->plus_one_name ?? ''),
-                'notes' => (string)($guestObject->notes ?? ''),
-                'dietary_restrictions' => (string)($guestObject->dietary_restrictions ?? ''),
-                'invitation_source' => (string)($guestObject->invitation_source ?? ''),
-                'temporary_guest_id' => (string)($guestObject->temporary_guest_id ?? ''),
-                'rsvp_token' => (string)($guestObject->rsvp_token ?? ''),
-            ];
-        }
-
-        return $normalized;
-    }
 }
