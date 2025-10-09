@@ -48,7 +48,7 @@
 		}
 
 		// Make AJAX request
-		fetch('/ajax/conversations', {
+		fetch('/api/conversations', {
 			method: 'POST',
 			body: formData
 		})

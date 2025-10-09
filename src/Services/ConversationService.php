@@ -137,11 +137,13 @@ final class ConversationService
      */
     public function listByCircle(int $viewerId, string $circle, ?array $allowedCommunities, array $memberCommunities, array $options = []): array
     {
-        $options = array_merge(['page' => 1, 'per_page' => 20], $options);
+        $options = array_merge(['page' => 1, 'per_page' => 20, 'filter' => '', 'viewer_email' => null], $options);
         $page = max(1, (int)$options['page']);
         $perPage = max(1, (int)$options['per_page']);
         $offset = ($page - 1) * $perPage;
         $fetchLimit = $perPage + 1;
+        $filter = strtolower((string)$options['filter']);
+        $viewerEmail = is_string($options['viewer_email']) ? trim($options['viewer_email']) : null;
 
         $allowedCommunities = $allowedCommunities === null ? null : $this->uniqueInts($allowedCommunities);
         $memberCommunities = $this->uniqueInts($memberCommunities);
@@ -182,6 +184,28 @@ final class ConversationService
 
         $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
+        if ($filter === 'my-events') {
+            $eventIds = $this->lookupViewerEventIds($viewerId, $viewerEmail);
+            if ($eventIds === []) {
+                return [
+                    'conversations' => [],
+                    'pagination' => [
+                        'page' => $page,
+                        'per_page' => $perPage,
+                        'has_more' => false,
+                        'next_page' => null,
+                        'total' => 0,
+                    ],
+                ];
+            }
+            $where .= ($where ? ' AND ' : 'WHERE ') . 'conv.event_id IN (' . $this->placeholderList(count($eventIds)) . ')';
+            $params = array_merge($params, $eventIds);
+        } elseif ($filter === 'all-events') {
+            $where .= ($where ? ' AND ' : 'WHERE ') . 'conv.event_id IS NOT NULL';
+        } elseif ($filter === 'communities') {
+            $where .= ($where ? ' AND ' : 'WHERE ') . 'conv.community_id IS NOT NULL';
+        }
+
         $sql = "SELECT
                 conv.id,
                 conv.title,
@@ -202,6 +226,18 @@ final class ConversationService
             ORDER BY COALESCE(conv.updated_at, conv.created_at) DESC
             LIMIT $fetchLimit OFFSET $offset";
 
+        $countSql = "SELECT COUNT(*)
+            FROM vt_conversations conv
+            LEFT JOIN vt_communities com ON conv.community_id = com.id
+            $where";
+
+        $countStmt = $this->db->pdo()->prepare($countSql);
+        foreach ($params as $index => $value) {
+            $countStmt->bindValue($index + 1, (int)$value, PDO::PARAM_INT);
+        }
+        $countStmt->execute();
+        $total = (int)$countStmt->fetchColumn();
+
         $stmt = $this->db->pdo()->prepare($sql);
         foreach ($params as $index => $value) {
             $stmt->bindValue($index + 1, (int)$value, PDO::PARAM_INT);
@@ -221,6 +257,7 @@ final class ConversationService
                 'per_page' => $perPage,
                 'has_more' => $hasMore,
                 'next_page' => $hasMore ? $page + 1 : null,
+                'total' => $total,
             ],
         ];
     }
@@ -245,6 +282,49 @@ final class ConversationService
     private function placeholderList(int $count): string
     {
         return implode(',', array_fill(0, $count, '?'));
+    }
+
+    /**
+     * @return array<int>
+     */
+    private function lookupViewerEventIds(int $viewerId, ?string $viewerEmail): array
+    {
+        if ($viewerId <= 0) {
+            return [];
+        }
+
+        $email = $viewerEmail !== null && $viewerEmail !== ''
+            ? $viewerEmail
+            : $this->lookupUserEmail($viewerId);
+
+        $stmt = $this->db->pdo()->prepare(
+            "SELECT DISTINCT e.id
+             FROM vt_events e
+             LEFT JOIN vt_guests g ON g.event_id = e.id
+             WHERE e.event_status = 'active'
+               AND e.status = 'active'
+               AND (
+                    e.author_id = :viewer
+                    OR g.converted_user_id = :viewer
+                    OR g.email = :viewer_email
+               )"
+        );
+        $stmt->bindValue(':viewer', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_email', $email ?? '', PDO::PARAM_STR);
+        $stmt->execute();
+
+        $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return $ids !== false ? array_map('intval', $ids) : [];
+    }
+
+    private function lookupUserEmail(int $viewerId): ?string
+    {
+        $stmt = $this->db->pdo()->prepare('SELECT email FROM vt_users WHERE id = :id LIMIT 1');
+        $stmt->bindValue(':id', $viewerId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $email = $stmt->fetchColumn();
+        return is_string($email) ? trim($email) : null;
     }
 
     public function canViewerAccess(array $conversation, int $viewerId, array $memberCommunities): bool

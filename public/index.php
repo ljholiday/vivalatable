@@ -78,6 +78,14 @@ if ($path === '/auth/logout') {
     exit;
 }
 
+if ($path === '/api/conversations' && $request->method() === 'POST') {
+    $response = vt_service('controller.conversations.api')->list();
+    http_response_code($response['status'] ?? 200);
+    header('Content-Type: application/json');
+    echo json_encode($response['body']);
+    return;
+}
+
 if ($path === '/events') {
     $view = vt_service('controller.events')->index();
     $events = $view['events'];

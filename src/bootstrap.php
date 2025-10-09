@@ -6,6 +6,7 @@ use App\Http\Controller\AuthController;
 use App\Http\Controller\EventController;
 use App\Http\Controller\CommunityController;
 use App\Http\Controller\ConversationController;
+use App\Http\Controller\ConversationApiController;
 use App\Http\Request;
 use App\Services\EventService;
 use App\Services\CommunityService;
@@ -145,6 +146,14 @@ if (!function_exists('vt_container')) {
 
             $container->register('controller.conversations', static function (VTContainer $c): ConversationController {
                 return new ConversationController(
+                    $c->get('conversation.service'),
+                    $c->get('circle.service'),
+                    $c->get('auth.service')
+                );
+            }, false);
+
+            $container->register('controller.conversations.api', static function (VTContainer $c): ConversationApiController {
+                return new ConversationApiController(
                     $c->get('conversation.service'),
                     $c->get('circle.service'),
                     $c->get('auth.service')

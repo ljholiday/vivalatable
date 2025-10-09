@@ -30,8 +30,10 @@ final class ConversationController
     {
         $request = $this->request();
         $circle = $this->normalizeCircle($request->query('circle'));
+        $filter = $this->normalizeFilter($request->query('filter'));
 
         $viewerId = $this->auth->currentUserId() ?? 0;
+        $viewerEmail = $this->auth->currentUserEmail();
         $context = $this->circles->buildContext($viewerId);
         $allowedCommunities = $this->circles->resolveCommunitiesForCircle($context, $circle);
         $memberCommunities = $this->circles->memberCommunities($context);
@@ -39,6 +41,8 @@ final class ConversationController
         $options = [
             'page' => max(1, (int)$request->query('page', 1)),
             'per_page' => 20,
+            'filter' => $filter,
+            'viewer_email' => $viewerEmail,
         ];
 
         $feed = $this->conversations->listByCircle(
@@ -53,6 +57,7 @@ final class ConversationController
             'conversations' => $feed['conversations'],
             'circle' => $circle,
             'circle_context' => $context,
+            'filter' => $filter,
             'pagination' => $feed['pagination'],
         ];
     }
@@ -318,5 +323,12 @@ final class ConversationController
     {
         $circle = strtolower((string)$circle);
         return in_array($circle, self::VALID_CIRCLES, true) ? $circle : 'all';
+    }
+
+    private function normalizeFilter($filter): string
+    {
+        $filter = strtolower((string)$filter);
+        $allowed = ['my-events', 'all-events', 'communities', ''];
+        return in_array($filter, $allowed, true) ? $filter : '';
     }
 }
