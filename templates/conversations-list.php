@@ -1,25 +1,13 @@
-<?php require_once __DIR__ . '/_helpers.php'; ?>
-<?php // templates/conversations-list.php ?>
+<?php
+/** @var array<int,array<string,mixed>> $conversations */
+/** @var string $circle */
+/** @var array $pagination */
+
+$circle = $circle ?? 'all';
+$pagination = $pagination ?? ['page' => 1, 'per_page' => 20, 'has_more' => false, 'next_page' => null];
+?>
 <section class="vt-section vt-conversations">
   <h1 class="vt-heading">Conversations</h1>
-
-  <?php
-  $circle = $circle ?? 'all';
-  $pagination = $pagination ?? ['page' => 1, 'per_page' => 20, 'has_more' => false, 'next_page' => null];
-  $circleLinks = [
-      ['key' => 'all', 'label' => 'All'],
-      ['key' => 'inner', 'label' => 'Inner'],
-      ['key' => 'trusted', 'label' => 'Trusted'],
-      ['key' => 'extended', 'label' => 'Extended'],
-  ];
-  ?>
-  <nav class="vt-subnav vt-mb-4">
-    <?php foreach ($circleLinks as $link): ?>
-      <a class="vt-subnav-link<?= $link['key'] === $circle ? ' is-active' : '' ?>" href="/conversations?circle=<?= urlencode($link['key']) ?>">
-        <?= e($link['label']) ?>
-      </a>
-    <?php endforeach; ?>
-  </nav>
 
   <?php if (!empty($conversations)): ?>
     <div class="vt-stack">

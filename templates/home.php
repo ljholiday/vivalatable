@@ -1,6 +1,4 @@
 <?php
-require_once __DIR__ . '/_helpers.php';
-
 /** @var object $viewer */
 /** @var array<int,array<string,mixed>> $upcoming_events */
 /** @var array<int,array<string,mixed>> $my_communities */
@@ -17,7 +15,7 @@ $conversations = $recent_conversations ?? [];
     <header class="vt-card">
       <div class="vt-card-body vt-flex vt-flex-between vt-flex-wrap vt-gap-4">
         <div class="vt-flex vt-flex-column vt-gap-2">
-          <h1 class="vt-heading vt-heading-lg">Welcome back, <?= $viewerName; ?> 👋</h1>
+          <h1 class="vt-heading vt-heading-lg">Welcome back, <?= $viewerName; ?></h1>
           <p class="vt-text-muted vt-text-lg">
             Plan events, keep up with your communities, and jump into the conversations that matter.
           </p>
@@ -118,10 +116,10 @@ $conversations = $recent_conversations ?? [];
                 <?php endif; ?>
                 <div class="vt-flex vt-gap-3 vt-text-muted vt-text-sm">
                   <?php if (isset($community['member_count'])): ?>
-                    <span>👥 <?= e((string)$community['member_count']); ?> members</span>
+                    <span><?= e((string)$community['member_count']); ?> members</span>
                   <?php endif; ?>
                   <?php if (isset($community['event_count'])): ?>
-                    <span>📅 <?= e((string)$community['event_count']); ?> events</span>
+                    <span><?= e((string)$community['event_count']); ?> events</span>
                   <?php endif; ?>
                 </div>
                 <a class="vt-btn vt-btn-outline vt-btn-sm" href="/communities/<?= e($community['slug'] ?? (string)($community['id'] ?? '')); ?>">View community</a>

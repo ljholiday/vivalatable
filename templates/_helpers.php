@@ -72,3 +72,38 @@ function vt_truncate_words(?string $text, int $limit = 25, string $ellipsis = 'â
 
     return implode(' ', array_slice($words, 0, $limit)) . $ellipsis;
 }
+
+/**
+ * Render a template within a layout
+ *
+ * @param string $template_path Path to content template (relative to templates/)
+ * @param array<string,mixed> $data Data to extract for template
+ * @param string $layout Layout to use ('page', 'form', 'two-column', or 'guest')
+ * @return void
+ */
+function vt_render(string $template_path, array $data = [], string $layout = 'page'): void
+{
+    // Extract data for template
+    extract($data, EXTR_SKIP);
+
+    // Capture template output
+    ob_start();
+    require __DIR__ . '/' . $template_path;
+    $content = ob_get_clean();
+
+    // Set layout variables
+    $page_title = $data['page_title'] ?? 'VivalaTable';
+    $page_description = $data['page_description'] ?? '';
+    $current_path = $_SERVER['REQUEST_URI'] ?? '/';
+    $breadcrumbs = $data['breadcrumbs'] ?? [];
+    $nav_items = $data['nav_items'] ?? [];
+
+    // For two-column layout, use content as main_content if not specified
+    if ($layout === 'two-column') {
+        $main_content = $data['main_content'] ?? $content;
+        $sidebar_content = $data['sidebar_content'] ?? '';
+    }
+
+    // Render layout with content
+    require __DIR__ . '/layouts/' . $layout . '.php';
+}

@@ -1,24 +1,11 @@
-<?php require_once __DIR__ . '/_helpers.php'; ?>
-<?php // templates/communities-list.php ?>
+<?php
+/** @var array<int,array<string,mixed>> $communities */
+/** @var string $circle */
+
+$circle = $circle ?? 'all';
+?>
 <section class="vt-section vt-communities">
   <h1 class="vt-heading">Communities</h1>
-
-  <?php
-  $circle = $circle ?? 'all';
-  $circleLinks = [
-      ['key' => 'all', 'label' => 'All'],
-      ['key' => 'inner', 'label' => 'Inner'],
-      ['key' => 'trusted', 'label' => 'Trusted'],
-      ['key' => 'extended', 'label' => 'Extended'],
-  ];
-  ?>
-  <nav class="vt-subnav vt-mb-4">
-    <?php foreach ($circleLinks as $link): ?>
-      <a class="vt-subnav-link<?= $link['key'] === $circle ? ' is-active' : '' ?>" href="/communities?circle=<?= urlencode($link['key']) ?>">
-        <?= e($link['label']) ?>
-      </a>
-    <?php endforeach; ?>
-  </nav>
 
   <?php
   $card_path = __DIR__ . '/partials/card.php';

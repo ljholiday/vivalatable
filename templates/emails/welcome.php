@@ -50,7 +50,7 @@ $styles = array(
 
 			<!-- Get Started Card -->
 			<div style="<?php echo $styles['card']; ?>">
-				<h2 style="margin: 0 0 16px 0; color: #2d3748; font-size: 22px;">🚀 Get Started</h2>
+				<h2 style="margin: 0 0 16px 0; color: #2d3748; font-size: 22px;">Get Started</h2>
 				<p style="margin-bottom: 20px;">Here are some quick steps to make the most of your <?php echo htmlspecialchars($site_name); ?> experience:</p>
 
 				<div style="text-align: center; margin: 24px 0;">
@@ -67,19 +67,16 @@ $styles = array(
 				<!-- Feature Items -->
 				<div style="margin: 24px 0;">
 					<div style="<?php echo $styles['feature_item']; ?> margin-bottom: 16px;">
-						<div style="font-size: 32px; margin-bottom: 8px;">🎪</div>
 						<h3 style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px;">Host Events</h3>
 						<p style="margin: 0; font-size: 14px; color: #718096;">Create and manage amazing parties with our easy-to-use tools</p>
 					</div>
 
 					<div style="<?php echo $styles['feature_item']; ?> margin-bottom: 16px;">
-						<div style="font-size: 32px; margin-bottom: 8px;">👥</div>
 						<h3 style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px;">Join Events</h3>
 						<p style="margin: 0; font-size: 14px; color: #718096;">Discover local events and connect with your community</p>
 					</div>
 
 					<div style="<?php echo $styles['feature_item']; ?> margin-bottom: 16px;">
-						<div style="font-size: 32px; margin-bottom: 8px;">💬</div>
 						<h3 style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px;">Connect</h3>
 						<p style="margin: 0; font-size: 14px; color: #718096;">Share tips, recipes, and stories with fellow party enthusiasts</p>
 					</div>

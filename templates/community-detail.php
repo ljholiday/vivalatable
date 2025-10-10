@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/_helpers.php';
 
 $viewer = $viewer ?? ['id' => 0, 'is_member' => false, 'is_creator' => false];
 $status = $status ?? (empty($community) ? 404 : 200);

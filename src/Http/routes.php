@@ -4,6 +4,9 @@ declare(strict_types=1);
 use App\Http\Router;
 use App\Http\Request;
 
+// Load template helpers
+require_once dirname(__DIR__, 2) . '/templates/_helpers.php';
+
 /**
  * Application routes
  *
@@ -31,19 +34,20 @@ return static function (Router $router): void {
         }
 
         $view = vt_service('controller.home')->dashboard();
-        $viewer = $view['viewer'];
-        $upcoming_events = $view['upcoming_events'];
-        $my_communities = $view['my_communities'];
-        $recent_conversations = $view['recent_conversations'];
-
-        require dirname(__DIR__, 2) . '/templates/home.php';
+        vt_render('home.php', [
+            'page_title' => 'Home',
+            'viewer' => $view['viewer'],
+            'upcoming_events' => $view['upcoming_events'],
+            'my_communities' => $view['my_communities'],
+            'recent_conversations' => $view['recent_conversations'],
+        ], 'two-column');
         return null;
     });
 
     // Auth routes
     $router->get('/auth', static function (Request $request) {
         $view = vt_service('controller.auth')->landing();
-        require dirname(__DIR__, 2) . '/templates/auth-landing.php';
+        vt_render('auth-landing.php', array_merge($view, ['page_title' => 'Sign In or Register']), 'guest');
         return null;
     });
 
@@ -53,7 +57,7 @@ return static function (Router $router): void {
             header('Location: ' . $view['redirect']);
             exit;
         }
-        require dirname(__DIR__, 2) . '/templates/auth-landing.php';
+        vt_render('auth-landing.php', array_merge($view, ['page_title' => 'Sign In']), 'guest');
         return null;
     });
 
@@ -63,7 +67,7 @@ return static function (Router $router): void {
             header('Location: ' . $view['redirect']);
             exit;
         }
-        require dirname(__DIR__, 2) . '/templates/auth-landing.php';
+        vt_render('auth-landing.php', array_merge($view, ['page_title' => 'Register']), 'guest');
         return null;
     });
 
@@ -76,24 +80,28 @@ return static function (Router $router): void {
     // Password Reset
     $router->get('/reset-password', static function (Request $request) {
         $view = vt_service('controller.auth')->requestReset();
-        $errors = $view['errors'];
-        $input = $view['input'];
-        require dirname(__DIR__, 2) . '/templates/password-reset-request.php';
+        vt_render('password-reset-request.php', array_merge($view, ['page_title' => 'Reset Password']), 'guest');
         return null;
     });
 
     $router->post('/reset-password', static function (Request $request) {
         $result = vt_service('controller.auth')->sendResetEmail();
         if (isset($result['message'])) {
-            $message = $result['message'];
-            $errors = [];
-            $input = ['email' => ''];
+            $data = [
+                'page_title' => 'Reset Password',
+                'message' => $result['message'],
+                'errors' => [],
+                'input' => ['email' => '']
+            ];
         } else {
-            $message = null;
-            $errors = $result['errors'] ?? [];
-            $input = $result['input'] ?? ['email' => ''];
+            $data = [
+                'page_title' => 'Reset Password',
+                'message' => null,
+                'errors' => $result['errors'] ?? [],
+                'input' => $result['input'] ?? ['email' => '']
+            ];
         }
-        require dirname(__DIR__, 2) . '/templates/password-reset-request.php';
+        vt_render('password-reset-request.php', $data, 'guest');
         return null;
     });
 
@@ -101,13 +109,17 @@ return static function (Router $router): void {
         $view = vt_service('controller.auth')->showResetForm($token);
         if (!$view['valid']) {
             http_response_code(400);
-            $error = $view['error'] ?? 'Invalid or expired token.';
-            require dirname(__DIR__, 2) . '/templates/password-reset-error.php';
+            vt_render('password-reset-error.php', [
+                'page_title' => 'Reset Password Error',
+                'error' => $view['error'] ?? 'Invalid or expired token.'
+            ], 'guest');
             return null;
         }
-        $token = $view['token'];
-        $errors = [];
-        require dirname(__DIR__, 2) . '/templates/password-reset-form.php';
+        vt_render('password-reset-form.php', [
+            'page_title' => 'Reset Password',
+            'token' => $view['token'],
+            'errors' => []
+        ], 'guest');
         return null;
     });
 
@@ -118,9 +130,11 @@ return static function (Router $router): void {
             header('Location: ' . $result['redirect']);
             exit;
         }
-        $errors = $result['errors'] ?? [];
-        $token = $result['token'] ?? $token;
-        require dirname(__DIR__, 2) . '/templates/password-reset-form.php';
+        vt_render('password-reset-form.php', [
+            'page_title' => 'Reset Password',
+            'errors' => $result['errors'] ?? [],
+            'token' => $result['token'] ?? $token
+        ], 'guest');
         return null;
     });
 
@@ -132,8 +146,10 @@ return static function (Router $router): void {
             header('Location: ' . ($result['redirect'] ?? '/'));
             exit;
         }
-        $errors = $result['errors'] ?? ['token' => 'Verification failed.'];
-        require dirname(__DIR__, 2) . '/templates/email-verification-error.php';
+        vt_render('email-verification-error.php', [
+            'page_title' => 'Email Verification Error',
+            'errors' => $result['errors'] ?? ['token' => 'Verification failed.']
+        ], 'guest');
         return null;
     });
 
@@ -242,17 +258,27 @@ return static function (Router $router): void {
     // Events
     $router->get('/events', static function (Request $request) {
         $view = vt_service('controller.events')->index();
-        $events = $view['events'];
         $filter = $view['filter'] ?? 'all';
-        require dirname(__DIR__, 2) . '/templates/events-list.php';
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('events-list.php', array_merge($view, [
+            'page_title' => 'Events',
+            'nav_items' => [
+                ['title' => 'All', 'url' => '/events?filter=all', 'active' => $filter === 'all'],
+                ['title' => 'My Events', 'url' => '/events?filter=my', 'active' => $filter === 'my'],
+            ],
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
     $router->get('/events/create', static function (Request $request) {
         $view = vt_service('controller.events')->create();
-        $errors = $view['errors'];
-        $input = $view['input'];
-        require dirname(__DIR__, 2) . '/templates/event-create.php';
+        vt_render('event-create.php', array_merge($view, ['page_title' => 'Create Event']), 'form');
         return null;
     });
 
@@ -262,9 +288,7 @@ return static function (Router $router): void {
             header('Location: ' . $result['redirect']);
             exit;
         }
-        $errors = $result['errors'] ?? [];
-        $input = $result['input'] ?? [];
-        require dirname(__DIR__, 2) . '/templates/event-create.php';
+        vt_render('event-create.php', array_merge($result, ['page_title' => 'Create Event']), 'form');
         return null;
     });
 
@@ -275,10 +299,7 @@ return static function (Router $router): void {
             echo 'Not Found';
             return null;
         }
-        $event = $view['event'];
-        $errors = $view['errors'];
-        $input = $view['input'];
-        require dirname(__DIR__, 2) . '/templates/event-edit.php';
+        vt_render('event-edit.php', array_merge($view, ['page_title' => 'Edit Event']), 'form');
         return null;
     });
 
@@ -288,10 +309,8 @@ return static function (Router $router): void {
         if ($status !== 200) {
             http_response_code($status);
         }
-        $event = $view['event'] ?? null;
-        $tab = $view['tab'] ?? 'settings';
-        $guest_summary = $view['guest_summary'] ?? ['total' => 0, 'confirmed' => 0];
-        require dirname(__DIR__, 2) . '/templates/event-manage.php';
+        $eventTitle = $view['event']['title'] ?? 'Event';
+        vt_render('event-manage.php', array_merge($view, ['page_title' => 'Manage ' . $eventTitle]), 'two-column');
         return null;
     });
 
@@ -306,10 +325,7 @@ return static function (Router $router): void {
             echo 'Not Found';
             return null;
         }
-        $event = $result['event'];
-        $errors = $result['errors'] ?? [];
-        $input = $result['input'] ?? [];
-        require dirname(__DIR__, 2) . '/templates/event-edit.php';
+        vt_render('event-edit.php', array_merge($result, ['page_title' => 'Edit Event']), 'form');
         return null;
     });
 
@@ -321,26 +337,37 @@ return static function (Router $router): void {
 
     $router->get('/events/{slug}', static function (Request $request, string $slug) {
         $view = vt_service('controller.events')->show($slug);
-        $event = $view['event'];
-        require dirname(__DIR__, 2) . '/templates/event-detail.php';
+        $eventTitle = $view['event']['title'] ?? 'Event';
+        vt_render('event-detail.php', array_merge($view, ['page_title' => $eventTitle]), 'two-column');
         return null;
     });
 
     // Communities
     $router->get('/communities', static function (Request $request) {
         $view = vt_service('controller.communities')->index();
-        $communities = $view['communities'];
         $circle = $view['circle'] ?? 'all';
-        $circle_context = $view['circle_context'] ?? ['inner' => ['communities' => [], 'creators' => []], 'trusted' => ['communities' => [], 'creators' => []], 'extended' => ['communities' => [], 'creators' => []]];
-        require dirname(__DIR__, 2) . '/templates/communities-list.php';
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('communities-list.php', array_merge($view, [
+            'page_title' => 'Communities',
+            'nav_items' => [
+                ['title' => 'All', 'url' => '/communities?circle=all', 'active' => $circle === 'all'],
+                ['title' => 'Inner', 'url' => '/communities?circle=inner', 'active' => $circle === 'inner'],
+                ['title' => 'Trusted', 'url' => '/communities?circle=trusted', 'active' => $circle === 'trusted'],
+                ['title' => 'Extended', 'url' => '/communities?circle=extended', 'active' => $circle === 'extended'],
+            ],
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
     $router->get('/communities/create', static function (Request $request) {
         $view = vt_service('controller.communities')->create();
-        $errors = $view['errors'];
-        $input = $view['input'];
-        require dirname(__DIR__, 2) . '/templates/community-create.php';
+        vt_render('community-create.php', array_merge($view, ['page_title' => 'Create Community']), 'form');
         return null;
     });
 
@@ -350,9 +377,7 @@ return static function (Router $router): void {
             header('Location: ' . $result['redirect']);
             exit;
         }
-        $errors = $result['errors'] ?? [];
-        $input = $result['input'] ?? [];
-        require dirname(__DIR__, 2) . '/templates/community-create.php';
+        vt_render('community-create.php', array_merge($result, ['page_title' => 'Create Community']), 'form');
         return null;
     });
 
@@ -363,10 +388,7 @@ return static function (Router $router): void {
             echo 'Not Found';
             return null;
         }
-        $community = $view['community'];
-        $errors = $view['errors'];
-        $input = $view['input'];
-        require dirname(__DIR__, 2) . '/templates/community-edit.php';
+        vt_render('community-edit.php', array_merge($view, ['page_title' => 'Edit Community']), 'form');
         return null;
     });
 
@@ -376,13 +398,8 @@ return static function (Router $router): void {
         if ($status !== 200) {
             http_response_code($status);
         }
-        $community = $view['community'] ?? null;
-        $tab = $view['tab'] ?? 'members';
-        $members = $view['members'] ?? [];
-        $viewer_role = $view['viewer_role'] ?? null;
-        $viewer_id = $view['viewer_id'] ?? 0;
-        $can_manage_members = $view['can_manage_members'] ?? false;
-        require dirname(__DIR__, 2) . '/templates/community-manage.php';
+        $communityTitle = $view['community']['title'] ?? $view['community']['name'] ?? 'Community';
+        vt_render('community-manage.php', array_merge($view, ['page_title' => 'Manage ' . $communityTitle]), 'two-column');
         return null;
     });
 
@@ -397,10 +414,7 @@ return static function (Router $router): void {
             echo 'Not Found';
             return null;
         }
-        $community = $result['community'];
-        $errors = $result['errors'] ?? [];
-        $input = $result['input'] ?? [];
-        require dirname(__DIR__, 2) . '/templates/community-edit.php';
+        vt_render('community-edit.php', array_merge($result, ['page_title' => 'Edit Community']), 'form');
         return null;
     });
 
@@ -412,31 +426,41 @@ return static function (Router $router): void {
 
     $router->get('/communities/{slug}', static function (Request $request, string $slug) {
         $view = vt_service('controller.communities')->show($slug);
-        $community = $view['community'];
-        $status = (int)($view['status'] ?? ($community === null ? 404 : 200));
+        $status = (int)($view['status'] ?? ($view['community'] === null ? 404 : 200));
         if ($status !== 200) {
             http_response_code($status);
         }
-        require dirname(__DIR__, 2) . '/templates/community-detail.php';
+        $communityTitle = $view['community']['title'] ?? $view['community']['name'] ?? 'Community';
+        vt_render('community-detail.php', array_merge($view, ['page_title' => $communityTitle]), 'two-column');
         return null;
     });
 
     // Conversations
     $router->get('/conversations', static function (Request $request) {
         $view = vt_service('controller.conversations')->index();
-        $conversations = $view['conversations'];
         $circle = $view['circle'] ?? 'all';
-        $circle_context = $view['circle_context'] ?? ['inner' => ['communities' => [], 'creators' => []], 'trusted' => ['communities' => [], 'creators' => []], 'extended' => ['communities' => [], 'creators' => []]];
-        $pagination = $view['pagination'] ?? ['page' => 1, 'per_page' => 20, 'has_more' => false, 'next_page' => null];
-        require dirname(__DIR__, 2) . '/templates/conversations-list.php';
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('conversations-list.php', array_merge($view, [
+            'page_title' => 'Conversations',
+            'nav_items' => [
+                ['title' => 'All', 'url' => '/conversations?circle=all', 'active' => $circle === 'all'],
+                ['title' => 'Inner', 'url' => '/conversations?circle=inner', 'active' => $circle === 'inner'],
+                ['title' => 'Trusted', 'url' => '/conversations?circle=trusted', 'active' => $circle === 'trusted'],
+                ['title' => 'Extended', 'url' => '/conversations?circle=extended', 'active' => $circle === 'extended'],
+            ],
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
     $router->get('/conversations/create', static function (Request $request) {
         $view = vt_service('controller.conversations')->create();
-        $errors = $view['errors'];
-        $input = $view['input'];
-        require dirname(__DIR__, 2) . '/templates/conversation-create.php';
+        vt_render('conversation-create.php', array_merge($view, ['page_title' => 'New Conversation']), 'form');
         return null;
     });
 
@@ -446,9 +470,7 @@ return static function (Router $router): void {
             header('Location: ' . $result['redirect']);
             exit;
         }
-        $errors = $result['errors'] ?? [];
-        $input = $result['input'] ?? [];
-        require dirname(__DIR__, 2) . '/templates/conversation-create.php';
+        vt_render('conversation-create.php', array_merge($result, ['page_title' => 'New Conversation']), 'form');
         return null;
     });
 
@@ -459,10 +481,7 @@ return static function (Router $router): void {
             echo 'Not Found';
             return null;
         }
-        $conversation = $view['conversation'];
-        $errors = $view['errors'];
-        $input = $view['input'];
-        require dirname(__DIR__, 2) . '/templates/conversation-edit.php';
+        vt_render('conversation-edit.php', array_merge($view, ['page_title' => 'Edit Conversation']), 'form');
         return null;
     });
 
@@ -477,10 +496,7 @@ return static function (Router $router): void {
             echo 'Not Found';
             return null;
         }
-        $conversation = $result['conversation'];
-        $errors = $result['errors'] ?? [];
-        $input = $result['input'] ?? [];
-        require dirname(__DIR__, 2) . '/templates/conversation-edit.php';
+        vt_render('conversation-edit.php', array_merge($result, ['page_title' => 'Edit Conversation']), 'form');
         return null;
     });
 
@@ -496,21 +512,15 @@ return static function (Router $router): void {
             header('Location: ' . $result['redirect']);
             exit;
         }
-        $conversation = $result['conversation'] ?? null;
-        $replies = $result['replies'] ?? [];
-        $reply_errors = $result['reply_errors'] ?? [];
-        $reply_input = $result['reply_input'] ?? ['content' => ''];
-        require dirname(__DIR__, 2) . '/templates/conversation-detail.php';
+        $conversationTitle = $result['conversation']['title'] ?? 'Conversation';
+        vt_render('conversation-detail.php', array_merge($result, ['page_title' => $conversationTitle]), 'two-column');
         return null;
     });
 
     $router->get('/conversations/{slug}', static function (Request $request, string $slug) {
         $view = vt_service('controller.conversations')->show($slug);
-        $conversation = $view['conversation'] ?? null;
-        $replies = $view['replies'] ?? [];
-        $reply_errors = $view['reply_errors'] ?? [];
-        $reply_input = $view['reply_input'] ?? ['content' => ''];
-        require dirname(__DIR__, 2) . '/templates/conversation-detail.php';
+        $conversationTitle = $view['conversation']['title'] ?? 'Conversation';
+        vt_render('conversation-detail.php', array_merge($view, ['page_title' => $conversationTitle]), 'two-column');
         return null;
     });
 };

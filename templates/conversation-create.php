@@ -1,4 +1,3 @@
-<?php require_once __DIR__ . '/_helpers.php'; ?>
 <?php
 $errors = $errors ?? [];
 $input = $input ?? ['title' => '', 'content' => ''];

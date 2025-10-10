@@ -33,7 +33,6 @@ $event_time_formatted = date('g:i A', strtotime($event_date ?? ''));
 
 // Status display logic
 $status_class = 'status_maybe';
-$status_emoji = '🤔';
 $status_text = 'Maybe';
 $status_message = 'Thanks for letting us know you might attend!';
 
@@ -41,14 +40,12 @@ switch (strtolower($status)) {
 	case 'yes':
 	case 'attending':
 		$status_class = 'status_yes';
-		$status_emoji = '✅';
 		$status_text = 'Yes, I\'ll be there!';
 		$status_message = 'Great! We\'re excited to see you at the event.';
 		break;
 	case 'no':
 	case 'not_attending':
 		$status_class = 'status_no';
-		$status_emoji = '❌';
 		$status_text = 'Can\'t make it';
 		$status_message = 'Thanks for letting us know. Maybe next time!';
 		break;
@@ -74,7 +71,6 @@ switch (strtolower($status)) {
 		<div style="<?php echo $styles['body']; ?>">
 			<!-- RSVP Status -->
 			<div style="<?php echo $styles['status_card'] . ' ' . $styles[$status_class]; ?>">
-				<div style="font-size: 48px; margin-bottom: 12px;"><?php echo $status_emoji; ?></div>
 				<h2 style="margin: 0 0 8px 0; font-size: 20px;"><?php echo $status_text; ?></h2>
 				<p style="margin: 0; font-size: 16px;"><?php echo $status_message; ?></p>
 			</div>
@@ -84,12 +80,12 @@ switch (strtolower($status)) {
 				<h2 style="margin: 0 0 15px 0; color: #2d3748; font-size: 20px;"><?php echo htmlspecialchars($event_title); ?></h2>
 
 				<div style="margin-bottom: 12px;">
-					<strong>📅 When:</strong> <?php echo $event_day; ?>, <?php echo $event_date_formatted; ?> at <?php echo $event_time_formatted; ?>
+					<strong>When:</strong> <?php echo $event_day; ?>, <?php echo $event_date_formatted; ?> at <?php echo $event_time_formatted; ?>
 				</div>
 
 				<?php if (!empty($venue_info)) : ?>
 				<div style="margin-bottom: 12px;">
-					<strong>📍 Where:</strong> <?php echo htmlspecialchars($venue_info); ?>
+					<strong>Where:</strong> <?php echo htmlspecialchars($venue_info); ?>
 				</div>
 				<?php endif; ?>
 
@@ -127,7 +123,7 @@ switch (strtolower($status)) {
 			<?php if (strtolower($status) === 'yes') : ?>
 			<!-- Attendee Tips -->
 			<div style="<?php echo $styles['event_card']; ?>">
-				<h3 style="margin: 0 0 16px 0; color: #2d3748; font-size: 18px;">📝 Before the Event</h3>
+				<h3 style="margin: 0 0 16px 0; color: #2d3748; font-size: 18px;">Before the Event</h3>
 				<ul style="margin: 0; padding-left: 20px; color: #4a5568;">
 					<li style="margin-bottom: 8px;">Add this event to your calendar</li>
 					<li style="margin-bottom: 8px;">Check the event page for any updates</li>

@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/_helpers.php';
 
 $community = $community ?? null;
 $tab = $tab ?? 'members';

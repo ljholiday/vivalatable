@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/_helpers.php';
 
 $status = $status ?? (empty($event) ? 404 : 200);
 $event = $event ?? [];

@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/../_helpers.php';
 $entity = (object)($entity ?? []);
 $url = $entity->url ?? '/events/' . e($entity->slug ?? (string)($entity->id ?? ''));
 ?>

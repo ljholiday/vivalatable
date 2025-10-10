@@ -1,22 +1,11 @@
-<?php require_once __DIR__ . '/_helpers.php'; ?>
-<?php // templates/events-list.php ?>
+<?php
+/** @var array<int,array<string,mixed>> $events */
+/** @var string $filter */
+
+$filter = $filter ?? 'all';
+?>
 <section class="vt-section vt-events">
   <h1 class="vt-heading">Upcoming Events</h1>
-
-  <?php
-  $filter = $filter ?? 'all';
-  $filters = [
-      ['key' => 'all', 'label' => 'All'],
-      ['key' => 'my',  'label' => 'My Events'],
-  ];
-  ?>
-  <nav class="vt-subnav vt-mb-4">
-    <?php foreach ($filters as $option): ?>
-      <a class="vt-subnav-link<?= $option['key'] === $filter ? ' is-active' : '' ?>" href="/events?filter=<?= urlencode($option['key']) ?>">
-        <?= e($option['label']) ?>
-      </a>
-    <?php endforeach; ?>
-  </nav>
 
   <?php
   $card_path = __DIR__ . '/partials/card.php';

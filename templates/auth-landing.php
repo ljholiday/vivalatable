@@ -1,6 +1,4 @@
 <?php
-require_once __DIR__ . '/_helpers.php';
-
 $login = $view['login'] ?? ['errors' => [], 'input' => []];
 $register = $view['register'] ?? ['errors' => [], 'input' => []];
 $active = $view['active'] ?? 'login';

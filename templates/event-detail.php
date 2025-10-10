@@ -1,4 +1,3 @@
-<?php require_once __DIR__ . '/_helpers.php'; ?>
 <section class="vt-section vt-event-detail">
   <?php if (empty($event)): ?>
     <h1 class="vt-heading">Event not found</h1>

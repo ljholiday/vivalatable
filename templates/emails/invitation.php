@@ -62,12 +62,12 @@ $rsvp_no_url = $invitation_url . '&rsvp=no';
 				<h2 style="margin: 0 0 15px 0; color: #2d3748; font-size: 20px;"><?php echo htmlspecialchars($event_title); ?></h2>
 
 				<div style="margin-bottom: 10px;">
-					<strong>📅 When:</strong> <?php echo $event_day; ?>, <?php echo $event_date_formatted; ?> at <?php echo $event_time_formatted; ?>
+					<strong>When:</strong> <?php echo $event_day; ?>, <?php echo $event_date_formatted; ?> at <?php echo $event_time_formatted; ?>
 				</div>
 
 				<?php if (!empty($venue_info)) : ?>
 				<div style="margin-bottom: 10px;">
-					<strong>📍 Where:</strong> <?php echo htmlspecialchars($venue_info); ?>
+					<strong>Where:</strong> <?php echo htmlspecialchars($venue_info); ?>
 				</div>
 				<?php endif; ?>
 
@@ -84,13 +84,13 @@ $rsvp_no_url = $invitation_url . '&rsvp=no';
 				<h3 style="color: #2d3748; margin-bottom: 15px;">Quick RSVP:</h3>
 				<div>
 					<a href="<?php echo htmlspecialchars($rsvp_yes_url); ?>" style="<?php echo $styles['btn_primary']; ?>">
-						✅ Yes, I'll be there!
+						Yes, I'll be there!
 					</a>
 					<a href="<?php echo htmlspecialchars($rsvp_maybe_url); ?>" style="<?php echo $styles['btn_secondary']; ?>">
-						🤔 Maybe
+						Maybe
 					</a>
 					<a href="<?php echo htmlspecialchars($rsvp_no_url); ?>" style="<?php echo $styles['btn_danger']; ?>">
-						❌ Can't make it
+						Can't make it
 					</a>
 				</div>
 				<p style="margin-top: 20px; font-size: 14px; color: #718096;">

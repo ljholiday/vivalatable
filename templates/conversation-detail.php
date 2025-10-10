@@ -1,4 +1,3 @@
-<?php require_once __DIR__ . '/_helpers.php'; ?>
 <section class="vt-section vt-conversation-detail">
   <?php if (empty($conversation)): ?>
     <h1 class="vt-heading">Conversation not found</h1>
