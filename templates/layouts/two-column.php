@@ -99,19 +99,19 @@ $csrf_token = $security->createNonce('vt_nonce');
 <script src="/assets/js/communities.js"></script>
 <script src="/assets/js/invitation.js"></script>
 <?php endif; ?>
-<script>
-  fetch('/assets/css/dev.css', { method: 'HEAD' })
-    .then(response => {
-      if (response.ok) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/assets/css/dev.css';
-        document.head.appendChild(link);
-      }
-    })
-    .catch(() => {
-      // dev.css doesn't exist - silently ignore
-    });
-</script>
+//<script>
+//  fetch('/assets/css/dev.css', { method: 'HEAD' })
+//    .then(response => {
+//      if (response.ok) {
+//        const link = document.createElement('link');
+//        link.rel = 'stylesheet';
+//        link.href = '/assets/css/dev.css';
+//        document.head.appendChild(link);
+//      }
+//    })
+//    .catch(() => {
+//      // dev.css doesn't exist - silently ignore
+//    });
+//</script>
 </body>
 </html>
