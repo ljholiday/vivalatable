@@ -34,12 +34,19 @@ return static function (Router $router): void {
         }
 
         $view = vt_service('controller.home')->dashboard();
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
         vt_render('home.php', [
             'page_title' => 'Home',
             'viewer' => $view['viewer'],
             'upcoming_events' => $view['upcoming_events'],
             'my_communities' => $view['my_communities'],
             'recent_conversations' => $view['recent_conversations'],
+            'sidebar_content' => $sidebar,
         ], 'two-column');
         return null;
     });
@@ -310,7 +317,16 @@ return static function (Router $router): void {
             http_response_code($status);
         }
         $eventTitle = $view['event']['title'] ?? 'Event';
-        vt_render('event-manage.php', array_merge($view, ['page_title' => 'Manage ' . $eventTitle]), 'two-column');
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('event-manage.php', array_merge($view, [
+            'page_title' => 'Manage ' . $eventTitle,
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
@@ -338,7 +354,16 @@ return static function (Router $router): void {
     $router->get('/events/{slug}', static function (Request $request, string $slug) {
         $view = vt_service('controller.events')->show($slug);
         $eventTitle = $view['event']['title'] ?? 'Event';
-        vt_render('event-detail.php', array_merge($view, ['page_title' => $eventTitle]), 'two-column');
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('event-detail.php', array_merge($view, [
+            'page_title' => $eventTitle,
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
@@ -399,7 +424,16 @@ return static function (Router $router): void {
             http_response_code($status);
         }
         $communityTitle = $view['community']['title'] ?? $view['community']['name'] ?? 'Community';
-        vt_render('community-manage.php', array_merge($view, ['page_title' => 'Manage ' . $communityTitle]), 'two-column');
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('community-manage.php', array_merge($view, [
+            'page_title' => 'Manage ' . $communityTitle,
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
@@ -431,7 +465,16 @@ return static function (Router $router): void {
             http_response_code($status);
         }
         $communityTitle = $view['community']['title'] ?? $view['community']['name'] ?? 'Community';
-        vt_render('community-detail.php', array_merge($view, ['page_title' => $communityTitle]), 'two-column');
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('community-detail.php', array_merge($view, [
+            'page_title' => $communityTitle,
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
@@ -513,14 +556,32 @@ return static function (Router $router): void {
             exit;
         }
         $conversationTitle = $result['conversation']['title'] ?? 'Conversation';
-        vt_render('conversation-detail.php', array_merge($result, ['page_title' => $conversationTitle]), 'two-column');
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('conversation-detail.php', array_merge($result, [
+            'page_title' => $conversationTitle,
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 
     $router->get('/conversations/{slug}', static function (Request $request, string $slug) {
         $view = vt_service('controller.conversations')->show($slug);
         $conversationTitle = $view['conversation']['title'] ?? 'Conversation';
-        vt_render('conversation-detail.php', array_merge($view, ['page_title' => $conversationTitle]), 'two-column');
+
+        ob_start();
+        $viewer = vt_service('auth.service')->getCurrentUser();
+        include dirname(__DIR__, 2) . '/templates/partials/sidebar-secondary-nav.php';
+        $sidebar = ob_get_clean();
+
+        vt_render('conversation-detail.php', array_merge($view, [
+            'page_title' => $conversationTitle,
+            'sidebar_content' => $sidebar,
+        ]), 'two-column');
         return null;
     });
 };
