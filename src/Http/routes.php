@@ -418,6 +418,14 @@ return static function (Router $router): void {
     });
 
     $router->get('/events/{slug}/manage', static function (Request $request, string $slug) {
+        $tab = $request->query('tab');
+
+        // If no tab specified, redirect to event view page
+        if (!$tab) {
+            header('Location: /events/' . $slug);
+            exit;
+        }
+
         $view = vt_service('controller.events')->manage($slug);
         $status = $view['status'] ?? 200;
         if ($status !== 200) {
@@ -431,7 +439,7 @@ return static function (Router $router): void {
         $sidebar = ob_get_clean();
 
         $navService = vt_service('navigation.service');
-        $currentUri = '/events/' . $slug . '/manage' . ($request->query('tab') ? '?tab=' . $request->query('tab') : '');
+        $currentUri = '/events/' . $slug . '/manage?tab=' . $tab;
         $tabs = $navService->buildEventManageTabs($view['event'], $currentUri);
 
         vt_render('event-manage.php', array_merge($view, [
@@ -554,6 +562,14 @@ return static function (Router $router): void {
     });
 
     $router->get('/communities/{slug}/manage', static function (Request $request, string $slug) {
+        $tab = $request->query('tab');
+
+        // If no tab specified, redirect to community view page
+        if (!$tab) {
+            header('Location: /communities/' . $slug);
+            exit;
+        }
+
         $view = vt_service('controller.communities')->manage($slug);
         $status = $view['status'] ?? 200;
         if ($status !== 200) {
@@ -567,7 +583,7 @@ return static function (Router $router): void {
         $sidebar = ob_get_clean();
 
         $navService = vt_service('navigation.service');
-        $currentUri = '/communities/' . $slug . '/manage' . ($request->query('tab') ? '?tab=' . $request->query('tab') : '');
+        $currentUri = '/communities/' . $slug . '/manage?tab=' . $tab;
         $tabs = $navService->buildCommunityManageTabs($view['community'], $currentUri);
 
         vt_render('community-manage.php', array_merge($view, [
