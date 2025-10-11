@@ -52,7 +52,7 @@ $csrf_token = $security->createNonce('vt_nonce');
 
 <div class="vt-page-two-column">
     <div class="vt-main">
-        <div class="vt-main-nav">
+        <div class="vt-main-nav vt-has-mobile-menu">
             <a href="/events" class="vt-main-nav-item<?= str_contains($current_path, '/events') ? ' active' : ''; ?>">
                 Events
             </a>
@@ -62,6 +62,13 @@ $csrf_token = $security->createNonce('vt_nonce');
             <a href="/communities" class="vt-main-nav-item<?= str_contains($current_path, '/communities') ? ' active' : ''; ?>">
                 Communities
             </a>
+            <button type="button" class="vt-mobile-menu-toggle vt-main-nav-item" id="mobile-menu-toggle" aria-label="Open menu">
+                <span class="vt-hamburger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+            </button>
         </div>
 
         <?php if ($nav_items): ?>
@@ -104,6 +111,8 @@ $csrf_token = $security->createNonce('vt_nonce');
         <?php endif; ?>
     </div>
 </div>
+
+<?php include __DIR__ . '/../partials/mobile-menu-modal.php'; ?>
 
 <script src="/assets/js/modal.js"></script>
 <script src="/assets/js/vivalatable.js"></script>
