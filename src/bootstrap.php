@@ -10,6 +10,7 @@ use App\Http\Controller\CommunityApiController;
 use App\Http\Controller\ConversationController;
 use App\Http\Controller\ConversationApiController;
 use App\Http\Controller\InvitationApiController;
+use App\Http\Controller\ProfileController;
 use App\Http\Request;
 use App\Services\EventService;
 use App\Services\CommunityService;
@@ -24,7 +25,9 @@ use App\Services\InvitationService;
 use App\Services\EventGuestService;
 use App\Services\AuthorizationService;
 use App\Services\ImageService;
+use App\Services\EmbedService;
 use App\Services\SecurityService;
+use App\Services\UserService;
 use PHPMailer\PHPMailer\PHPMailer;
 
 
@@ -134,7 +137,11 @@ if (!function_exists('vt_container')) {
             });
 
             $container->register('conversation.service', static function (VTContainer $c): ConversationService {
-                return new ConversationService($c->get('database.connection'));
+                return new ConversationService(
+                    $c->get('database.connection'),
+                    $c->get('image.service'),
+                    $c->get('embed.service')
+                );
             });
 
             $container->register('circle.service', static function (VTContainer $c): CircleService {
@@ -176,13 +183,24 @@ if (!function_exists('vt_container')) {
             });
 
             $container->register('image.service', static function (): ImageService {
-                $uploadBasePath = dirname(__DIR__) . '/uploads';
+                $uploadBasePath = dirname(__DIR__) . '/public/uploads';
                 $uploadBaseUrl = '/uploads';
                 return new ImageService($uploadBasePath, $uploadBaseUrl);
             });
 
+            $container->register('embed.service', static function (): EmbedService {
+                return new EmbedService();
+            });
+
             $container->register('security.service', static function (): SecurityService {
                 return new SecurityService();
+            });
+
+            $container->register('user.service', static function (VTContainer $c): UserService {
+                return new UserService(
+                    $c->get('database.connection'),
+                    $c->get('image.service')
+                );
             });
 
             $container->register('invitation.manager', static function (VTContainer $c): InvitationService {
@@ -266,6 +284,15 @@ if (!function_exists('vt_container')) {
                     $c->get('invitation.manager'),
                     $c->get('security.service'),
                     $c->get('community.member.service')
+                );
+            }, false);
+
+            $container->register('controller.profile', static function (VTContainer $c): ProfileController {
+                return new ProfileController(
+                    $c->get('auth.service'),
+                    $c->get('user.service'),
+                    $c->get('validator.service'),
+                    $c->get('security.service')
                 );
             }, false);
 

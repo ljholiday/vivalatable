@@ -160,6 +160,80 @@ return static function (Router $router): void {
         return null;
     });
 
+    // Profile Routes
+    $router->get('/profile', static function (Request $request) {
+        $result = vt_service('controller.profile')->showOwn();
+        if (isset($result['redirect'])) {
+            header('Location: ' . $result['redirect']);
+            exit;
+        }
+        if (isset($result['error'])) {
+            header('Location: /auth');
+            exit;
+        }
+        return null;
+    });
+
+    // IMPORTANT: /profile/edit must come BEFORE /profile/{username} to avoid treating "edit" as a username
+    $router->get('/profile/edit', static function (Request $request) {
+        $result = vt_service('controller.profile')->edit();
+        if (isset($result['error'])) {
+            header('Location: /auth');
+            exit;
+        }
+        vt_render('profile-edit.php', [
+            'page_title' => 'Edit Profile',
+            'user' => $result['user'],
+            'errors' => $result['errors'],
+            'input' => $result['input']
+        ], 'form');
+        return null;
+    });
+
+    $router->get('/profile/{username}', static function (Request $request, string $username) {
+        $result = vt_service('controller.profile')->show($username);
+        $logFile = dirname(__DIR__, 2) . '/debug.log';
+        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Profile view - avatar_url: " . ($result['user']['avatar_url'] ?? 'NULL') . "\n", FILE_APPEND);
+        vt_render('profile-view.php', [
+            'page_title' => $result['user'] ? e($result['user']['display_name'] ?? $result['user']['username']) . ' - Profile' : 'User Not Found',
+            'user' => $result['user'],
+            'is_own_profile' => $result['is_own_profile'],
+            'stats' => $result['stats'],
+            'recent_activity' => $result['recent_activity'],
+            'error' => $result['error'] ?? null,
+            'success' => isset($_GET['updated']) ? 'Profile updated successfully!' : null
+        ], 'two-column');
+        return null;
+    });
+
+    $router->post('/profile/update', static function (Request $request) {
+        error_log("Profile update route hit - FILES: " . json_encode($_FILES));
+        try {
+            $result = vt_service('controller.profile')->update($request);
+            if (isset($result['redirect'])) {
+                header('Location: ' . $result['redirect']);
+                exit;
+            }
+            if (isset($result['error'])) {
+                $_SESSION['flash_error'] = $result['error'];
+                header('Location: /auth');
+                exit;
+            }
+            vt_render('profile-edit.php', [
+                'page_title' => 'Edit Profile',
+                'user' => $result['user'],
+                'errors' => $result['errors'] ?? [],
+                'input' => $result['input'] ?? []
+            ], 'form');
+            return null;
+        } catch (\Throwable $e) {
+            file_put_contents(__DIR__ . '/../../debug.log', date('[Y-m-d H:i:s] ') . "Profile update route error: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n", FILE_APPEND);
+            http_response_code(500);
+            echo "Error updating profile. Check debug.log for details.";
+            exit;
+        }
+    });
+
     // API: Conversations
     $router->post('/api/conversations', static function (Request $request) {
         $response = vt_service('controller.conversations.api')->list();

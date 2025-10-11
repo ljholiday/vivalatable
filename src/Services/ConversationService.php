@@ -8,8 +8,11 @@ use PDO;
 
 final class ConversationService
 {
-    public function __construct(private Database $db)
-    {
+    public function __construct(
+        private Database $db,
+        private ?ImageService $imageService = null,
+        private ?EmbedService $embedService = null
+    ) {
     }
 
     /**
@@ -375,7 +378,7 @@ final class ConversationService
     public function listReplies(int $conversationId): array
     {
         $stmt = $this->db->pdo()->prepare(
-            'SELECT id, conversation_id, parent_reply_id, content, author_name, created_at, depth_level
+            'SELECT id, conversation_id, parent_reply_id, content, image_url, image_alt, author_name, created_at, depth_level
              FROM vt_conversation_replies
              WHERE conversation_id = :cid
              ORDER BY created_at ASC'
@@ -390,7 +393,9 @@ final class ConversationService
      *   content:string,
      *   author_id?:int,
      *   author_name?:string,
-     *   author_email?:string
+     *   author_email?:string,
+     *   image?:array,
+     *   image_alt?:string
      * } $data
      */
     public function addReply(int $conversationId, array $data): int
@@ -413,18 +418,44 @@ final class ConversationService
             $authorName = 'Anonymous';
         }
 
+        // Handle image upload
+        $imageUrl = null;
+        $imageAlt = null;
+        if ($this->imageService && !empty($data['image']) && !empty($data['image']['tmp_name'])) {
+            $imageAlt = trim((string)($data['image_alt'] ?? ''));
+            if ($imageAlt === '') {
+                throw new \RuntimeException('Image alt-text is required for accessibility.');
+            }
+
+            $uploadResult = $this->imageService->upload(
+                $data['image'],
+                $imageAlt,
+                'post',
+                'conversation',
+                $conversationId
+            );
+
+            if (!$uploadResult['success']) {
+                throw new \RuntimeException($uploadResult['error'] ?? 'Failed to upload image.');
+            }
+
+            $imageUrl = $uploadResult['url'];
+        }
+
         $pdo = $this->db->pdo();
         $now = date('Y-m-d H:i:s');
 
         $stmt = $pdo->prepare(
-            'INSERT INTO vt_conversation_replies (conversation_id, parent_reply_id, content, author_id, author_name, author_email, depth_level, created_at, updated_at)
-             VALUES (:conversation_id, :parent_reply_id, :content, :author_id, :author_name, :author_email, :depth_level, :created_at, :updated_at)'
+            'INSERT INTO vt_conversation_replies (conversation_id, parent_reply_id, content, image_url, image_alt, author_id, author_name, author_email, depth_level, created_at, updated_at)
+             VALUES (:conversation_id, :parent_reply_id, :content, :image_url, :image_alt, :author_id, :author_name, :author_email, :depth_level, :created_at, :updated_at)'
         );
 
         $stmt->execute([
             ':conversation_id' => (int)$conversation['id'],
             ':parent_reply_id' => null,
             ':content' => $content,
+            ':image_url' => $imageUrl,
+            ':image_alt' => $imageAlt,
             ':author_id' => $authorId,
             ':author_name' => $authorName,
             ':author_email' => $authorEmail,
@@ -434,6 +465,18 @@ final class ConversationService
         ]);
 
         return (int)$pdo->lastInsertId();
+    }
+
+    /**
+     * Process content to add embeds
+     */
+    public function processContentEmbeds(string $content): string
+    {
+        if (!$this->embedService || empty($content)) {
+            return $content;
+        }
+
+        return $this->embedService->processContent($content);
     }
 
     public function update(string $slugOrId, array $data): string

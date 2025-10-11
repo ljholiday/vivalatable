@@ -337,7 +337,7 @@ a:focus {
     padding: 1.25rem;
 }
 
-/* Original form page styling (deprecated) */
+/* Form page wrapper - wide layout */
 .vt-page-form {
     max-width: 90%;
     width: 90%;
@@ -345,7 +345,7 @@ a:focus {
     padding: 1.25rem;
 }
 
-/* New centered form layout - matches main column width */
+/* Form page wrapper - centered layout */
 .vt-page-form-centered {
     max-width: 50rem; /* Match the main column width from two-column layout */
     width: 100%;
@@ -392,8 +392,6 @@ a:focus {
         padding-bottom: 0.75rem;
     }
 }
-
-/* Old grid styles removed - now using flex layout above */
 
 .vt-main {
     min-width: 0;
@@ -454,8 +452,7 @@ a:focus {
     font-weight: 700;
 }
 
-/* New/Unread Item Styling */
-.vt-item-new,
+/* Unread Item Styling */
 .vt-item-unread,
 .vt-card.vt-item-unread {
     font-weight: 700;
@@ -464,12 +461,10 @@ a:focus {
     padding-left: 0.75rem;
 }
 
-.vt-item-new .vt-heading,
 .vt-item-unread .vt-heading {
     font-weight: 700;
 }
 
-.vt-item-new .vt-text-primary,
 .vt-item-unread .vt-text-primary {
     font-weight: 700;
 }
@@ -814,6 +809,21 @@ a:focus {
     width: 3.5rem;
     height: 3.5rem;
     font-size: 1.125rem;
+}
+
+.vt-avatar-xl {
+    width: 6rem;
+    height: 6rem;
+    font-size: 2rem;
+}
+
+.vt-avatar-placeholder {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
 }
 
 .vt-avatar img,
@@ -1464,8 +1474,7 @@ body.vt-modal-open {
 }
 
 
-/* Legacy Conversations Navigation - DEPRECATED, use .vt-tab-nav instead */
-/* Kept for backward compatibility only */
+/* Conversations Navigation */
 .vt-conversations-nav {
     display: flex;
     gap: 0.5rem;
@@ -1763,33 +1772,12 @@ body.vt-modal-open {
   }
 }
 
-/* Modern Profile Header - Competitive Style */
-.vt-profile-header-modern {
-  border-radius: 0.75rem;
-  overflow: hidden;
-  background: var(--vt-surface);
-  border: 0.0625rem solid var(--vt-border);
-}
-
-.vt-profile-header-modern {
-  display: block;
-}
-
-
+/* Profile Header Layout */
 .vt-avatar-row {
   padding: 1rem;
   margin-top: -3rem;
   align-items: flex-end;
   width: 100%;
-}
-
-.vt-avatar-modern {
-  width: 7.5rem;
-  height: 7.5rem;
-  border: 0.25rem solid var(--vt-surface);
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
 }
 
 .vt-profile-identity {
@@ -1803,17 +1791,11 @@ body.vt-modal-open {
 }
 
 @media (max-width: 640px) {
-  
   .vt-avatar-row {
     flex-direction: column;
     align-items: center;
     gap: 1rem;
     margin-top: -2rem;
-  }
-  
-  .vt-avatar-modern {
-    width: 5rem;
-    height: 5rem;
   }
 }
 

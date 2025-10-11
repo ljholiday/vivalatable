@@ -32,12 +32,30 @@
       <h2 class="vt-heading-sm">Replies</h2>
       <?php if (!empty($replies)): ?>
         <div class="vt-stack">
-          <?php foreach ($replies as $reply): $r = (object)$reply; ?>
+          <?php
+          $conversationService = function_exists('vt_service') ? vt_service('conversation.service') : null;
+          foreach ($replies as $reply):
+            $r = (object)$reply;
+            $content = e($r->content ?? '');
+            // Process embeds if service available
+            if ($conversationService && method_exists($conversationService, 'processContentEmbeds')) {
+              $content = $conversationService->processContentEmbeds($content);
+            } else {
+              $content = nl2br($content);
+            }
+          ?>
             <article class="vt-card">
               <div class="vt-card-sub">
                 <?= e($r->author_name ?? 'Unknown') ?><?php if (!empty($r->created_at)): ?> · <?= e(date_fmt($r->created_at)) ?><?php endif; ?>
               </div>
-              <p class="vt-card-desc"><?= nl2br(e($r->content ?? '')) ?></p>
+              <div class="vt-card-body">
+                <?php if (!empty($r->image_url)): ?>
+                  <div class="vt-reply-image vt-mb-3">
+                    <img src="<?= e($r->image_url) ?>" alt="<?= e($r->image_alt ?? '') ?>" class="vt-img" loading="lazy">
+                  </div>
+                <?php endif; ?>
+                <div class="vt-card-desc"><?= $content ?></div>
+              </div>
             </article>
           <?php endforeach; ?>
         </div>
@@ -57,13 +75,26 @@
           </ul>
         </div>
       <?php endif; ?>
-      <form method="post" action="/conversations/<?= e($c->slug ?? '') ?>/reply" class="vt-form vt-stack">
+      <form method="post" action="/conversations/<?= e($c->slug ?? '') ?>/reply" class="vt-form vt-stack" enctype="multipart/form-data">
         <?php if (function_exists('vt_service')): ?>
           <?php echo vt_service('security.service')->nonceField('vt_conversation_reply', 'reply_nonce'); ?>
         <?php endif; ?>
         <div class="vt-field">
           <label class="vt-label" for="reply-content">Reply</label>
           <textarea class="vt-textarea<?= isset($reply_errors['content']) ? ' is-invalid' : '' ?>" id="reply-content" name="content" rows="4" required><?= e($reply_input['content'] ?? '') ?></textarea>
+        </div>
+        <div class="vt-field">
+          <label class="vt-label" for="reply-image">Image (optional)</label>
+          <input type="file" class="vt-input<?= isset($reply_errors['image_alt']) ? ' is-invalid' : '' ?>" id="reply-image" name="reply_image" accept="image/jpeg,image/png,image/gif,image/webp">
+          <small class="vt-help-text">Maximum 10MB. JPEG, PNG, GIF, or WebP format.</small>
+        </div>
+        <div class="vt-field">
+          <label class="vt-label" for="image-alt">Image description</label>
+          <input type="text" class="vt-input<?= isset($reply_errors['image_alt']) ? ' is-invalid' : '' ?>" id="image-alt" name="image_alt" placeholder="Describe the image for accessibility" value="<?= e($reply_input['image_alt'] ?? '') ?>">
+          <small class="vt-help-text">Required if uploading an image. Describe what's in the image for screen reader users.</small>
+          <?php if (isset($reply_errors['image_alt'])): ?>
+            <div class="vt-field-error"><?= e($reply_errors['image_alt']) ?></div>
+          <?php endif; ?>
         </div>
         <div class="vt-actions">
           <button type="submit" class="vt-btn vt-btn-primary">Post Reply</button>

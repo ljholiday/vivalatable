@@ -336,10 +336,20 @@ final class ConversationController
         $errors = [];
         $input = [
             'content' => $contentValidation['value'],
+            'image_alt' => (string)$request->input('image_alt', ''),
         ];
 
         if (!$contentValidation['is_valid']) {
             $errors['content'] = $contentValidation['errors'][0] ?? 'Reply content is required.';
+        }
+
+        // Check for image upload
+        $hasImage = !empty($_FILES['reply_image']) && !empty($_FILES['reply_image']['tmp_name']);
+        if ($hasImage) {
+            $imageAlt = trim($input['image_alt']);
+            if ($imageAlt === '') {
+                $errors['image_alt'] = 'Image alt-text is required for accessibility.';
+            }
         }
 
         if ($errors) {
@@ -352,14 +362,21 @@ final class ConversationController
         }
 
         $viewer = $this->auth->getCurrentUser();
-        $this->conversations->addReply((int)$conversation['id'], [
+        $replyData = [
             'content' => $input['content'],
             'author_id' => isset($viewer->id) ? (int)$viewer->id : 0,
             'author_name' => isset($viewer->display_name) && $viewer->display_name !== ''
                 ? (string)$viewer->display_name
                 : ((isset($viewer->username) && $viewer->username !== '') ? (string)$viewer->username : 'Anonymous'),
             'author_email' => isset($viewer->email) ? (string)$viewer->email : '',
-        ]);
+        ];
+
+        if ($hasImage) {
+            $replyData['image'] = $_FILES['reply_image'];
+            $replyData['image_alt'] = $input['image_alt'];
+        }
+
+        $this->conversations->addReply((int)$conversation['id'], $replyData);
 
         $redirect = '/conversations/' . $conversation['slug'];
         $circleParam = $request->query('circle');

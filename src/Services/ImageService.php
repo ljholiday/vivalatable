@@ -11,7 +11,7 @@ namespace App\Services;
 final class ImageService
 {
     private const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    private const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     private const DIMENSIONS = [
         'profile' => ['width' => 400, 'height' => 400],
@@ -41,40 +41,64 @@ final class ImageService
      */
     public function upload(array $file, string $altText, string $imageType, string $entityType, int $entityId): array
     {
-        // Enforce alt-text requirement
-        if (trim($altText) === '') {
-            return ['success' => false, 'error' => 'Alt-text is required for accessibility.'];
+        $logFile = dirname(__DIR__, 2) . '/debug.log';
+
+        try {
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "ImageService::upload called with imageType={$imageType}, entityType={$entityType}, entityId={$entityId}\n", FILE_APPEND);
+
+            // Enforce alt-text requirement
+            if (trim($altText) === '') {
+                return ['success' => false, 'error' => 'Alt-text is required for accessibility.'];
+            }
+
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Alt-text validated\n", FILE_APPEND);
+
+            // Validate file
+            $validation = $this->validate($file);
+            if (!$validation['is_valid']) {
+                file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Validation failed: " . ($validation['error'] ?? 'unknown') . "\n", FILE_APPEND);
+                return ['success' => false, 'error' => $validation['error']];
+            }
+
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "File validated\n", FILE_APPEND);
+
+            // Set up directory
+            $uploadDir = $this->getUploadDirectory($entityType, $entityId);
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Upload dir: {$uploadDir}\n", FILE_APPEND);
+
+            if (!$this->ensureDirectoryExists($uploadDir)) {
+                file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Failed to create directory\n", FILE_APPEND);
+                return ['success' => false, 'error' => 'Failed to create upload directory.'];
+            }
+
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Directory ensured\n", FILE_APPEND);
+
+            // Generate filename
+            $filename = $this->generateFilename($file, $imageType, $entityId, $entityType);
+            $filePath = $uploadDir . '/' . $filename;
+            $fileUrl = $this->uploadBaseUrl . '/' . $this->getRelativePath($entityType, $entityId) . '/' . $filename;
+
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Filename: {$filename}, Path: {$filePath}\n", FILE_APPEND);
+
+            // Process and save
+            $result = $this->processAndSave($file, $filePath, $imageType);
+            if (!$result['success']) {
+                file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "processAndSave failed\n", FILE_APPEND);
+                return $result;
+            }
+
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Upload successful: {$fileUrl}\n", FILE_APPEND);
+
+            return [
+                'success' => true,
+                'url' => $fileUrl,
+                'path' => $filePath,
+                'filename' => $filename,
+            ];
+        } catch (\Throwable $e) {
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "ImageService::upload exception: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n", FILE_APPEND);
+            return ['success' => false, 'error' => 'Upload failed: ' . $e->getMessage()];
         }
-
-        // Validate file
-        $validation = $this->validate($file);
-        if (!$validation['is_valid']) {
-            return ['success' => false, 'error' => $validation['error']];
-        }
-
-        // Set up directory
-        $uploadDir = $this->getUploadDirectory($entityType, $entityId);
-        if (!$this->ensureDirectoryExists($uploadDir)) {
-            return ['success' => false, 'error' => 'Failed to create upload directory.'];
-        }
-
-        // Generate filename
-        $filename = $this->generateFilename($file, $imageType, $entityId, $entityType);
-        $filePath = $uploadDir . '/' . $filename;
-        $fileUrl = $this->uploadBaseUrl . '/' . $this->getRelativePath($entityType, $entityId) . '/' . $filename;
-
-        // Process and save
-        $result = $this->processAndSave($file, $filePath, $imageType);
-        if (!$result['success']) {
-            return $result;
-        }
-
-        return [
-            'success' => true,
-            'url' => $fileUrl,
-            'path' => $filePath,
-            'filename' => $filename,
-        ];
     }
 
     /**
@@ -90,7 +114,7 @@ final class ImageService
         }
 
         if ($file['size'] > self::MAX_FILE_SIZE) {
-            return ['is_valid' => false, 'error' => 'File must be less than 5MB.'];
+            return ['is_valid' => false, 'error' => 'File must be less than 10MB.'];
         }
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
