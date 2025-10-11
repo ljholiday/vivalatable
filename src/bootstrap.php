@@ -29,6 +29,7 @@ use App\Services\ImageService;
 use App\Services\EmbedService;
 use App\Services\SecurityService;
 use App\Services\UserService;
+use App\Services\BlueskyService;
 use PHPMailer\PHPMailer\PHPMailer;
 
 
@@ -206,6 +207,10 @@ if (!function_exists('vt_container')) {
                     $c->get('database.connection'),
                     $c->get('image.service')
                 );
+            });
+
+            $container->register('bluesky.service', static function (VTContainer $c): BlueskyService {
+                return new BlueskyService($c->get('database.connection'));
             });
 
             $container->register('invitation.manager', static function (VTContainer $c): InvitationService {

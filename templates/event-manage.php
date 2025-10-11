@@ -129,6 +129,38 @@ $tab = in_array($tab, ['settings', 'guests', 'invites'], true) ? $tab : 'setting
       $show_pending = true;
       include __DIR__ . '/partials/invitation-section.php';
       ?>
+
+      <hr class="vt-divider vt-my-6">
+
+      <div class="vt-section">
+        <div class="vt-section-header">
+          <h2 class="vt-heading vt-heading-md vt-text-primary">Bluesky Followers</h2>
+        </div>
+        <p class="vt-text-muted vt-mb-4">
+          Invite your Bluesky followers to this event.
+          <?php
+          $blueskyService = function_exists('vt_service') ? vt_service('bluesky.service') : null;
+          $authService = function_exists('vt_service') ? vt_service('auth.service') : null;
+          $currentUser = $authService ? $authService->getCurrentUser() : null;
+          $isConnected = $blueskyService && $currentUser && $blueskyService->isConnected($currentUser->id);
+          ?>
+          <?php if (!$isConnected): ?>
+            <a href="/profile/edit" class="vt-text-primary">Connect your Bluesky account</a> to get started.
+          <?php endif; ?>
+        </p>
+        <?php if ($isConnected): ?>
+          <button type="button" class="vt-btn vt-btn-primary" data-open-bluesky-modal>
+            Select Followers to Invite
+          </button>
+        <?php endif; ?>
+      </div>
+
+      <?php
+      // Include Bluesky follower selector modal
+      $entity_type = 'event';
+      $entity_id = $eventId;
+      include __DIR__ . '/partials/bluesky-follower-selector.php';
+      ?>
     <?php endif; ?>
   <?php endif; ?>
 </section>

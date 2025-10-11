@@ -145,6 +145,79 @@ $input = $input ?? [];
       </div>
     </form>
 
+    <hr class="vt-divider vt-my-6">
+
+    <?php
+    // Check if Bluesky is connected
+    $blueskyService = function_exists('vt_service') ? vt_service('bluesky.service') : null;
+    $isConnected = $blueskyService && $blueskyService->isConnected((int)($u->id ?? 0));
+    $credentials = $isConnected ? $blueskyService->getCredentials((int)($u->id ?? 0)) : null;
+    ?>
+
+    <section class="vt-section">
+      <h2 class="vt-heading vt-heading-md vt-mb-4">Bluesky Connection</h2>
+      <p class="vt-text-muted vt-mb-4">
+        Connect your Bluesky account to invite your followers to events and communities.
+      </p>
+
+      <?php if ($isConnected && $credentials): ?>
+        <div class="vt-card vt-mb-4">
+          <div class="vt-card-body">
+            <div class="vt-flex vt-items-center vt-gap-4">
+              <div class="vt-flex-1">
+                <div class="vt-text-success vt-mb-2">Connected</div>
+                <div class="vt-text-lg">@<?= e($credentials['handle']) ?></div>
+                <div class="vt-text-muted vt-text-sm">DID: <?= e(substr($credentials['did'], 0, 20)) ?>...</div>
+              </div>
+              <form method="post" action="/disconnect/bluesky" style="display: inline;">
+                <?php if (function_exists('vt_service')): ?>
+                  <?php echo vt_service('security.service')->nonceField('vt_nonce', 'nonce'); ?>
+                <?php endif; ?>
+                <button type="submit" class="vt-btn vt-btn-sm vt-btn-danger">Disconnect</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <?php else: ?>
+        <form method="post" action="/connect/bluesky" class="vt-form vt-stack vt-card vt-card-body">
+          <?php if (function_exists('vt_service')): ?>
+            <?php echo vt_service('security.service')->nonceField('vt_nonce', 'nonce'); ?>
+          <?php endif; ?>
+
+          <div class="vt-field">
+            <label class="vt-label" for="bluesky-identifier">Bluesky Handle or Email</label>
+            <input
+              type="text"
+              class="vt-input"
+              id="bluesky-identifier"
+              name="identifier"
+              placeholder="user.bsky.social or email@example.com"
+              required
+            >
+            <small class="vt-help-text">Your Bluesky handle (e.g., user.bsky.social) or the email you use to log in.</small>
+          </div>
+
+          <div class="vt-field">
+            <label class="vt-label" for="bluesky-password">App Password</label>
+            <input
+              type="password"
+              class="vt-input"
+              id="bluesky-password"
+              name="password"
+              required
+            >
+            <small class="vt-help-text">
+              Create an app password at <a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noopener">bsky.app/settings/app-passwords</a>. Do not use your main account password.
+            </small>
+          </div>
+
+          <div class="vt-actions">
+            <button type="submit" class="vt-btn vt-btn-primary">Connect Bluesky</button>
+          </div>
+        </form>
+      <?php endif; ?>
+    </section>
+
   <?php else: ?>
     <div class="vt-alert vt-alert-error">
       Please log in to edit your profile.

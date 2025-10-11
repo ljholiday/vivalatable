@@ -569,6 +569,142 @@ final class InvitationService
     }
 
     /**
+     * Invite Bluesky followers to an event
+     *
+     * @param int $eventId
+     * @param int $viewerId
+     * @param array<string> $followerDids Array of Bluesky DIDs
+     * @return array{success:bool,status:int,message:string,data:array<string,mixed>}
+     */
+    public function inviteBlueskyFollowersToEvent(int $eventId, int $viewerId, array $followerDids): array
+    {
+        $event = $this->fetchEvent($eventId, includeSlug: true, includeTitle: true);
+        if ($event === null) {
+            return $this->failure('Event not found.', 404);
+        }
+
+        if (!$this->canManageEvent($event, $viewerId)) {
+            return $this->failure('Only the event host can send invitations.', 403);
+        }
+
+        if (empty($followerDids)) {
+            return $this->failure('No followers selected.', 422);
+        }
+
+        $invited = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($followerDids as $did) {
+            $did = trim($did);
+            if ($did === '') {
+                continue;
+            }
+
+            // Use bsky: prefix to indicate DID-based invitation
+            $email = 'bsky:' . $did;
+
+            // Check if already invited
+            if ($this->eventGuests->guestExists($eventId, $email)) {
+                $skipped++;
+                continue;
+            }
+
+            try {
+                $token = $this->generateToken();
+                $this->eventGuests->createGuest($eventId, $email, $token, '', 'bluesky');
+                $invited++;
+            } catch (\Exception $e) {
+                $errors[] = 'Failed to invite ' . substr($did, 0, 20) . '...';
+            }
+        }
+
+        return $this->success([
+            'message' => "Invited {$invited} followers" . ($skipped > 0 ? ", skipped {$skipped} already invited" : ''),
+            'invited' => $invited,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ]);
+    }
+
+    /**
+     * Invite Bluesky followers to a community
+     *
+     * @param int $communityId
+     * @param int $viewerId
+     * @param array<string> $followerDids Array of Bluesky DIDs
+     * @return array{success:bool,status:int,message:string,data:array<string,mixed>}
+     */
+    public function inviteBlueskyFollowersToCommunity(int $communityId, int $viewerId, array $followerDids): array
+    {
+        $community = $this->fetchCommunity($communityId);
+        if ($community === null) {
+            return $this->failure('Community not found.', 404);
+        }
+
+        if (!$this->canManageCommunity($communityId, $viewerId, ['admin', 'moderator'])) {
+            return $this->failure('You do not have permission to send invitations.', 403);
+        }
+
+        if (empty($followerDids)) {
+            return $this->failure('No followers selected.', 422);
+        }
+
+        $invited = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($followerDids as $did) {
+            $did = trim($did);
+            if ($did === '') {
+                continue;
+            }
+
+            // Use bsky: prefix to indicate DID-based invitation
+            $email = 'bsky:' . $did;
+
+            // Check if already invited
+            if ($this->isAlreadyInvited('community', $communityId, $email)) {
+                $skipped++;
+                continue;
+            }
+
+            try {
+                $token = $this->generateToken();
+                $expiresAt = date('Y-m-d H:i:s', strtotime('+' . self::EXPIRY_DAYS . ' days'));
+
+                $pdo = $this->database->pdo();
+                $stmt = $pdo->prepare('
+                    INSERT INTO vt_community_invitations
+                    (community_id, invited_by_member_id, invited_email, invitation_token, message, status, expires_at, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                ');
+
+                $stmt->execute([
+                    $communityId,
+                    $viewerId,
+                    $email,
+                    $token,
+                    '',
+                    'pending',
+                    $expiresAt
+                ]);
+
+                $invited++;
+            } catch (\Exception $e) {
+                $errors[] = 'Failed to invite ' . substr($did, 0, 20) . '...';
+            }
+        }
+
+        return $this->success([
+            'message' => "Invited {$invited} followers" . ($skipped > 0 ? ", skipped {$skipped} already invited" : ''),
+            'invited' => $invited,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ]);
+    }
+
+    /**
      * @param array<string,mixed> $data
      * @return array{success:bool,status:int,message:string,data:array<string,mixed>}
      */
