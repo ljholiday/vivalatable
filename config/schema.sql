@@ -596,6 +596,8 @@ CREATE TABLE `vt_users` (
   `display_name` varchar(250) COLLATE utf8mb4_unicode_ci NOT NULL,
   `bio` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `avatar_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cover_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cover_alt` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `role` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'member',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
