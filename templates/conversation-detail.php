@@ -4,16 +4,23 @@
     <p class="vt-text-muted">We couldn’t find that conversation.</p>
   <?php else: $c = (object)$conversation; ?>
     <h1 class="vt-heading"><?= e($c->title ?? '') ?></h1>
-    <div class="vt-sub">
+    <div class="vt-sub vt-flex vt-gap">
       <?php
-      $bits = [];
-      if (!empty($c->author_name)) {
-          $bits[] = 'Started by ' . $c->author_name;
+      if (!empty($c->author_username) || !empty($c->author_display_name)) {
+          echo '<span>Started by</span>';
+          $user = (object)[
+              'id' => $c->author_id ?? null,
+              'username' => $c->author_username ?? null,
+              'display_name' => $c->author_display_name ?? $c->author_name ?? 'Unknown',
+              'email' => $c->author_email ?? null,
+              'avatar_url' => $c->author_avatar_url ?? null
+          ];
+          $args = ['avatar_size' => 24, 'class' => 'vt-member-display-inline'];
+          include __DIR__ . '/partials/member-display.php';
       }
       if (!empty($c->created_at)) {
-          $bits[] = date_fmt($c->created_at);
+          echo '<span> · ' . e(date_fmt($c->created_at)) . '</span>';
       }
-      echo e(implode(' · ', $bits));
       ?>
     </div>
     <?php if (!empty($c->content)): ?>
@@ -45,8 +52,21 @@
             }
           ?>
             <article class="vt-card">
-              <div class="vt-card-sub">
-                <?= e($r->author_name ?? 'Unknown') ?><?php if (!empty($r->created_at)): ?> · <?= e(date_fmt($r->created_at)) ?><?php endif; ?>
+              <div class="vt-card-sub vt-flex vt-gap">
+                <?php
+                $user = (object)[
+                    'id' => $r->author_id ?? null,
+                    'username' => $r->author_username ?? null,
+                    'display_name' => $r->author_display_name ?? $r->author_name ?? 'Unknown',
+                    'email' => $r->author_email ?? null,
+                    'avatar_url' => $r->author_avatar_url ?? null
+                ];
+                $args = ['avatar_size' => 32, 'class' => 'vt-member-display-inline'];
+                include __DIR__ . '/partials/member-display.php';
+                ?>
+                <?php if (!empty($r->created_at)): ?>
+                  <span class="vt-text-muted"> · <?= e(date_fmt($r->created_at)) ?></span>
+                <?php endif; ?>
               </div>
               <div class="vt-card-body">
                 <?php if (!empty($r->image_url)): ?>

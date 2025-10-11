@@ -264,6 +264,33 @@ final class AuthorizationService
     }
 
     /**
+     * Check if user can edit an event
+     *
+     * Rules:
+     * - Author can edit
+     * - Site admin can edit
+     */
+    public function canEditEvent(array $event, int $viewerId): bool
+    {
+        if ($viewerId <= 0) {
+            return false;
+        }
+
+        // Author can edit
+        $authorId = (int)($event['author_id'] ?? 0);
+        if ($authorId === $viewerId) {
+            return true;
+        }
+
+        // Site admin can edit
+        if ($this->isSiteAdmin($viewerId)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Check if user can create events in a community
      *
      * Rules:

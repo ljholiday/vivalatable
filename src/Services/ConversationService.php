@@ -49,18 +49,22 @@ final class ConversationService
 
         if (ctype_digit($slugOrId)) {
             $stmt = $pdo->prepare(
-                "SELECT conv.id, conv.title, conv.slug, conv.content, conv.author_id, conv.author_name, conv.created_at, conv.reply_count, conv.last_reply_date, conv.community_id, conv.privacy, com.privacy AS community_privacy
+                "SELECT conv.id, conv.title, conv.slug, conv.content, conv.author_id, conv.author_name, conv.created_at, conv.reply_count, conv.last_reply_date, conv.community_id, conv.privacy, com.privacy AS community_privacy,
+                        u.username AS author_username, u.display_name AS author_display_name, u.email AS author_email, u.avatar_url AS author_avatar_url
                  FROM vt_conversations conv
                  LEFT JOIN vt_communities com ON conv.community_id = com.id
+                 LEFT JOIN vt_users u ON conv.author_id = u.id
                  WHERE conv.id = :id
                  LIMIT 1"
             );
             $stmt->execute([':id' => (int)$slugOrId]);
         } else {
             $stmt = $pdo->prepare(
-                "SELECT conv.id, conv.title, conv.slug, conv.content, conv.author_id, conv.author_name, conv.created_at, conv.reply_count, conv.last_reply_date, conv.community_id, conv.privacy, com.privacy AS community_privacy
+                "SELECT conv.id, conv.title, conv.slug, conv.content, conv.author_id, conv.author_name, conv.created_at, conv.reply_count, conv.last_reply_date, conv.community_id, conv.privacy, com.privacy AS community_privacy,
+                        u.username AS author_username, u.display_name AS author_display_name, u.email AS author_email, u.avatar_url AS author_avatar_url
                  FROM vt_conversations conv
                  LEFT JOIN vt_communities com ON conv.community_id = com.id
+                 LEFT JOIN vt_users u ON conv.author_id = u.id
                  WHERE conv.slug = :slug
                  LIMIT 1"
             );
@@ -378,10 +382,12 @@ final class ConversationService
     public function listReplies(int $conversationId): array
     {
         $stmt = $this->db->pdo()->prepare(
-            'SELECT id, conversation_id, parent_reply_id, content, image_url, image_alt, author_name, created_at, depth_level
-             FROM vt_conversation_replies
-             WHERE conversation_id = :cid
-             ORDER BY created_at ASC'
+            'SELECT r.id, r.conversation_id, r.parent_reply_id, r.content, r.image_url, r.image_alt, r.author_name, r.created_at, r.depth_level,
+                    u.id AS author_id, u.username AS author_username, u.display_name AS author_display_name, u.email AS author_email, u.avatar_url AS author_avatar_url
+             FROM vt_conversation_replies r
+             LEFT JOIN vt_users u ON r.author_id = u.id
+             WHERE r.conversation_id = :cid
+             ORDER BY r.created_at ASC'
         );
         $stmt->execute([':cid' => $conversationId]);
 
@@ -533,6 +539,60 @@ final class ConversationService
         $stmt->execute([':slug' => $slug]);
 
         return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * @return array<int, array<string,mixed>>
+     */
+    public function listByEvent(int $eventId, int $limit = 50): array
+    {
+        if ($eventId <= 0) {
+            return [];
+        }
+
+        $pdo = $this->db->pdo();
+        $stmt = $pdo->prepare('
+            SELECT c.id, c.title, c.slug, c.content, c.author_id, c.event_id, c.community_id,
+                   c.created_at, c.reply_count, c.last_reply_date,
+                   u.username AS author_name
+            FROM vt_conversations c
+            LEFT JOIN vt_users u ON c.author_id = u.id
+            WHERE c.event_id = :event_id
+            ORDER BY c.created_at DESC
+            LIMIT :limit
+        ');
+        $stmt->bindValue(':event_id', $eventId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @return array<int, array<string,mixed>>
+     */
+    public function listByCommunity(int $communityId, int $limit = 50): array
+    {
+        if ($communityId <= 0) {
+            return [];
+        }
+
+        $pdo = $this->db->pdo();
+        $stmt = $pdo->prepare('
+            SELECT c.id, c.title, c.slug, c.content, c.author_id, c.event_id, c.community_id,
+                   c.created_at, c.reply_count, c.last_reply_date,
+                   u.username AS author_name
+            FROM vt_conversations c
+            LEFT JOIN vt_users u ON c.author_id = u.id
+            WHERE c.community_id = :community_id
+            ORDER BY c.created_at DESC
+            LIMIT :limit
+        ');
+        $stmt->bindValue(':community_id', $communityId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     private function slugify(string $title): string

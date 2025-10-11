@@ -10,6 +10,8 @@ use App\Services\AuthService;
 use App\Services\AuthorizationService;
 use App\Services\ValidatorService;
 use App\Services\CommunityMemberService;
+use App\Services\EventService;
+use App\Services\ConversationService;
 
 final class CommunityController
 {
@@ -21,7 +23,9 @@ final class CommunityController
         private AuthService $auth,
         private AuthorizationService $authz,
         private ValidatorService $validator,
-        private CommunityMemberService $members
+        private CommunityMemberService $members,
+        private EventService $events,
+        private ConversationService $conversations
     ) {
     }
 
@@ -317,6 +321,81 @@ final class CommunityController
         $this->communities->delete($slugOrId);
         return [
             'redirect' => '/communities',
+        ];
+    }
+
+    /**
+     * @return array{
+     *   community: array<string,mixed>|null,
+     *   events: array<int,array<string,mixed>>
+     * }
+     */
+    public function events(string $slugOrId): array
+    {
+        $community = $this->communities->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return [
+                'community' => null,
+                'events' => [],
+            ];
+        }
+
+        $communityId = (int)($community['id'] ?? 0);
+        $events = $communityId > 0 ? $this->events->listByCommunity($communityId) : [];
+
+        return [
+            'community' => $community,
+            'events' => $events,
+        ];
+    }
+
+    /**
+     * @return array{
+     *   community: array<string,mixed>|null,
+     *   conversations: array<int,array<string,mixed>>
+     * }
+     */
+    public function conversations(string $slugOrId): array
+    {
+        $community = $this->communities->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return [
+                'community' => null,
+                'conversations' => [],
+            ];
+        }
+
+        $communityId = (int)($community['id'] ?? 0);
+        $conversations = $communityId > 0 ? $this->conversations->listByCommunity($communityId) : [];
+
+        return [
+            'community' => $community,
+            'conversations' => $conversations,
+        ];
+    }
+
+    /**
+     * @return array{
+     *   community: array<string,mixed>|null,
+     *   members: array<int,array<string,mixed>>
+     * }
+     */
+    public function members(string $slugOrId): array
+    {
+        $community = $this->communities->getBySlugOrId($slugOrId);
+        if ($community === null) {
+            return [
+                'community' => null,
+                'members' => [],
+            ];
+        }
+
+        $communityId = (int)($community['id'] ?? 0);
+        $members = $communityId > 0 ? $this->members->listMembers($communityId) : [];
+
+        return [
+            'community' => $community,
+            'members' => $members,
         ];
     }
 

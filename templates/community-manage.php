@@ -42,17 +42,6 @@ $statusCode = $status ?? 200;
       <?php endif; ?>
     </header>
 
-    <nav class="vt-tab-nav vt-flex vt-gap-3 vt-flex-wrap vt-mb-5" aria-label="Community manage navigation">
-      <a class="vt-btn<?= $tab === 'members' ? ' is-active' : '' ?>" href="/communities/<?= e($slug) ?>/manage?tab=members">
-        Members (<?= e((string)$memberCount) ?>)
-      </a>
-      <a class="vt-btn<?= $tab === 'invites' ? ' is-active' : '' ?>" href="/communities/<?= e($slug) ?>/manage?tab=invites">
-        Invitations
-      </a>
-      <a class="vt-btn" href="/communities/<?= e($slug) ?>/edit">Edit</a>
-      <a class="vt-btn" href="/communities/<?= e($slug) ?>">View community</a>
-    </nav>
-
     <?php if ($tab === 'members'): ?>
       <section class="vt-section">
         <div class="vt-flex vt-flex-between vt-align-center vt-flex-wrap vt-gap-3 vt-mb-4">

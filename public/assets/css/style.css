@@ -62,7 +62,7 @@ html, body {
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 16px;
+    font-size: 20px;
     line-height: 1.5;
     color: var(--vt-text);
     background-color: var(--vt-background);
@@ -1362,6 +1362,28 @@ body.vt-modal-open {
 .vt-member-actions {
     display: flex;
     gap: 0.5rem;
+}
+
+/* Member Display Component */
+.vt-member-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.vt-member-display-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.vt-member-name {
+    font-weight: 500;
+    color: var(--vt-text);
+}
+
+.vt-member-display-inline .vt-member-name {
+    font-weight: 600;
 }
 
 /* Standardized Invitation Components */

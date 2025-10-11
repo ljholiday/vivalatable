@@ -24,6 +24,7 @@ use App\Services\ValidatorService;
 use App\Services\InvitationService;
 use App\Services\EventGuestService;
 use App\Services\AuthorizationService;
+use App\Services\NavigationService;
 use App\Services\ImageService;
 use App\Services\EmbedService;
 use App\Services\SecurityService;
@@ -160,6 +161,10 @@ if (!function_exists('vt_container')) {
                 return new AuthorizationService($c->get('database.connection'));
             });
 
+            $container->register('navigation.service', static function (VTContainer $c): NavigationService {
+                return new NavigationService($c->get('authorization.service'));
+            });
+
             $container->register('auth.service', static function (VTContainer $c): AuthService {
                 return new AuthService($c->get('database.connection'), $c->get('mail.service'));
             });
@@ -223,7 +228,8 @@ if (!function_exists('vt_container')) {
                     $c->get('event.service'),
                     $c->get('auth.service'),
                     $c->get('validator.service'),
-                    $c->get('invitation.manager')
+                    $c->get('invitation.manager'),
+                    $c->get('conversation.service')
                 );
             }, false);
 
@@ -244,7 +250,9 @@ if (!function_exists('vt_container')) {
                     $c->get('auth.service'),
                     $c->get('authorization.service'),
                     $c->get('validator.service'),
-                    $c->get('community.member.service')
+                    $c->get('community.member.service'),
+                    $c->get('event.service'),
+                    $c->get('conversation.service')
                 );
             }, false);
 

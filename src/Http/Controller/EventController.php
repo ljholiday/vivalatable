@@ -8,6 +8,7 @@ use App\Services\EventService;
 use App\Services\AuthService;
 use App\Services\ValidatorService;
 use App\Services\InvitationService;
+use App\Services\ConversationService;
 
 /**
  * Thin HTTP controller for event listings and detail views.
@@ -21,7 +22,8 @@ final class EventController
         private EventService $events,
         private AuthService $auth,
         private ValidatorService $validator,
-        private InvitationService $invitations
+        private InvitationService $invitations,
+        private ConversationService $conversations
     ) {
     }
 
@@ -201,6 +203,31 @@ final class EventController
         $this->events->delete($slugOrId);
         return [
             'redirect' => '/events',
+        ];
+    }
+
+    /**
+     * @return array{
+     *   event: array<string,mixed>|null,
+     *   conversations: array<int,array<string,mixed>>
+     * }
+     */
+    public function conversations(string $slugOrId): array
+    {
+        $event = $this->events->getBySlugOrId($slugOrId);
+        if ($event === null) {
+            return [
+                'event' => null,
+                'conversations' => [],
+            ];
+        }
+
+        $eventId = (int)($event['id'] ?? 0);
+        $conversations = $eventId > 0 ? $this->conversations->listByEvent($eventId) : [];
+
+        return [
+            'event' => $event,
+            'conversations' => $conversations,
         ];
     }
 

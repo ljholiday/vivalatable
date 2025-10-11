@@ -237,6 +237,30 @@ final class EventService
         return $stmt->rowCount() === 1;
     }
 
+    /**
+     * @return array<int, array<string,mixed>>
+     */
+    public function listByCommunity(int $communityId, int $limit = 50): array
+    {
+        if ($communityId <= 0) {
+            return [];
+        }
+
+        $pdo = $this->db->pdo();
+        $stmt = $pdo->prepare('
+            SELECT id, title, slug, description, event_date, location, author_id, community_id, created_at
+            FROM vt_events
+            WHERE community_id = :community_id
+            ORDER BY event_date DESC, created_at DESC
+            LIMIT :limit
+        ');
+        $stmt->bindValue(':community_id', $communityId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     private function slugify(string $title): string
     {
         $slug = strtolower($title);

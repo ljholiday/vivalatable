@@ -46,22 +46,6 @@ $tab = in_array($tab, ['settings', 'guests', 'invites'], true) ? $tab : 'setting
       <?php endif; ?>
     </header>
 
-    <nav class="vt-tab-nav vt-flex vt-gap-3 vt-flex-wrap vt-mb-5" aria-label="Event manage navigation">
-      <?php foreach ($tabs as $key => $label): ?>
-        <a
-          class="vt-btn<?= $tab === $key ? ' is-active' : '' ?>"
-          href="/events/<?= e($slug !== '' ? $slug : (string)$eventId) ?>/manage?tab=<?= urlencode($key) ?>"
-        >
-          <?= e($label) ?>
-          <?php if ($key === 'guests'): ?>
-            (<span id="confirmed-guest-count"><?= e((string)($guest_summary['confirmed'] ?? 0)) ?></span>)
-          <?php endif; ?>
-        </a>
-      <?php endforeach; ?>
-      <a class="vt-btn" href="/events/<?= e($slug !== '' ? $slug : (string)$eventId) ?>/edit">Edit</a>
-      <a class="vt-btn" href="/events/<?= e($slug !== '' ? $slug : (string)$eventId) ?>">View event</a>
-    </nav>
-
     <?php if ($tab === 'settings'): ?>
       <section class="vt-grid vt-gap-4">
         <article class="vt-card">
