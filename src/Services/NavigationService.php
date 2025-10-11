@@ -240,6 +240,16 @@ class NavigationService
             'active' => $currentRoute === '/conversations/' . $slug || str_ends_with($currentRoute, '/conversations/' . $slug)
         ];
 
+        // Reply button (always visible on conversation detail page)
+        if ($currentRoute === '/conversations/' . $slug || str_ends_with($currentRoute, '/conversations/' . $slug)) {
+            $tabs[] = [
+                'title' => 'Reply',
+                'type' => 'button',
+                'data' => ['open-reply-modal' => ''],
+                'active' => false
+            ];
+        }
+
         // Edit tab (only if user can edit)
         $userId = $this->getUserId($currentUser);
         if ($userId > 0 && $this->authorization->canEditConversation($conversation, $userId)) {

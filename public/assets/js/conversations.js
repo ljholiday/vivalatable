@@ -150,3 +150,129 @@
 	// Don't reload on page load - use server-rendered content
 	// Only reload when user clicks buttons
 })();
+
+/**
+ * Edit reply
+ */
+window.editReply = function(replyId) {
+	const replyCard = document.querySelector(`article:has(button[onclick*="editReply(${replyId})"])`);
+	if (!replyCard) return;
+
+	const contentDiv = replyCard.querySelector('.vt-card-desc');
+	if (!contentDiv) return;
+
+	// Get current content (strip HTML breaks)
+	const currentContent = contentDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n').trim();
+	const plainText = contentDiv.textContent.trim();
+
+	// Replace content with textarea
+	contentDiv.innerHTML = `
+		<textarea class="vt-form-textarea" id="edit-reply-${replyId}" rows="4" style="width: 100%; margin-bottom: 0.5rem;">${plainText}</textarea>
+		<div style="display: flex; gap: 0.5rem;">
+			<button class="vt-btn vt-btn-sm vt-btn-primary" onclick="saveReply(${replyId})">Save</button>
+			<button class="vt-btn vt-btn-sm" onclick="cancelEditReply(${replyId}, ${JSON.stringify(currentContent).replace(/"/g, '&quot;')})">Cancel</button>
+		</div>
+	`;
+
+	// Focus textarea
+	document.getElementById(`edit-reply-${replyId}`).focus();
+};
+
+/**
+ * Cancel edit reply
+ */
+window.cancelEditReply = function(replyId, originalContent) {
+	const replyCard = document.querySelector(`article:has(button[onclick*="editReply(${replyId})"])`);
+	if (!replyCard) return;
+
+	const contentDiv = replyCard.querySelector('.vt-card-desc');
+	if (!contentDiv) return;
+
+	contentDiv.innerHTML = originalContent;
+};
+
+/**
+ * Save reply
+ */
+window.saveReply = function(replyId) {
+	const textarea = document.getElementById(`edit-reply-${replyId}`);
+	if (!textarea) return;
+
+	const content = textarea.value.trim();
+	if (!content) {
+		alert('Reply content cannot be empty');
+		return;
+	}
+
+	// Get CSRF token
+	const nonce = document.querySelector('meta[name="csrf-token"]')?.content;
+
+	// Prepare form data
+	const formData = new FormData();
+	formData.append('nonce', nonce);
+	formData.append('content', content);
+
+	// Disable textarea during save
+	textarea.disabled = true;
+
+	fetch(`/api/replies/${replyId}/edit`, {
+		method: 'POST',
+		body: formData
+	})
+	.then(response => response.json())
+	.then(data => {
+		if (data.success) {
+			// Update content in DOM
+			const replyCard = document.querySelector(`article:has(button[onclick*="editReply(${replyId})"])`);
+			const contentDiv = replyCard?.querySelector('.vt-card-desc');
+			if (contentDiv) {
+				contentDiv.textContent = content;
+			}
+		} else {
+			alert(data.message || 'Failed to update reply');
+			textarea.disabled = false;
+		}
+	})
+	.catch(error => {
+		console.error('Error updating reply:', error);
+		alert('Network error. Please try again.');
+		textarea.disabled = false;
+	});
+};
+
+/**
+ * Delete reply
+ */
+window.deleteReply = function(replyId) {
+	if (!confirm('Are you sure you want to delete this reply?')) {
+		return;
+	}
+
+	// Get CSRF token
+	const nonce = document.querySelector('meta[name="csrf-token"]')?.content;
+
+	// Prepare form data
+	const formData = new FormData();
+	formData.append('nonce', nonce);
+
+	fetch(`/api/replies/${replyId}/delete`, {
+		method: 'POST',
+		body: formData
+	})
+	.then(response => response.json())
+	.then(data => {
+		if (data.success) {
+			// Remove reply from DOM
+			const replyCard = document.querySelector(`article:has(button[onclick*="deleteReply(${replyId})"])`);
+			if (replyCard) {
+				replyCard.remove();
+			}
+		} else {
+			alert(data.message || 'Failed to delete reply');
+		}
+	})
+	.catch(error => {
+		console.error('Error deleting reply:', error);
+		alert('Network error. Please try again.');
+	});
+};

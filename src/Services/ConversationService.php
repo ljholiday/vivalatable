@@ -618,4 +618,62 @@ final class ConversationService
             $slug = $base . '-' . ++$i;
         }
     }
+
+    /**
+     * Get a single reply by ID
+     */
+    public function getReply(int $replyId): ?array
+    {
+        $pdo = $this->db->pdo();
+        $stmt = $pdo->prepare('SELECT * FROM vt_conversation_replies WHERE id = :id');
+        $stmt->execute([':id' => $replyId]);
+        $reply = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $reply !== false ? $reply : null;
+    }
+
+    /**
+     * Update a reply
+     */
+    public function updateReply(int $replyId, array $data): bool
+    {
+        $reply = $this->getReply($replyId);
+        if ($reply === null) {
+            throw new \RuntimeException('Reply not found.');
+        }
+
+        $content = trim((string)($data['content'] ?? ''));
+        if ($content === '') {
+            throw new \RuntimeException('Reply content is required.');
+        }
+
+        $pdo = $this->db->pdo();
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $pdo->prepare(
+            'UPDATE vt_conversation_replies
+             SET content = :content, updated_at = :updated_at
+             WHERE id = :id'
+        );
+
+        return $stmt->execute([
+            ':content' => $content,
+            ':updated_at' => $now,
+            ':id' => $replyId
+        ]);
+    }
+
+    /**
+     * Delete a reply
+     */
+    public function deleteReply(int $replyId): bool
+    {
+        $reply = $this->getReply($replyId);
+        if ($reply === null) {
+            throw new \RuntimeException('Reply not found.');
+        }
+
+        $pdo = $this->db->pdo();
+        $stmt = $pdo->prepare('DELETE FROM vt_conversation_replies WHERE id = :id');
+        return $stmt->execute([':id' => $replyId]);
+    }
 }

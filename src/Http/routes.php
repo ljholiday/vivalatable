@@ -284,6 +284,96 @@ return static function (Router $router): void {
         return null;
     });
 
+    $router->post('/api/replies/{id}/edit', static function (Request $request, string $id) {
+        header('Content-Type: application/json');
+        $replyId = (int)$id;
+        $conversationService = vt_service('conversation.service');
+        $authService = vt_service('auth.service');
+        $securityService = vt_service('security.service');
+
+        try {
+            // Verify nonce
+            $nonce = $request->input('nonce');
+            if (!$securityService->verifyNonce($nonce, 'vt_nonce')) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Invalid security token']);
+                return true;
+            }
+
+            // Get reply and check ownership
+            $reply = $conversationService->getReply($replyId);
+            if (!$reply) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Reply not found']);
+                return true;
+            }
+
+            $currentUser = $authService->getCurrentUser();
+            $currentUserId = $currentUser->id ?? 0;
+            if ($currentUserId !== (int)($reply['author_id'] ?? 0)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Permission denied']);
+                return true;
+            }
+
+            // Update reply
+            $content = $request->input('content');
+            $conversationService->updateReply($replyId, ['content' => $content]);
+
+            http_response_code(200);
+            echo json_encode(['success' => true, 'message' => 'Reply updated']);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        return true;
+    });
+
+    $router->post('/api/replies/{id}/delete', static function (Request $request, string $id) {
+        try {
+            header('Content-Type: application/json');
+            $replyId = (int)$id;
+
+            $conversationService = vt_service('conversation.service');
+            $authService = vt_service('auth.service');
+            $securityService = vt_service('security.service');
+
+            // Verify nonce
+            $nonce = $request->input('nonce');
+            if (!$securityService->verifyNonce($nonce, 'vt_nonce')) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Invalid security token']);
+                return true;
+            }
+
+            // Get reply and check ownership
+            $reply = $conversationService->getReply($replyId);
+            if (!$reply) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Reply not found']);
+                return true;
+            }
+
+            $currentUser = $authService->getCurrentUser();
+            $currentUserId = $currentUser->id ?? 0;
+            if ($currentUserId !== (int)($reply['author_id'] ?? 0)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Permission denied']);
+                return true;
+            }
+
+            // Delete reply
+            $conversationService->deleteReply($replyId);
+
+            http_response_code(200);
+            echo json_encode(['success' => true, 'message' => 'Reply deleted']);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        return true;
+    });
+
     // API: Communities
     $router->post('/api/communities/{id}/join', static function (Request $request, string $id) {
         $response = vt_service('controller.communities.api')->join((int)$id);

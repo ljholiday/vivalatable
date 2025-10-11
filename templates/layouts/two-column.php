@@ -67,13 +67,28 @@ $csrf_token = $security->createNonce('vt_nonce');
         <?php if ($nav_items): ?>
         <div class="vt-nav">
             <?php foreach ($nav_items as $nav_item): ?>
-                <a href="<?= htmlspecialchars($nav_item['url']); ?>"
-                    class="vt-nav-item<?= !empty($nav_item['active']) ? ' active' : ''; ?>">
-                    <?php if (!empty($nav_item['icon'])): ?>
-                        <span><?= $nav_item['icon']; ?></span>
-                    <?php endif; ?>
-                    <?= htmlspecialchars($nav_item['title']); ?>
-                </a>
+                <?php if (!empty($nav_item['type']) && $nav_item['type'] === 'button'): ?>
+                    <button type="button"
+                        class="vt-nav-item vt-nav-item-button<?= !empty($nav_item['active']) ? ' active' : ''; ?>"
+                        <?php if (!empty($nav_item['data'])): ?>
+                            <?php foreach ($nav_item['data'] as $key => $value): ?>
+                                data-<?= htmlspecialchars($key); ?>="<?= htmlspecialchars($value); ?>"
+                            <?php endforeach; ?>
+                        <?php endif; ?>>
+                        <?php if (!empty($nav_item['icon'])): ?>
+                            <span><?= $nav_item['icon']; ?></span>
+                        <?php endif; ?>
+                        <?= htmlspecialchars($nav_item['title']); ?>
+                    </button>
+                <?php else: ?>
+                    <a href="<?= htmlspecialchars($nav_item['url']); ?>"
+                        class="vt-nav-item<?= !empty($nav_item['active']) ? ' active' : ''; ?>">
+                        <?php if (!empty($nav_item['icon'])): ?>
+                            <span><?= $nav_item['icon']; ?></span>
+                        <?php endif; ?>
+                        <?= htmlspecialchars($nav_item['title']); ?>
+                    </a>
+                <?php endif; ?>
             <?php endforeach; ?>
         </div>
         <?php endif; ?>

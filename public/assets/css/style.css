@@ -489,7 +489,7 @@ a:focus {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-/*    padding: 0.75rem 1.25rem; */ 
+/*    padding: 0.75rem 1.25rem; */
     padding: 0.25rem 1.25rem;
     border: 0.125rem solid var(--vt-primary);
     border-radius: 0.5rem;
@@ -534,6 +534,30 @@ a:focus {
 
 .vt-btn-danger:hover {
     opacity: 0.9;
+}
+
+.vt-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border: none;
+    background: none;
+    color: var(--vt-text-muted);
+    cursor: pointer;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.vt-btn-icon:hover {
+    background: var(--vt-background);
+    color: var(--vt-text);
+}
+
+.vt-reply-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
 }
 
 /* Alerts */
@@ -1057,6 +1081,7 @@ a:focus {
 .vt-reply-modal .vt-modal-header {
     background: var(--vt-background);
     border-bottom: 0.0625rem solid var(--vt-border);
+    border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .vt-reply-modal .vt-modal-body {

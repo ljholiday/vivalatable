@@ -52,20 +52,45 @@
             }
           ?>
             <article class="vt-card">
-              <div class="vt-card-sub vt-flex vt-gap">
+              <div class="vt-card-sub vt-flex vt-gap vt-flex-between">
+                <div class="vt-flex vt-gap">
+                  <?php
+                  $user = (object)[
+                      'id' => $r->author_id ?? null,
+                      'username' => $r->author_username ?? null,
+                      'display_name' => $r->author_display_name ?? $r->author_name ?? 'Unknown',
+                      'email' => $r->author_email ?? null,
+                      'avatar_url' => $r->author_avatar_url ?? null
+                  ];
+                  $args = ['avatar_size' => 32, 'class' => 'vt-member-display-inline'];
+                  include __DIR__ . '/partials/member-display.php';
+                  ?>
+                  <?php if (!empty($r->created_at)): ?>
+                    <span class="vt-text-muted"> · <?= e(date_fmt($r->created_at)) ?></span>
+                  <?php endif; ?>
+                </div>
                 <?php
-                $user = (object)[
-                    'id' => $r->author_id ?? null,
-                    'username' => $r->author_username ?? null,
-                    'display_name' => $r->author_display_name ?? $r->author_name ?? 'Unknown',
-                    'email' => $r->author_email ?? null,
-                    'avatar_url' => $r->author_avatar_url ?? null
-                ];
-                $args = ['avatar_size' => 32, 'class' => 'vt-member-display-inline'];
-                include __DIR__ . '/partials/member-display.php';
+                // Check if current user can edit/delete this reply
+                $currentUser = function_exists('vt_service') ? vt_service('auth.service')->getCurrentUser() : null;
+                $currentUserId = $currentUser->id ?? 0;
+                $replyAuthorId = (int)($r->author_id ?? 0);
+                $canEdit = $currentUserId > 0 && $currentUserId === $replyAuthorId;
                 ?>
-                <?php if (!empty($r->created_at)): ?>
-                  <span class="vt-text-muted"> · <?= e(date_fmt($r->created_at)) ?></span>
+                <?php if ($canEdit): ?>
+                  <div class="vt-reply-actions">
+                    <button type="button" class="vt-btn-icon" title="Edit reply" onclick="editReply(<?= e((string)($r->id ?? 0)) ?>)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                    <button type="button" class="vt-btn-icon" title="Delete reply" onclick="deleteReply(<?= e((string)($r->id ?? 0)) ?>)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  </div>
                 <?php endif; ?>
               </div>
               <div class="vt-card-body">
@@ -83,43 +108,7 @@
         <p class="vt-text-muted">No replies yet.</p>
       <?php endif; ?>
     </section>
-
-    <section class="vt-section vt-mt-6">
-      <h2 class="vt-heading-sm">Add Reply</h2>
-      <?php if (!empty($reply_errors)): ?>
-        <div class="vt-alert vt-alert-error vt-mb-4">
-          <ul>
-            <?php foreach ($reply_errors as $message): ?>
-              <li><?= e($message) ?></li>
-            <?php endforeach; ?>
-          </ul>
-        </div>
-      <?php endif; ?>
-      <form method="post" action="/conversations/<?= e($c->slug ?? '') ?>/reply" class="vt-form vt-stack" enctype="multipart/form-data">
-        <?php if (function_exists('vt_service')): ?>
-          <?php echo vt_service('security.service')->nonceField('vt_conversation_reply', 'reply_nonce'); ?>
-        <?php endif; ?>
-        <div class="vt-field">
-          <label class="vt-label" for="reply-content">Reply</label>
-          <textarea class="vt-textarea<?= isset($reply_errors['content']) ? ' is-invalid' : '' ?>" id="reply-content" name="content" rows="4" required><?= e($reply_input['content'] ?? '') ?></textarea>
-        </div>
-        <div class="vt-field">
-          <label class="vt-label" for="reply-image">Image (optional)</label>
-          <input type="file" class="vt-input<?= isset($reply_errors['image_alt']) ? ' is-invalid' : '' ?>" id="reply-image" name="reply_image" accept="image/jpeg,image/png,image/gif,image/webp">
-          <small class="vt-help-text">Maximum 10MB. JPEG, PNG, GIF, or WebP format.</small>
-        </div>
-        <div class="vt-field">
-          <label class="vt-label" for="image-alt">Image description</label>
-          <input type="text" class="vt-input<?= isset($reply_errors['image_alt']) ? ' is-invalid' : '' ?>" id="image-alt" name="image_alt" placeholder="Describe the image for accessibility" value="<?= e($reply_input['image_alt'] ?? '') ?>">
-          <small class="vt-help-text">Required if uploading an image. Describe what's in the image for screen reader users.</small>
-          <?php if (isset($reply_errors['image_alt'])): ?>
-            <div class="vt-field-error"><?= e($reply_errors['image_alt']) ?></div>
-          <?php endif; ?>
-        </div>
-        <div class="vt-actions">
-          <button type="submit" class="vt-btn vt-btn-primary">Post Reply</button>
-        </div>
-      </form>
-    </section>
   <?php endif; ?>
 </section>
+
+<?php include __DIR__ . '/partials/reply-modal.php'; ?>
