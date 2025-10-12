@@ -85,6 +85,13 @@ return static function (Router $router): void {
         exit;
     });
 
+    $router->get('/logout', function () {
+        vt_service('controller.auth')->logout();
+        header('Location: /auth');
+        exit;
+    });
+
+
     // Password Reset
     $router->get('/reset-password', static function (Request $request) {
         $view = vt_service('controller.auth')->requestReset();
