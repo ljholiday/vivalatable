@@ -312,7 +312,7 @@ return static function (Router $router): void {
         }
 
         $stored = $blueskyService->storeCredentials(
-            (int)$currentUser->id,
+            (int)(int)$currentUser->id,
             $sessionResult['did'],
             $sessionResult['handle'],
             $sessionResult['accessJwt'],
@@ -326,7 +326,7 @@ return static function (Router $router): void {
         }
 
         // Sync followers in background
-        $blueskyService->syncFollowers($currentUser->id);
+        $blueskyService->syncFollowers((int)$currentUser->id);
 
         $_SESSION['flash_success'] = 'Bluesky account connected successfully!';
         $logFile = dirname(__DIR__, 2) . '/debug.log';
@@ -348,13 +348,13 @@ return static function (Router $router): void {
         }
 
         $nonce = (string)$request->input('nonce', '');
-        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
+        if (!$securityService->verifyNonce($nonce, 'vt_nonce', (int)$currentUser->id)) {
             $_SESSION['flash_error'] = 'Security verification failed';
             header('Location: /profile/edit');
             exit;
         }
 
-        $blueskyService->disconnectAccount($currentUser->id);
+        $blueskyService->disconnectAccount((int)$currentUser->id);
 
         $_SESSION['flash_success'] = 'Bluesky account disconnected';
         header('Location: /profile/edit');
@@ -377,13 +377,13 @@ return static function (Router $router): void {
         }
 
         $nonce = (string)$request->input('nonce', '');
-        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
+        if (!$securityService->verifyNonce($nonce, 'vt_nonce', (int)$currentUser->id)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Security verification failed']);
             return null;
         }
 
-        $result = $blueskyService->syncFollowers($currentUser->id);
+        $result = $blueskyService->syncFollowers((int)$currentUser->id);
         http_response_code($result['success'] ? 200 : 400);
         echo json_encode($result);
         return null;
@@ -402,7 +402,7 @@ return static function (Router $router): void {
             return null;
         }
 
-        $result = $blueskyService->getCachedFollowers($currentUser->id);
+        $result = $blueskyService->getCachedFollowers((int)$currentUser->id);
         http_response_code($result['success'] ? 200 : 404);
         echo json_encode($result);
         return null;
@@ -450,7 +450,7 @@ return static function (Router $router): void {
             }
 
             $currentUser = $authService->getCurrentUser();
-            $currentUserId = $currentUser->id ?? 0;
+            $currentUserId = (int)$currentUser->id ?? 0;
             if ($currentUserId !== (int)($reply['author_id'] ?? 0)) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'Permission denied']);
@@ -496,7 +496,7 @@ return static function (Router $router): void {
             }
 
             $currentUser = $authService->getCurrentUser();
-            $currentUserId = $currentUser->id ?? 0;
+            $currentUserId = (int)$currentUser->id ?? 0;
             if ($currentUserId !== (int)($reply['author_id'] ?? 0)) {
                 http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'Permission denied']);
@@ -595,7 +595,7 @@ return static function (Router $router): void {
         $nonce = (string)($body['nonce'] ?? '');
         $followerDids = $body['follower_dids'] ?? [];
 
-        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
+        if (!$securityService->verifyNonce($nonce, 'vt_nonce', (int)$currentUser->id)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Security verification failed']);
             return true;
@@ -608,7 +608,7 @@ return static function (Router $router): void {
         }
 
         try {
-            $result = $invitationService->inviteBlueskyFollowersToEvent((int)$id, $currentUser->id, $followerDids);
+            $result = $invitationService->inviteBlueskyFollowersToEvent((int)$id, (int)$currentUser->id, $followerDids);
             http_response_code($result['status']);
             echo json_encode([
                 'success' => $result['success'],
@@ -644,7 +644,7 @@ return static function (Router $router): void {
         $nonce = (string)($body['nonce'] ?? '');
         $followerDids = $body['follower_dids'] ?? [];
 
-        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
+        if (!$securityService->verifyNonce($nonce, 'vt_nonce', (int)$currentUser->id)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Security verification failed']);
             return true;
@@ -657,7 +657,7 @@ return static function (Router $router): void {
         }
 
         try {
-            $result = $invitationService->inviteBlueskyFollowersToCommunity((int)$id, $currentUser->id, $followerDids);
+            $result = $invitationService->inviteBlueskyFollowersToCommunity((int)$id, (int)$currentUser->id, $followerDids);
             http_response_code($result['status']);
             echo json_encode([
                 'success' => $result['success'],
