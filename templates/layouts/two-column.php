@@ -25,7 +25,7 @@ $security = vt_service('security.service');
 $authService = vt_service('auth.service');
 $currentUser = $authService->getCurrentUser();
 $userId = $currentUser->id ?? 0;
-$csrf_token = $security->createNonce('vt_nonce', $userId);
+$csrf_token = $security->createNonce('vt_nonce', (int) $userId);
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
