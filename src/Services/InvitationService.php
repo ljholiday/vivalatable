@@ -654,6 +654,9 @@ final class InvitationService
         $skipped = 0;
         $errors = [];
 
+        $logFile = dirname(__DIR__, 2) . '/debug.log';
+        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Starting community invitations for community {$communityId}, viewer {$viewerId}, " . count($followerDids) . " DIDs\n", FILE_APPEND);
+
         foreach ($followerDids as $did) {
             $did = trim($did);
             if ($did === '') {
@@ -663,8 +666,11 @@ final class InvitationService
             // Use bsky: prefix to indicate DID-based invitation
             $email = 'bsky:' . $did;
 
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Processing DID: {$did}, email format: {$email}\n", FILE_APPEND);
+
             // Check if already invited
             if ($this->isAlreadyInvited('community', $communityId, $email)) {
+                file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Already invited, skipping\n", FILE_APPEND);
                 $skipped++;
                 continue;
             }
@@ -690,11 +696,15 @@ final class InvitationService
                     $expiresAt
                 ]);
 
+                file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Successfully inserted invitation\n", FILE_APPEND);
                 $invited++;
             } catch (\Exception $e) {
+                file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Exception: " . $e->getMessage() . "\n", FILE_APPEND);
                 $errors[] = 'Failed to invite ' . substr($did, 0, 20) . '...';
             }
         }
+
+        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Finished: invited={$invited}, skipped={$skipped}\n", FILE_APPEND);
 
         return $this->success([
             'message' => "Invited {$invited} followers" . ($skipped > 0 ? ", skipped {$skipped} already invited" : ''),

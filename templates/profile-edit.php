@@ -160,6 +160,20 @@ $input = $input ?? [];
         Connect your Bluesky account to invite your followers to events and communities.
       </p>
 
+      <?php if (isset($_SESSION['flash_success'])): ?>
+        <div class="vt-alert vt-alert-success vt-mb-4">
+          <?= htmlspecialchars($_SESSION['flash_success'], ENT_QUOTES, 'UTF-8') ?>
+        </div>
+        <?php unset($_SESSION['flash_success']); ?>
+      <?php endif; ?>
+
+      <?php if (isset($_SESSION['flash_error'])): ?>
+        <div class="vt-alert vt-alert-error vt-mb-4">
+          <?= htmlspecialchars($_SESSION['flash_error'], ENT_QUOTES, 'UTF-8') ?>
+        </div>
+        <?php unset($_SESSION['flash_error']); ?>
+      <?php endif; ?>
+
       <?php if ($isConnected && $credentials): ?>
         <div class="vt-card vt-mb-4">
           <div class="vt-card-body">

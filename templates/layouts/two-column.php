@@ -22,7 +22,10 @@ $breadcrumbs = $breadcrumbs ?? [];
 $nav_items = $nav_items ?? [];
 
 $security = vt_service('security.service');
-$csrf_token = $security->createNonce('vt_nonce');
+$authService = vt_service('auth.service');
+$currentUser = $authService->getCurrentUser();
+$userId = $currentUser->id ?? 0;
+$csrf_token = $security->createNonce('vt_nonce', $userId);
 ?><!DOCTYPE html>
 <html lang="en">
 <head>

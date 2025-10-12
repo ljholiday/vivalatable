@@ -322,6 +322,8 @@ return static function (Router $router): void {
         $blueskyService->syncFollowers($currentUser->id);
 
         $_SESSION['flash_success'] = 'Bluesky account connected successfully!';
+        $logFile = dirname(__DIR__, 2) . '/debug.log';
+        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Bluesky connected - Setting flash_success in session\n", FILE_APPEND);
         header('Location: /profile/edit');
         exit;
     });
@@ -579,23 +581,27 @@ return static function (Router $router): void {
         if ($currentUser === null) {
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
-            return null;
-        }
-
-        $nonce = (string)$request->input('nonce', '');
-        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Security verification failed']);
-            return null;
+            return true;
         }
 
         $body = json_decode(file_get_contents('php://input'), true);
+        $nonce = (string)($body['nonce'] ?? '');
         $followerDids = $body['follower_dids'] ?? [];
+
+        $logFile = dirname(__DIR__, 2) . '/debug.log';
+        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Bluesky invite - nonce: {$nonce}, userId: {$currentUser->id}, body: " . json_encode($body) . "\n", FILE_APPEND);
+
+        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Nonce verification FAILED\n", FILE_APPEND);
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Security verification failed']);
+            return true;
+        }
 
         if (!is_array($followerDids)) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Invalid follower_dids format']);
-            return null;
+            return true;
         }
 
         $result = $invitationService->inviteBlueskyFollowersToEvent((int)$id, $currentUser->id, $followerDids);
@@ -605,7 +611,7 @@ return static function (Router $router): void {
             'message' => $result['message'] ?? '',
             'data' => $result['data'] ?? []
         ]);
-        return null;
+        return true;
     });
 
     $router->post('/api/invitations/bluesky/community/{id}', static function (Request $request, string $id) {
@@ -619,23 +625,27 @@ return static function (Router $router): void {
         if ($currentUser === null) {
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => 'Not authenticated']);
-            return null;
-        }
-
-        $nonce = (string)$request->input('nonce', '');
-        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Security verification failed']);
-            return null;
+            return true;
         }
 
         $body = json_decode(file_get_contents('php://input'), true);
+        $nonce = (string)($body['nonce'] ?? '');
         $followerDids = $body['follower_dids'] ?? [];
+
+        $logFile = dirname(__DIR__, 2) . '/debug.log';
+        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Bluesky invite - nonce: {$nonce}, userId: {$currentUser->id}, body: " . json_encode($body) . "\n", FILE_APPEND);
+
+        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Nonce verification FAILED\n", FILE_APPEND);
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Security verification failed']);
+            return true;
+        }
 
         if (!is_array($followerDids)) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Invalid follower_dids format']);
-            return null;
+            return true;
         }
 
         $result = $invitationService->inviteBlueskyFollowersToCommunity((int)$id, $currentUser->id, $followerDids);
@@ -645,7 +655,7 @@ return static function (Router $router): void {
             'message' => $result['message'] ?? '',
             'data' => $result['data'] ?? []
         ]);
-        return null;
+        return true;
     });
 
     $router->get('/api/communities/{id}/members', static function (Request $request, string $id) {

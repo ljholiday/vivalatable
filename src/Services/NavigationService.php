@@ -58,7 +58,7 @@ class NavigationService
         if ($userId > 0 && $this->authorization->canEditEvent($event, $userId)) {
             $tabs[] = [
                 'title' => 'Manage',
-                'url' => '/events/' . $slug . '/manage',
+                'url' => '/events/' . $slug . '/manage?tab=settings',
                 'active' => str_contains($currentRoute, '/events/' . $slug . '/manage')
             ];
         }
@@ -162,7 +162,7 @@ class NavigationService
         if ($userId > 0 && $this->authorization->canEditCommunity($community, $userId)) {
             $tabs[] = [
                 'title' => 'Manage',
-                'url' => '/communities/' . $slug . '/manage',
+                'url' => '/communities/' . $slug . '/manage?tab=members',
                 'active' => str_contains($currentRoute, '/communities/' . $slug . '/manage')
             ];
         }

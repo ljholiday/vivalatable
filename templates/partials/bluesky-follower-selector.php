@@ -295,6 +295,9 @@ if (!$isConnected) {
                     throw new Error(data.message || 'Failed to send invitations');
                 }
 
+                inviteBtn.disabled = false;
+                inviteBtn.textContent = 'Invite Selected';
+
                 alert('Invitations sent successfully to ' + selectedFollowers.size + ' followers!');
                 closeModal();
 
