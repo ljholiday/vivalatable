@@ -312,7 +312,7 @@ return static function (Router $router): void {
         }
 
         $stored = $blueskyService->storeCredentials(
-            $currentUser->id,
+            (int)$currentUser->id,
             $sessionResult['did'],
             $sessionResult['handle'],
             $sessionResult['accessJwt'],
