@@ -576,7 +576,8 @@ return static function (Router $router): void {
         return true;
     });
 
-    // API: Bluesky Invitations
+// API: Bluesky Invitations
+    
     $router->post('/api/invitations/bluesky/event/{id}', static function (Request $request, string $id) {
         $authService = vt_service('auth.service');
         $invitationService = vt_service('invitation.manager');
@@ -699,7 +700,7 @@ return static function (Router $router): void {
         return null;
     });
 
-    // Events
+// Events
     $router->get('/events', static function (Request $request) {
         $view = vt_service('controller.events')->index();
         $filter = $view['filter'] ?? 'all';
