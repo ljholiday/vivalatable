@@ -523,7 +523,7 @@ return static function (Router $router): void {
         http_response_code($response['status'] ?? 200);
         header('Content-Type: application/json');
         echo json_encode($response['body']);
-        return null;
+        return true;
     });
 
     $router->post('/api/{type}/{id}/invitations', static function (Request $request, string $type, string $id) {
@@ -535,7 +535,7 @@ return static function (Router $router): void {
         http_response_code($response['status'] ?? 200);
         header('Content-Type: application/json');
         echo json_encode($response['body']);
-        return null;
+        return true;
     });
 
     $router->get('/api/{type}/{id}/invitations', static function (Request $request, string $type, string $id) {
@@ -547,7 +547,7 @@ return static function (Router $router): void {
         http_response_code($response['status'] ?? 200);
         header('Content-Type: application/json');
         echo json_encode($response['body']);
-        return null;
+        return true;
     });
 
     $router->post('/api/events/{eventId}/invitations/{invitationId}/resend', static function (Request $request, string $eventId, string $invitationId) {
@@ -555,7 +555,7 @@ return static function (Router $router): void {
         http_response_code($response['status'] ?? 200);
         header('Content-Type: application/json');
         echo json_encode($response['body']);
-        return null;
+        return true;
     });
 
     $router->delete('/api/{type}/{entityId}/invitations/{invitationId}', static function (Request $request, string $type, string $entityId, string $invitationId) {
@@ -566,7 +566,7 @@ return static function (Router $router): void {
         http_response_code($response['status'] ?? 200);
         header('Content-Type: application/json');
         echo json_encode($response['body']);
-        return null;
+        return true;
     });
 
     // API: Bluesky Invitations
@@ -588,11 +588,7 @@ return static function (Router $router): void {
         $nonce = (string)($body['nonce'] ?? '');
         $followerDids = $body['follower_dids'] ?? [];
 
-        $logFile = dirname(__DIR__, 2) . '/debug.log';
-        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Bluesky invite - nonce: {$nonce}, userId: {$currentUser->id}, body: " . json_encode($body) . "\n", FILE_APPEND);
-
         if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
-            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Nonce verification FAILED\n", FILE_APPEND);
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Security verification failed']);
             return true;
@@ -604,13 +600,22 @@ return static function (Router $router): void {
             return true;
         }
 
-        $result = $invitationService->inviteBlueskyFollowersToEvent((int)$id, $currentUser->id, $followerDids);
-        http_response_code($result['status']);
-        echo json_encode([
-            'success' => $result['success'],
-            'message' => $result['message'] ?? '',
-            'data' => $result['data'] ?? []
-        ]);
+        try {
+            $result = $invitationService->inviteBlueskyFollowersToEvent((int)$id, $currentUser->id, $followerDids);
+            http_response_code($result['status']);
+            echo json_encode([
+                'success' => $result['success'],
+                'message' => $result['message'] ?? '',
+                'data' => $result['data'] ?? []
+            ]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
         return true;
     });
 
@@ -632,11 +637,7 @@ return static function (Router $router): void {
         $nonce = (string)($body['nonce'] ?? '');
         $followerDids = $body['follower_dids'] ?? [];
 
-        $logFile = dirname(__DIR__, 2) . '/debug.log';
-        file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Bluesky invite - nonce: {$nonce}, userId: {$currentUser->id}, body: " . json_encode($body) . "\n", FILE_APPEND);
-
         if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
-            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . "Nonce verification FAILED\n", FILE_APPEND);
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Security verification failed']);
             return true;
@@ -648,13 +649,22 @@ return static function (Router $router): void {
             return true;
         }
 
-        $result = $invitationService->inviteBlueskyFollowersToCommunity((int)$id, $currentUser->id, $followerDids);
-        http_response_code($result['status']);
-        echo json_encode([
-            'success' => $result['success'],
-            'message' => $result['message'] ?? '',
-            'data' => $result['data'] ?? []
-        ]);
+        try {
+            $result = $invitationService->inviteBlueskyFollowersToCommunity((int)$id, $currentUser->id, $followerDids);
+            http_response_code($result['status']);
+            echo json_encode([
+                'success' => $result['success'],
+                'message' => $result['message'] ?? '',
+                'data' => $result['data'] ?? []
+            ]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
         return true;
     });
 
@@ -663,7 +673,7 @@ return static function (Router $router): void {
         http_response_code($response['status'] ?? 200);
         header('Content-Type: application/json');
         echo json_encode($response['body']);
-        return null;
+        return true;
     });
 
     $router->post('/api/communities/{communityId}/members/{memberId}/role', static function (Request $request, string $communityId, string $memberId) {

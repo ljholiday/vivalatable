@@ -156,6 +156,60 @@ final class BlueskyService
     }
 
     /**
+     * Refresh the access token using refresh token
+     *
+     * @return array{success: bool, accessJwt?: string, refreshJwt?: string, message?: string}
+     */
+    public function refreshSession(int $userId): array
+    {
+        $credentials = $this->getCredentials($userId);
+        if ($credentials === null) {
+            return [
+                'success' => false,
+                'message' => 'No credentials found',
+            ];
+        }
+
+        try {
+            $response = $this->client->post(self::BSKY_SOCIAL_BASE . '/xrpc/com.atproto.server.refreshSession', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $credentials['refreshJwt'],
+                ],
+            ]);
+
+            $data = json_decode((string)$response->getBody(), true);
+
+            if (isset($data['accessJwt'], $data['refreshJwt'])) {
+                // Update stored credentials
+                $this->storeCredentials(
+                    $userId,
+                    $data['did'] ?? $credentials['did'],
+                    $data['handle'] ?? $credentials['handle'],
+                    $data['accessJwt'],
+                    $data['refreshJwt']
+                );
+
+                return [
+                    'success' => true,
+                    'accessJwt' => $data['accessJwt'],
+                    'refreshJwt' => $data['refreshJwt'],
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Invalid response from refresh endpoint',
+            ];
+
+        } catch (GuzzleException $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to refresh session: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Disconnect Bluesky account for a user
      */
     public function disconnectAccount(int $userId): bool
@@ -363,5 +417,134 @@ final class BlueskyService
             'followers' => $data['followers'] ?? [],
             'synced_at' => $result['last_sync'],
         ];
+    }
+
+    /**
+     * Create a post on Bluesky with mentions
+     *
+     * @param int $userId User ID to post as
+     * @param string $text Post text
+     * @param array<array{handle: string, did: string}> $mentions Array of mentions with handle and did
+     * @return array{success: bool, uri?: string, cid?: string, message?: string}
+     */
+    public function createPost(int $userId, string $text, array $mentions = []): array
+    {
+        $credentials = $this->getCredentials($userId);
+        if ($credentials === null) {
+            return [
+                'success' => false,
+                'message' => 'Bluesky account not connected',
+            ];
+        }
+
+        // Try to create post, refresh token if expired
+        $result = $this->attemptCreatePost($userId, $credentials, $text, $mentions);
+
+        // If token expired, refresh and retry once
+        if (!$result['success'] && str_contains($result['message'] ?? '', 'ExpiredToken')) {
+            $refreshResult = $this->refreshSession($userId);
+            if ($refreshResult['success']) {
+                $credentials['accessJwt'] = $refreshResult['accessJwt'];
+                $result = $this->attemptCreatePost($userId, $credentials, $text, $mentions);
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Token expired and refresh failed. Please reconnect your Bluesky account.',
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Attempt to create a post (internal helper)
+     */
+    private function attemptCreatePost(int $userId, array $credentials, string $text, array $mentions): array
+    {
+        try {
+            $facets = [];
+
+            // Build facets for mentions
+            foreach ($mentions as $mention) {
+                $handle = $mention['handle'] ?? '';
+                $did = $mention['did'] ?? '';
+
+                if ($handle === '' || $did === '') {
+                    continue;
+                }
+
+                $mentionText = '@' . $handle;
+                $byteStart = mb_strpos($text, $mentionText);
+
+                if ($byteStart === false) {
+                    continue;
+                }
+
+                // Convert character position to byte position
+                $beforeText = mb_substr($text, 0, $byteStart);
+                $byteStart = strlen($beforeText);
+                $byteEnd = $byteStart + strlen($mentionText);
+
+                $facets[] = [
+                    'index' => [
+                        'byteStart' => $byteStart,
+                        'byteEnd' => $byteEnd,
+                    ],
+                    'features' => [
+                        [
+                            '$type' => 'app.bsky.richtext.facet#mention',
+                            'did' => $did,
+                        ],
+                    ],
+                ];
+            }
+
+            $record = [
+                '$type' => 'app.bsky.feed.post',
+                'text' => $text,
+                'createdAt' => date('c'),
+            ];
+
+            if (!empty($facets)) {
+                $record['facets'] = $facets;
+            }
+
+            $response = $this->client->post(self::BSKY_SOCIAL_BASE . '/xrpc/com.atproto.repo.createRecord', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $credentials['accessJwt'],
+                ],
+                'json' => [
+                    'repo' => $credentials['did'],
+                    'collection' => 'app.bsky.feed.post',
+                    'record' => $record,
+                ],
+            ]);
+
+            $data = json_decode((string)$response->getBody(), true);
+
+            return [
+                'success' => true,
+                'uri' => $data['uri'] ?? null,
+                'cid' => $data['cid'] ?? null,
+            ];
+
+        } catch (GuzzleException $e) {
+            $message = $e->getMessage();
+
+            // Check for expired token in response
+            if ($e->hasResponse()) {
+                $body = (string)$e->getResponse()->getBody();
+                $decoded = json_decode($body, true);
+                if (isset($decoded['error'])) {
+                    $message = $decoded['error'] . ': ' . ($decoded['message'] ?? '');
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => $message,
+            ];
+        }
     }
 }

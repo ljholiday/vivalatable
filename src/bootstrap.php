@@ -220,7 +220,8 @@ if (!function_exists('vt_container')) {
                     $c->get('mail.service'),
                     $c->get('sanitizer.service'),
                     $c->get('event.guest.service'),
-                    $c->get('community.member.service')
+                    $c->get('community.member.service'),
+                    $c->get('bluesky.service')
                 );
             });
 

@@ -62,7 +62,8 @@ final class InvitationApiController
         if ($nonce === '') {
             $nonce = (string)$request->query('nonce', '');
         }
-        if (!$this->verifyNonce($nonce, 'vt_community_action')) {
+
+        if (!$this->verifyNonce($nonce, 'vt_nonce')) {
             return $this->error('Security verification failed.', 403);
         }
 
@@ -72,6 +73,7 @@ final class InvitationApiController
         }
 
         $result = $this->invitations->listCommunityInvitations($communityId, $viewerId);
+
         if (!$result['success']) {
             return $this->error($result['message'], $result['status']);
         }
@@ -176,7 +178,7 @@ final class InvitationApiController
         if ($nonce === '') {
             $nonce = (string)$request->query('nonce', '');
         }
-        if (!$this->verifyNonce($nonce, 'vt_event_action')) {
+        if (!$this->verifyNonce($nonce, 'vt_nonce')) {
             return $this->error('Security verification failed.', 403);
         }
 
@@ -208,7 +210,7 @@ final class InvitationApiController
         if ($nonce === '') {
             $nonce = (string)$request->query('nonce', '');
         }
-        if (!$this->verifyNonce($nonce, 'vt_event_action')) {
+        if (!$this->verifyNonce($nonce, 'vt_nonce')) {
             return $this->error('Security verification failed.', 403);
         }
 
@@ -241,7 +243,7 @@ final class InvitationApiController
             $nonce = (string)$request->query('nonce', '');
         }
 
-        if (!$this->verifyNonce($nonce, 'vt_event_action')) {
+        if (!$this->verifyNonce($nonce, 'vt_nonce')) {
             return $this->error('Security verification failed.', 403);
         }
 

@@ -365,15 +365,27 @@ function renderInvitationsList(invitations, entityType) {
         const email = inv.invited_email || inv.email;
         const dateField = inv.created_at || inv.rsvp_date;
 
+        // Check if this is a Bluesky invitation
+        const isBluesky = email && email.startsWith('bsky:');
+        let displayEmail = email;
+
+        if (isBluesky) {
+            const did = email.substring(5); // Remove 'bsky:' prefix
+            displayEmail = did.substring(0, 30) + '...'; // Truncate DID for display
+        }
+
         html += '<div class="vt-invitation-item">';
         html += '<div class="vt-flex vt-flex-between">';
         html += '<div>';
-        html += '<strong>' + escapeHtml(email) + '</strong>';
+        html += '<strong>' + escapeHtml(displayEmail) + '</strong>';
+        if (isBluesky) {
+            html += ' <span class="vt-badge vt-badge-secondary">Bluesky</span>';
+        }
         html += '<div class="vt-text-muted vt-text-sm">Sent ' + new Date(dateField).toLocaleDateString() + '</div>';
         html += '</div>';
         html += '<div class="vt-flex vt-gap-2">';
         html += '<span class="vt-badge vt-badge-' + statusClass + '">' + statusText + '</span>';
-        if (inv.status === 'pending') {
+        if (inv.status === 'pending' && !isBluesky) {
             html += '<button class="vt-btn vt-btn-sm vt-btn-danger cancel-invitation" data-invitation-id="' + inv.id + '" data-invitation-action="cancel">Cancel</button>';
         }
         html += '</div>';
