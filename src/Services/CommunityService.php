@@ -239,6 +239,33 @@ final class CommunityService
             ':is_active' => 1,
         ]);
 
+    // ------------------------------------------------------
+    // Automatically add creator as admin of new community
+    // ------------------------------------------------------
+    $communityId = (int)$pdo->lastInsertId();
+
+    $stmtMember = $pdo->prepare("
+        INSERT INTO vt_community_members (
+            community_id,
+            user_id,
+            role,
+            status,
+            joined_at
+        ) VALUES (
+            :community_id,
+            :user_id,
+            'admin',
+            'active',
+            NOW()
+        )
+    ");
+
+    $stmtMember->execute([
+        ':community_id' => $communityId,
+        ':user_id' => 1, // same creator as above
+    ]);
+    // ------------------------------------------------------
+
         return $slug;
     }
 
