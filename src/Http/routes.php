@@ -288,7 +288,7 @@ return static function (Router $router): void {
         }
 
         $nonce = (string)$request->input('nonce', '');
-        if (!$securityService->verifyNonce($nonce, 'vt_nonce', $currentUser->id)) {
+        if (!$securityService->verifyNonce($nonce, 'vt_nonce',(int)$currentUser->id)) {
             $_SESSION['flash_error'] = 'Security verification failed';
             header('Location: /profile/edit');
             exit;
