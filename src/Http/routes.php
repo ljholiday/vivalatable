@@ -1157,4 +1157,29 @@ return static function (Router $router): void {
         ]), 'two-column');
         return null;
     });
+
+$router->get('/invitation/accept', static function (Request $request) {
+    $token = $request->query('token');
+
+    if (!$token) {
+        http_response_code(400);
+        echo 'Missing invitation token.';
+        return null;
+    }
+
+    // Use the existing controller to process the token
+    $controller = vt_service('controller.invitations');
+    $result = $controller->accept($token);
+
+    // If the controller returns data or redirect info, handle it here
+    if (isset($result['redirect'])) {
+        header('Location: ' . $result['redirect']);
+        exit;
+    }
+
+    // Simple success message if no redirect is specified
+    echo 'Invitation accepted successfully.';
+    return null;
+});
+
 };
